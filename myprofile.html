@@ -113,36 +113,41 @@
   ======================================================== -->
     <main class="main-wrap">
 
-      <header class="topbar">
+    <header class="topbar">
 
-        <div class="topbar-left">
-          <button class="icon-btn mobile-menu" id="mobileMenu" type="button">
-            <i class="bi bi-list"></i>
-          </button>
+      <div class="d-flex align-items-center">
+        <button class="mobile-toggle me-2" id="menuBtn" type="button" aria-label="Toggle sidebar" title="Toggle sidebar">
+          <i class="bi bi-list fs-5"></i>
+        </button>
 
-          <h1 class="topbar-title">My Profile</h1>
-          <div class="breadcrumb">Home / My Profile</div>
+        <div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-subtitle">Home / Dashboard</div>
         </div>
+      </div>
 
-        <div class="topbar-right">
+      <div class="topbar-right">
 
-          <button class="icon-btn" type="button" title="Notifications">
-            <i class="bi bi-bell"></i>
-          </button>
+        <button class="top-icon" type="button">
+          <i class="bi bi-search"></i>
+        </button>
 
-          <div class="top-user">
-            <div class="top-avatar" id="topAvatar">LS</div>
+        <button class="top-icon" type="button">
+          <i class="bi bi-bell"></i>
+          <span class="notify-dot"></span>
+        </button>
 
-            <div class="top-user-copy">
-              <strong id="topUserName">Lovesha Sharma</strong>
-              <span>Employee</span>
-            </div>
-
-            <i class="bi bi-chevron-down"></i>
+        <div class="top-user">
+          <div class="avatar">LS</div>
+          <div>
+            <div class="top-user-name">Lovesha Sharma</div>
+            <div class="top-user-role">Employee</div>
           </div>
-
+          <i class="bi bi-chevron-down small text-secondary"></i>
         </div>
-      </header>
+
+      </div>
+    </header>
 
 
       <section class="page">
