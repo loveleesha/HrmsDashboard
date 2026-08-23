@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Openings | Hike Associate</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+  <link rel="stylesheet" href="style/job-opening.css">
+</head>
+
+<body>
+<div class="app-shell">
+
+  <!-- COMMON SIDEBAR -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="brand-area">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Hike Associate</div>
+        <div class="brand-caption">HR MANAGEMENT</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Overview</div>
+      <a href="#" class="nav-item">
+        <i class="bi bi-grid-fill"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <div class="nav-section-title">Employee</div>
+      <a href="#" class="nav-item">
+        <i class="bi bi-person-vcard"></i>
+        <span>My Profile</span>
+        <i class="bi bi-chevron-right nav-arrow"></i>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-calendar3"></i>
+        <span>Attendance</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-calendar2-week"></i>
+        <span>Leave & Holidays</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-receipt"></i>
+        <span>My Payslips</span>
+      </a>
+
+      <div class="nav-section-title">Work</div>
+      <a href="#" class="nav-item">
+        <i class="bi bi-clock-history"></i>
+        <span>DSR & Allocation</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-kanban"></i>
+        <span>My Projects</span>
+        <i class="bi bi-chevron-right nav-arrow"></i>
+      </a>
+
+      <div class="nav-section-title">People & Support</div>
+      <a href="#" class="nav-item active">
+        <i class="bi bi-briefcase"></i>
+        <span>Job Openings</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-people"></i>
+        <span>Refer a Friend</span>
+      </a>
+      <a href="#" class="nav-item">
+        <i class="bi bi-chat-square-text"></i>
+        <span>Complaints</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-profile">
+      <div class="profile-avatar">LS</div>
+      <div class="profile-copy">
+        <strong>Lovesha Sharma</strong>
+        <span>Employee</span>
+      </div>
+      <i class="bi bi-three-dots"></i>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- COMMON HEADER -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="mobile-menu" id="mobileMenu" type="button">
+          <i class="bi bi-list"></i>
+        </button>
+
+        <div>
+          <div class="topbar-title">Hike Associate</div>
+          <div class="topbar-subtitle">Employee Workspace</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="last-login">
+          Last Login
+          <strong>21-Aug-2026 10:38 PM</strong>
+        </div>
+
+        <div class="header-user">
+          <span>Lovesha Sharma</span>
+          <div class="header-avatar">LS</div>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+
+        <button class="help-btn" type="button">Help</button>
+
+        <button class="notification-btn" type="button">
+          <i class="bi bi-bell-fill"></i>
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- PAGE -->
+    <section class="page-content">
+
+      <div class="page-heading-row">
+        <div>
+          <div class="page-eyebrow">
+            <i class="bi bi-briefcase"></i>
+            CAREER OPPORTUNITIES
+          </div>
+
+          <h1>Job Openings</h1>
+          <p>Explore current opportunities and apply for roles that match your skills.</p>
+        </div>
+
+        <div class="page-actions">
+          <button class="btn-outline-custom" id="filterBtn" type="button">
+            <i class="bi bi-funnel"></i>
+            Filter
+          </button>
+
+          <button class="btn-primary-custom" id="refreshBtn" type="button">
+            <i class="bi bi-arrow-clockwise"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- SEARCH / FILTER BAR -->
+      <div class="search-card">
+        <div class="search-main">
+          <div class="search-field">
+            <i class="bi bi-search"></i>
+            <input id="jobSearch" type="search" placeholder="Search job title, skill or department...">
+          </div>
+
+          <select id="departmentFilter" class="filter-select">
+            <option value="">All Departments</option>
+            <option value="Engineering">Engineering</option>
+            <option value="Design">Design</option>
+            <option value="HR">Human Resources</option>
+            <option value="Finance">Finance</option>
+            <option value="Marketing">Marketing</option>
+          </select>
+
+          <select id="locationFilter" class="filter-select">
+            <option value="">All Locations</option>
+            <option value="Noida">Noida</option>
+            <option value="Bangalore">Bangalore</option>
+            <option value="Mumbai">Mumbai</option>
+            <option value="Remote">Remote</option>
+          </select>
+
+          <button class="clear-filter" id="clearFilters" type="button">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- SUMMARY -->
+      <div class="job-summary">
+        <div class="summary-left">
+          <strong id="jobCount">6</strong>
+          <span>open positions</span>
+        </div>
+
+        <div class="sort-wrap">
+          <label for="sortJobs">Sort by</label>
+          <select id="sortJobs">
+            <option value="latest">Latest</option>
+            <option value="az">A - Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- JOB GRID -->
+      <div class="job-grid" id="jobGrid">
+
+        <article class="job-card"
+          data-title="Senior React Developer"
+          data-department="Engineering"
+          data-location="Noida"
+          data-order="1">
+
+          <div class="job-card-top">
+            <div class="job-icon red">
+              <i class="bi bi-code-slash"></i>
+            </div>
+
+            <span class="job-type">Full Time</span>
+          </div>
+
+          <h3>Senior React Developer</h3>
+          <p class="job-description">
+            Build scalable frontend experiences using React, TypeScript and modern UI practices.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Engineering</span>
+            <span><i class="bi bi-geo-alt"></i> Noida</span>
+            <span><i class="bi bi-briefcase"></i> 4 - 6 Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 2 days ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+        <article class="job-card"
+          data-title="UI/UX Designer"
+          data-department="Design"
+          data-location="Noida"
+          data-order="2">
+
+          <div class="job-card-top">
+            <div class="job-icon purple">
+              <i class="bi bi-palette"></i>
+            </div>
+            <span class="job-type">Full Time</span>
+          </div>
+
+          <h3>UI/UX Designer</h3>
+          <p class="job-description">
+            Create intuitive digital experiences, wireframes and polished interfaces for business products.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Design</span>
+            <span><i class="bi bi-geo-alt"></i> Noida</span>
+            <span><i class="bi bi-briefcase"></i> 3 - 5 Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 4 days ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+        <article class="job-card"
+          data-title="HR Business Partner"
+          data-department="HR"
+          data-location="Bangalore"
+          data-order="3">
+
+          <div class="job-card-top">
+            <div class="job-icon blue">
+              <i class="bi bi-people"></i>
+            </div>
+            <span class="job-type">Full Time</span>
+          </div>
+
+          <h3>HR Business Partner</h3>
+          <p class="job-description">
+            Partner with teams on employee engagement, workforce planning and HR operations.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Human Resources</span>
+            <span><i class="bi bi-geo-alt"></i> Bangalore</span>
+            <span><i class="bi bi-briefcase"></i> 5+ Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 5 days ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+        <article class="job-card"
+          data-title="Frontend Developer"
+          data-department="Engineering"
+          data-location="Remote"
+          data-order="4">
+
+          <div class="job-card-top">
+            <div class="job-icon green">
+              <i class="bi bi-window"></i>
+            </div>
+            <span class="job-type">Remote</span>
+          </div>
+
+          <h3>Frontend Developer</h3>
+          <p class="job-description">
+            Develop responsive web applications with JavaScript, HTML, CSS and frontend frameworks.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Engineering</span>
+            <span><i class="bi bi-geo-alt"></i> Remote</span>
+            <span><i class="bi bi-briefcase"></i> 2 - 4 Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 1 week ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+        <article class="job-card"
+          data-title="Finance Analyst"
+          data-department="Finance"
+          data-location="Mumbai"
+          data-order="5">
+
+          <div class="job-card-top">
+            <div class="job-icon orange">
+              <i class="bi bi-bar-chart"></i>
+            </div>
+            <span class="job-type">Full Time</span>
+          </div>
+
+          <h3>Finance Analyst</h3>
+          <p class="job-description">
+            Support financial reporting, business analysis and data-driven decision making.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Finance</span>
+            <span><i class="bi bi-geo-alt"></i> Mumbai</span>
+            <span><i class="bi bi-briefcase"></i> 2 - 4 Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 1 week ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+        <article class="job-card"
+          data-title="Digital Marketing Specialist"
+          data-department="Marketing"
+          data-location="Noida"
+          data-order="6">
+
+          <div class="job-card-top">
+            <div class="job-icon pink">
+              <i class="bi bi-megaphone"></i>
+            </div>
+            <span class="job-type">Full Time</span>
+          </div>
+
+          <h3>Digital Marketing Specialist</h3>
+          <p class="job-description">
+            Drive digital campaigns, content initiatives and performance marketing activities.
+          </p>
+
+          <div class="job-meta">
+            <span><i class="bi bi-building"></i> Marketing</span>
+            <span><i class="bi bi-geo-alt"></i> Noida</span>
+            <span><i class="bi bi-briefcase"></i> 2 - 5 Years</span>
+          </div>
+
+          <div class="job-card-footer">
+            <span class="posted">Posted 2 weeks ago</span>
+            <button class="apply-btn" type="button">View & Apply <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </article>
+
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon"><i class="bi bi-search"></i></div>
+        <h3>No jobs found</h3>
+        <p>Try changing your search or filter criteria.</p>
+        <button class="btn-primary-custom" id="emptyClear" type="button">Clear Filters</button>
+      </div>
+
+    </section>
+  </main>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+</div>
+
+<!-- JOB DETAIL MODAL -->
+<div class="job-modal-backdrop" id="jobModal">
+  <div class="job-modal">
+    <button class="modal-close" id="closeJobModal" type="button">
+      <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="modal-icon job-icon red">
+      <i class="bi bi-briefcase"></i>
+    </div>
+
+    <div class="page-eyebrow">OPEN POSITION</div>
+    <h2 id="modalTitle">Senior React Developer</h2>
+
+    <div class="modal-meta">
+      <span><i class="bi bi-building"></i> <b id="modalDepartment">Engineering</b></span>
+      <span><i class="bi bi-geo-alt"></i> <b id="modalLocation">Noida</b></span>
+      <span><i class="bi bi-briefcase"></i> <b id="modalExperience">4 - 6 Years</b></span>
+    </div>
+
+    <div class="modal-section">
+      <h4>About the role</h4>
+      <p id="modalDescription"></p>
+    </div>
+
+    <div class="modal-section">
+      <h4>Application</h4>
+      <p>Interested in this opportunity? Submit your application to the HR team.</p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-outline-custom" id="modalCloseBtn" type="button">Close</button>
+      <button class="btn-primary-custom" id="applyNowBtn" type="button">
+        <i class="bi bi-send"></i>
+        Apply Now
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="js/job-opening.js"></script>
+</body>
+</html>
