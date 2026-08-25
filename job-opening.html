@@ -19,76 +19,93 @@
 <div class="app-shell">
 
   <!-- COMMON SIDEBAR -->
-  <aside class="app-sidebar" id="sidebar">
-    <div class="brand-area">
-      <div class="brand-mark">A</div>
-      <div>
-        <div class="brand-name">Hike Associate</div>
-        <div class="brand-caption">HR MANAGEMENT</div>
+ <aside class="app-sidebar" id="sidebar">
+
+      <div class="brand-area">
+        <div class="brand-mark">A</div>
+        <div>
+          <div class="brand-name">Hike Associate</div>
+          <div class="brand-caption">HR MANAGEMENT</div>
+        </div>
       </div>
-    </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section-title">Overview</div>
-      <a href="#" class="nav-item">
-        <i class="bi bi-grid-fill"></i>
-        <span>Dashboard</span>
-      </a>
+      <nav class="sidebar-nav">
 
-      <div class="nav-section-title">Employee</div>
-      <a href="#" class="nav-item">
-        <i class="bi bi-person-vcard"></i>
-        <span>My Profile</span>
-        <i class="bi bi-chevron-right nav-arrow"></i>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-calendar3"></i>
-        <span>Attendance</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-calendar2-week"></i>
-        <span>Leave & Holidays</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-receipt"></i>
-        <span>My Payslips</span>
-      </a>
+        <div class="nav-section-title">Overview</div>
 
-      <div class="nav-section-title">Work</div>
-      <a href="#" class="nav-item">
-        <i class="bi bi-clock-history"></i>
-        <span>DSR & Allocation</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-kanban"></i>
-        <span>My Projects</span>
-        <i class="bi bi-chevron-right nav-arrow"></i>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-grid-fill"></i>
+          <span>Dashboard</span>
+        </a>
 
-      <div class="nav-section-title">People & Support</div>
-      <a href="#" class="nav-item active">
-        <i class="bi bi-briefcase"></i>
-        <span>Job Openings</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-people"></i>
-        <span>Refer a Friend</span>
-      </a>
-      <a href="#" class="nav-item">
-        <i class="bi bi-chat-square-text"></i>
-        <span>Complaints</span>
-      </a>
-    </nav>
+        <div class="nav-section-title">Employee</div>
 
-    <div class="sidebar-profile">
-      <div class="profile-avatar">LS</div>
-      <div class="profile-copy">
-        <strong>Lovesha Sharma</strong>
-        <span>Employee</span>
+        <a href="#" class="nav-item">
+          <i class="bi bi-person-vcard"></i>
+          <span>My Profile</span>
+          <i class="bi bi-chevron-right nav-arrow"></i>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-calendar3"></i>
+          <span>Attendance</span>
+        </a>
+        <a href="permission.html" class="nav-item">
+          <i class="bi bi-shield-check"></i>
+          <span>Permissions</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-calendar2-week"></i>
+          <span>Leave & Holidays</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-receipt"></i>
+          <span>My Payslips</span>
+        </a>
+
+        <div class="nav-section-title">Work</div>
+
+        <a href="#" class="nav-item active">
+          <i class="bi bi-clock-history"></i>
+          <span>DSR & Allocation</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-kanban"></i>
+          <span>My Projects</span>
+          <i class="bi bi-chevron-right nav-arrow"></i>
+        </a>
+
+        <div class="nav-section-title">People & Support</div>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-briefcase"></i>
+          <span>Job Openings</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-people"></i>
+          <span>Refer a Friend</span>
+        </a>
+
+        <a href="#" class="nav-item">
+          <i class="bi bi-chat-square-text"></i>
+          <span>Complaints</span>
+        </a>
+
+      </nav>
+
+      <div class="sidebar-profile">
+        <div class="profile-avatar">LS</div>
+        <div class="profile-copy">
+          <strong>Lovesha Sharma</strong>
+          <span>Employee</span>
+        </div>
+        <i class="bi bi-three-dots"></i>
       </div>
-      <i class="bi bi-three-dots"></i>
-    </div>
-  </aside>
+
+    </aside>
 
   <!-- MAIN -->
   <main class="main-content">
@@ -106,25 +123,30 @@
         </div>
       </div>
 
-      <div class="topbar-right">
-        <div class="last-login">
-          Last Login
-          <strong>21-Aug-2026 10:38 PM</strong>
+       <div class="topbar-right">
+
+          <button class="top-icon" type="button">
+            <i class="bi bi-search"></i>
+          </button>
+
+          <button type="button" id="themeToggle" class="theme-toggle">
+            <i class="bi bi-moon-fill"></i>
+          </button>
+          <button class="top-icon" type="button">
+            <i class="bi bi-bell"></i>
+            <span class="notify-dot"></span>
+          </button>
+
+          <div class="top-user">
+            <div class="avatar">LS</div>
+            <div>
+              <div class="top-user-name">Lovesha Sharma</div>
+              <div class="top-user-role">Employee</div>
+            </div>
+            <i class="bi bi-chevron-down small text-secondary"></i>
+          </div>
+
         </div>
-
-        <div class="header-user">
-          <span>Lovesha Sharma</span>
-          <div class="header-avatar">LS</div>
-          <i class="bi bi-chevron-down"></i>
-        </div>
-
-        <button class="help-btn" type="button">Help</button>
-
-        <button class="notification-btn" type="button">
-          <i class="bi bi-bell-fill"></i>
-          <span></span>
-        </button>
-      </div>
     </header>
 
     <!-- PAGE -->

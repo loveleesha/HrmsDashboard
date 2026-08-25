@@ -557,3 +557,37 @@
   $(init);
 
 })(jQuery);
+
+
+(function () {
+    const html = document.documentElement;
+    const toggle = document.getElementById("themeToggle");
+
+    if (!toggle) return;
+
+    const savedTheme = localStorage.getItem("hrms-theme") || "light";
+
+    html.setAttribute("data-theme", savedTheme);
+
+    updateIcon(savedTheme);
+
+    toggle.addEventListener("click", function () {
+        const currentTheme = html.getAttribute("data-theme");
+
+        const nextTheme =
+            currentTheme === "dark" ? "light" : "dark";
+
+        html.setAttribute("data-theme", nextTheme);
+
+        localStorage.setItem("hrms-theme", nextTheme);
+
+        updateIcon(nextTheme);
+    });
+
+    function updateIcon(theme) {
+        toggle.innerHTML =
+            theme === "dark"
+                ? '<i class="bi bi-sun-fill"></i>'
+                : '<i class="bi bi-moon-fill"></i>';
+    }
+})();

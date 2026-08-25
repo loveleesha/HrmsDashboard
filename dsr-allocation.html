@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,636 +17,643 @@
 </head>
 
 <body>
-<div class="app-shell">
+  <div class="app-shell">
 
-  <!-- =====================================================
+    <!-- =====================================================
        COMMON SIDEBAR
        ===================================================== -->
-  <aside class="app-sidebar" id="sidebar">
+    <aside class="app-sidebar" id="sidebar">
 
-    <div class="brand-area">
-      <div class="brand-mark">A</div>
-      <div>
-        <div class="brand-name">Hike Associate</div>
-        <div class="brand-caption">HR MANAGEMENT</div>
+      <div class="brand-area">
+        <div class="brand-mark">A</div>
+        <div>
+          <div class="brand-name">Hike Associate</div>
+          <div class="brand-caption">HR MANAGEMENT</div>
+        </div>
       </div>
-    </div>
 
-    <nav class="sidebar-nav">
+      <nav class="sidebar-nav">
 
-      <div class="nav-section-title">Overview</div>
+        <div class="nav-section-title">Overview</div>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-grid-fill"></i>
-        <span>Dashboard</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-grid-fill"></i>
+          <span>Dashboard</span>
+        </a>
 
-      <div class="nav-section-title">Employee</div>
+        <div class="nav-section-title">Employee</div>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-person-vcard"></i>
-        <span>My Profile</span>
-        <i class="bi bi-chevron-right nav-arrow"></i>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-person-vcard"></i>
+          <span>My Profile</span>
+          <i class="bi bi-chevron-right nav-arrow"></i>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-calendar3"></i>
-        <span>Attendance</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-calendar3"></i>
+          <span>Attendance</span>
+        </a>
+        <a href="permission.html" class="nav-item">
+          <i class="bi bi-shield-check"></i>
+          <span>Permissions</span>
+        </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-calendar2-week"></i>
+          <span>Leave & Holidays</span>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-calendar2-week"></i>
-        <span>Leave & Holidays</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-receipt"></i>
+          <span>My Payslips</span>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-receipt"></i>
-        <span>My Payslips</span>
-      </a>
+        <div class="nav-section-title">Work</div>
 
-      <div class="nav-section-title">Work</div>
+        <a href="#" class="nav-item active">
+          <i class="bi bi-clock-history"></i>
+          <span>DSR & Allocation</span>
+        </a>
 
-      <a href="#" class="nav-item active">
-        <i class="bi bi-clock-history"></i>
-        <span>DSR & Allocation</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-kanban"></i>
+          <span>My Projects</span>
+          <i class="bi bi-chevron-right nav-arrow"></i>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-kanban"></i>
-        <span>My Projects</span>
-        <i class="bi bi-chevron-right nav-arrow"></i>
-      </a>
+        <div class="nav-section-title">People & Support</div>
 
-      <div class="nav-section-title">People & Support</div>
+        <a href="#" class="nav-item">
+          <i class="bi bi-briefcase"></i>
+          <span>Job Openings</span>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-briefcase"></i>
-        <span>Job Openings</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-people"></i>
+          <span>Refer a Friend</span>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-people"></i>
-        <span>Refer a Friend</span>
-      </a>
+        <a href="#" class="nav-item">
+          <i class="bi bi-chat-square-text"></i>
+          <span>Complaints</span>
+        </a>
 
-      <a href="#" class="nav-item">
-        <i class="bi bi-chat-square-text"></i>
-        <span>Complaints</span>
-      </a>
+      </nav>
 
-    </nav>
-
-    <div class="sidebar-profile">
-      <div class="profile-avatar">LS</div>
-      <div class="profile-copy">
-        <strong>Lovesha Sharma</strong>
-        <span>Employee</span>
+      <div class="sidebar-profile">
+        <div class="profile-avatar">LS</div>
+        <div class="profile-copy">
+          <strong>Lovesha Sharma</strong>
+          <span>Employee</span>
+        </div>
+        <i class="bi bi-three-dots"></i>
       </div>
-      <i class="bi bi-three-dots"></i>
-    </div>
 
-  </aside>
+    </aside>
 
 
-  <!-- =====================================================
+    <!-- =====================================================
        MAIN
        ===================================================== -->
-  <main class="main-content">
+    <main class="main-content">
 
-    <!-- COMMON HEADER -->
-    <header class="topbar">
+      <!-- COMMON HEADER -->
+      <header class="topbar">
 
-      <div class="topbar-left">
-        <button class="mobile-menu" id="mobileMenu">
-          <i class="bi bi-list"></i>
-        </button>
+        <div class="topbar-left">
+          <button class="mobile-menu" id="mobileMenu">
+            <i class="bi bi-list"></i>
+          </button>
 
-        <div>
-          <div class="topbar-title">Hike Associate</div>
-          <div class="topbar-subtitle">Employee Workspace</div>
-        </div>
-      </div>
-
-      <div class="topbar-right">
-
-        <div class="last-login">
-          Last Login
-          <strong>21-Aug-2026 10:38 PM</strong>
+          <div>
+            <div class="topbar-title">Hike Associate</div>
+            <div class="topbar-subtitle">Employee Workspace</div>
+          </div>
         </div>
 
-        <div class="header-user">
-          <span>Lovesha Sharma</span>
-          <div class="header-avatar">LS</div>
-          <i class="bi bi-chevron-down"></i>
-        </div>
+        <div class="topbar-right">
 
-        <button class="help-btn">Help</button>
+          <button class="top-icon" type="button">
+            <i class="bi bi-search"></i>
+          </button>
 
-        <button class="notification-btn">
-          <i class="bi bi-bell-fill"></i>
-          <span></span>
-        </button>
+          <button type="button" id="themeToggle" class="theme-toggle">
+            <i class="bi bi-moon-fill"></i>
+          </button>
+          <button class="top-icon" type="button">
+            <i class="bi bi-bell"></i>
+            <span class="notify-dot"></span>
+          </button>
 
-      </div>
-    </header>
-
-
-    <!-- PAGE -->
-    <section class="page-content">
-
-      <div class="page-heading-row">
-
-        <div>
-          <div class="page-eyebrow">
-            <i class="bi bi-clock-history"></i>
-            WORK MANAGEMENT
+          <div class="top-user">
+            <div class="avatar">LS</div>
+            <div>
+              <div class="top-user-name">Lovesha Sharma</div>
+              <div class="top-user-role">Employee</div>
+            </div>
+            <i class="bi bi-chevron-down small text-secondary"></i>
           </div>
 
-          <h1>DSR & Allocation</h1>
+        </div>
+      </header>
 
-          <p>
-            Submit your daily status reports and view your project allocations.
-          </p>
+
+      <!-- PAGE -->
+      <section class="page-content">
+
+        <div class="page-heading-row">
+
+          <div>
+            <div class="page-eyebrow">
+              <i class="bi bi-clock-history"></i>
+              WORK MANAGEMENT
+            </div>
+
+            <h1>DSR & Allocation</h1>
+
+            <p>
+              Submit your daily status reports and view your project allocations.
+            </p>
+          </div>
+
+          <div class="page-actions">
+            <button class="btn-outline-custom" id="filterBtn">
+              <i class="bi bi-funnel"></i>
+              Filter
+            </button>
+
+            <button class="btn-primary-custom" id="refreshBtn">
+              <i class="bi bi-arrow-clockwise"></i>
+              Refresh
+            </button>
+          </div>
+
         </div>
 
-        <div class="page-actions">
-          <button class="btn-outline-custom" id="filterBtn">
-            <i class="bi bi-funnel"></i>
-            Filter
+
+        <!-- TABS -->
+        <div class="module-tabs">
+
+          <button class="module-tab active" data-tab="dsr">
+            <i class="bi bi-journal-text"></i>
+            DSR
           </button>
 
-          <button class="btn-primary-custom" id="refreshBtn">
-            <i class="bi bi-arrow-clockwise"></i>
-            Refresh
+          <button class="module-tab" data-tab="allocation">
+            <i class="bi bi-diagram-3"></i>
+            Allocation
           </button>
+
         </div>
 
-      </div>
 
-
-      <!-- TABS -->
-      <div class="module-tabs">
-
-        <button class="module-tab active" data-tab="dsr">
-          <i class="bi bi-journal-text"></i>
-          DSR
-        </button>
-
-        <button class="module-tab" data-tab="allocation">
-          <i class="bi bi-diagram-3"></i>
-          Allocation
-        </button>
-
-      </div>
-
-
-      <!-- =================================================
+        <!-- =================================================
            DSR TAB
            ================================================= -->
-      <div class="tab-panel active" id="dsrPanel">
+        <div class="tab-panel active" id="dsrPanel">
 
-        <div class="action-card">
+          <div class="action-card">
 
-          <div class="action-icon">
-            <i class="bi bi-plus-lg"></i>
-          </div>
-
-          <div class="action-copy">
-            <strong>Create New DSR</strong>
-            <span>Submit your daily status report</span>
-          </div>
-
-          <button class="btn-primary-outline ms-auto" id="openDsrForm">
-            <i class="bi bi-plus-lg"></i>
-            Add
-          </button>
-
-        </div>
-
-
-        <div class="content-card">
-
-          <div class="card-heading">
-
-            <div class="heading-icon purple">
-              <i class="bi bi-journal-text"></i>
+            <div class="action-icon">
+              <i class="bi bi-plus-lg"></i>
             </div>
 
-            <div>
-              <h3>All Worksheets</h3>
-              <p>Daily status reports overview</p>
+            <div class="action-copy">
+              <strong>Create New DSR</strong>
+              <span>Submit your daily status report</span>
             </div>
+
+            <button class="btn-primary-outline ms-auto" id="openDsrForm">
+              <i class="bi bi-plus-lg"></i>
+              Add
+            </button>
 
           </div>
 
 
-          <div class="table-toolbar">
+          <div class="content-card">
 
-            <div class="entries">
-              Show
-              <select>
-                <option>10</option>
-                <option>25</option>
-                <option>50</option>
-              </select>
-              entries
+            <div class="card-heading">
+
+              <div class="heading-icon purple">
+                <i class="bi bi-journal-text"></i>
+              </div>
+
+              <div>
+                <h3>All Worksheets</h3>
+                <p>Daily status reports overview</p>
+              </div>
+
             </div>
 
-            <div class="search-box">
-              <label>Search:</label>
-              <div class="search-input">
-                <i class="bi bi-search"></i>
-                <input type="search" placeholder="Search">
+
+            <div class="table-toolbar">
+
+              <div class="entries">
+                Show
+                <select>
+                  <option>10</option>
+                  <option>25</option>
+                  <option>50</option>
+                </select>
+                entries
+              </div>
+
+              <div class="search-box">
+                <label>Search:</label>
+                <div class="search-input">
+                  <i class="bi bi-search"></i>
+                  <input type="search" placeholder="Search">
+                </div>
+              </div>
+
+            </div>
+
+
+            <div class="table-actions">
+              <button>Excel</button>
+              <button>CSV</button>
+            </div>
+
+
+            <div class="table-responsive">
+              <table class="hrms-table">
+                <thead>
+                  <tr>
+                    <th>Sr.No.</th>
+                    <th>Emp Name</th>
+                    <th>EmpId</th>
+                    <th>Email</th>
+                    <th>Employment Type</th>
+                    <th>Date</th>
+                    <th>Total (Logged Hr)</th>
+                    <th>Final Approval</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td>Lovesha Sharma</td>
+                    <td>AI2235</td>
+                    <td>lovesha.sharma@hikeassociate.com</td>
+                    <td>Permanent</td>
+                    <td>21-Aug-2026</td>
+                    <td>8:00</td>
+                    <td><span class="status pending">Pending</span></td>
+                  </tr>
+
+                  <tr>
+                    <td>2</td>
+                    <td>Lovesha Sharma</td>
+                    <td>AI2235</td>
+                    <td>lovesha.sharma@hikeassociate.com</td>
+                    <td>Permanent</td>
+                    <td>20-Aug-2026</td>
+                    <td>8:28</td>
+                    <td><span class="status approved">Approved</span></td>
+                  </tr>
+
+                  <tr>
+                    <td>3</td>
+                    <td>Lovesha Sharma</td>
+                    <td>AI2235</td>
+                    <td>lovesha.sharma@hikeassociate.com</td>
+                    <td>Permanent</td>
+                    <td>19-Aug-2026</td>
+                    <td>8:00</td>
+                    <td><span class="status pending">Pending</span></td>
+                  </tr>
+
+                  <tr>
+                    <td>4</td>
+                    <td>Lovesha Sharma</td>
+                    <td>AI2235</td>
+                    <td>lovesha.sharma@hikeassociate.com</td>
+                    <td>Permanent</td>
+                    <td>18-Aug-2026</td>
+                    <td>8:22</td>
+                    <td><span class="status rejected">Rejected</span></td>
+                  </tr>
+
+                  <tr>
+                    <td>5</td>
+                    <td>Lovesha Sharma</td>
+                    <td>AI2235</td>
+                    <td>lovesha.sharma@hikeassociate.com</td>
+                    <td>Permanent</td>
+                    <td>17-Aug-2026</td>
+                    <td>7:53</td>
+                    <td><span class="status pending">Pending</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-footer">
+              <span>Showing 1 to 5 of 18 entries</span>
+
+              <div class="pagination-custom">
+                <button disabled><i class="bi bi-chevron-left"></i></button>
+                <button class="active">1</button>
+                <button>2</button>
+                <button>3</button>
+                <button><i class="bi bi-chevron-right"></i></button>
               </div>
             </div>
 
           </div>
 
-
-          <div class="table-actions">
-            <button>Excel</button>
-            <button>CSV</button>
-          </div>
-
-
-          <div class="table-responsive">
-            <table class="hrms-table">
-              <thead>
-                <tr>
-                  <th>Sr.No.</th>
-                  <th>Emp Name</th>
-                  <th>EmpId</th>
-                  <th>Email</th>
-                  <th>Employment Type</th>
-                  <th>Date</th>
-                  <th>Total (Logged Hr)</th>
-                  <th>Final Approval</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>Lovesha Sharma</td>
-                  <td>AI2235</td>
-                  <td>lovesha.sharma@hikeassociate.com</td>
-                  <td>Permanent</td>
-                  <td>21-Aug-2026</td>
-                  <td>8:00</td>
-                  <td><span class="status pending">Pending</span></td>
-                </tr>
-
-                <tr>
-                  <td>2</td>
-                  <td>Lovesha Sharma</td>
-                  <td>AI2235</td>
-                  <td>lovesha.sharma@hikeassociate.com</td>
-                  <td>Permanent</td>
-                  <td>20-Aug-2026</td>
-                  <td>8:28</td>
-                  <td><span class="status approved">Approved</span></td>
-                </tr>
-
-                <tr>
-                  <td>3</td>
-                  <td>Lovesha Sharma</td>
-                  <td>AI2235</td>
-                  <td>lovesha.sharma@hikeassociate.com</td>
-                  <td>Permanent</td>
-                  <td>19-Aug-2026</td>
-                  <td>8:00</td>
-                  <td><span class="status pending">Pending</span></td>
-                </tr>
-
-                <tr>
-                  <td>4</td>
-                  <td>Lovesha Sharma</td>
-                  <td>AI2235</td>
-                  <td>lovesha.sharma@hikeassociate.com</td>
-                  <td>Permanent</td>
-                  <td>18-Aug-2026</td>
-                  <td>8:22</td>
-                  <td><span class="status rejected">Rejected</span></td>
-                </tr>
-
-                <tr>
-                  <td>5</td>
-                  <td>Lovesha Sharma</td>
-                  <td>AI2235</td>
-                  <td>lovesha.sharma@hikeassociate.com</td>
-                  <td>Permanent</td>
-                  <td>17-Aug-2026</td>
-                  <td>7:53</td>
-                  <td><span class="status pending">Pending</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="table-footer">
-            <span>Showing 1 to 5 of 18 entries</span>
-
-            <div class="pagination-custom">
-              <button disabled><i class="bi bi-chevron-left"></i></button>
-              <button class="active">1</button>
-              <button>2</button>
-              <button>3</button>
-              <button><i class="bi bi-chevron-right"></i></button>
-            </div>
-          </div>
-
         </div>
 
-      </div>
 
-
-      <!-- =================================================
+        <!-- =================================================
            ALLOCATION TAB
            ================================================= -->
-      <div class="tab-panel" id="allocationPanel">
+        <div class="tab-panel" id="allocationPanel">
 
-        <div class="allocation-summary">
+          <div class="allocation-summary">
 
-          <div class="summary-card">
-            <div class="summary-icon red">
-              <i class="bi bi-kanban"></i>
+            <div class="summary-card">
+              <div class="summary-icon red">
+                <i class="bi bi-kanban"></i>
+              </div>
+              <div>
+                <strong>3</strong>
+                <span>Active Projects</span>
+              </div>
             </div>
-            <div>
-              <strong>3</strong>
-              <span>Active Projects</span>
+
+            <div class="summary-card">
+              <div class="summary-icon green">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <div>
+                <strong>82%</strong>
+                <span>Current Allocation</span>
+              </div>
             </div>
+
+            <div class="summary-card">
+              <div class="summary-icon blue">
+                <i class="bi bi-clock"></i>
+              </div>
+              <div>
+                <strong>6h 34m</strong>
+                <span>Avg. Daily Allocation</span>
+              </div>
+            </div>
+
+            <div class="summary-card">
+              <div class="summary-icon purple">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+              <div>
+                <strong>1</strong>
+                <span>Upcoming Allocation</span>
+              </div>
+            </div>
+
           </div>
 
-          <div class="summary-card">
-            <div class="summary-icon green">
-              <i class="bi bi-check-circle"></i>
-            </div>
-            <div>
-              <strong>82%</strong>
-              <span>Current Allocation</span>
-            </div>
-          </div>
 
-          <div class="summary-card">
-            <div class="summary-icon blue">
-              <i class="bi bi-clock"></i>
-            </div>
-            <div>
-              <strong>6h 34m</strong>
-              <span>Avg. Daily Allocation</span>
-            </div>
-          </div>
+          <div class="content-card">
 
-          <div class="summary-card">
-            <div class="summary-icon purple">
-              <i class="bi bi-calendar-check"></i>
+            <div class="card-heading allocation-heading">
+
+              <div class="heading-icon">
+                <i class="bi bi-diagram-3"></i>
+              </div>
+
+              <div>
+                <h3>My Project Allocations</h3>
+                <p>Current and upcoming project assignments</p>
+              </div>
+
+              <button class="btn-primary-outline ms-auto">
+                <i class="bi bi-plus-lg"></i>
+                Request Allocation
+              </button>
+
             </div>
-            <div>
-              <strong>1</strong>
-              <span>Upcoming Allocation</span>
+
+
+            <div class="allocation-list">
+
+              <article class="project-card">
+
+                <div class="project-main">
+
+                  <div class="project-logo">B</div>
+
+                  <div>
+                    <h4>Bloom Website</h4>
+                    <p>Frontend Development · Web Application</p>
+
+                    <div class="project-meta">
+                      <span>
+                        <i class="bi bi-calendar3"></i>
+                        01-Aug-2026 — 30-Sep-2026
+                      </span>
+
+                      <span>
+                        <i class="bi bi-person"></i>
+                        Primary
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="allocation-percent">
+                  <strong>60%</strong>
+                  <span>Allocation</span>
+                  <div class="progress-line">
+                    <span style="width:60%"></span>
+                  </div>
+                </div>
+
+                <span class="status active-status">Active</span>
+
+              </article>
+
+
+              <article class="project-card">
+
+                <div class="project-main">
+
+                  <div class="project-logo blue-logo">A</div>
+
+                  <div>
+                    <h4>HRMS Portal</h4>
+                    <p>UI Development · Employee Management</p>
+
+                    <div class="project-meta">
+                      <span>
+                        <i class="bi bi-calendar3"></i>
+                        15-Aug-2026 — 31-Dec-2026
+                      </span>
+
+                      <span>
+                        <i class="bi bi-person"></i>
+                        Secondary
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="allocation-percent">
+                  <strong>20%</strong>
+                  <span>Allocation</span>
+                  <div class="progress-line">
+                    <span style="width:20%"></span>
+                  </div>
+                </div>
+
+                <span class="status active-status">Active</span>
+
+              </article>
+
+
+              <article class="project-card">
+
+                <div class="project-main">
+
+                  <div class="project-logo purple-logo">D</div>
+
+                  <div>
+                    <h4>Digital Transformation</h4>
+                    <p>UI Support · Enhancement</p>
+
+                    <div class="project-meta">
+                      <span>
+                        <i class="bi bi-calendar3"></i>
+                        Starts 01-Sep-2026
+                      </span>
+
+                      <span>
+                        <i class="bi bi-person"></i>
+                        Upcoming
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div class="allocation-percent">
+                  <strong>0%</strong>
+                  <span>Allocation</span>
+                  <div class="progress-line">
+                    <span style="width:0%"></span>
+                  </div>
+                </div>
+
+                <span class="status upcoming-status">Upcoming</span>
+
+              </article>
+
             </div>
+
           </div>
 
         </div>
 
 
-        <div class="content-card">
-
-          <div class="card-heading allocation-heading">
-
-            <div class="heading-icon">
-              <i class="bi bi-diagram-3"></i>
-            </div>
-
-            <div>
-              <h3>My Project Allocations</h3>
-              <p>Current and upcoming project assignments</p>
-            </div>
-
-            <button class="btn-primary-outline ms-auto">
-              <i class="bi bi-plus-lg"></i>
-              Request Allocation
-            </button>
-
-          </div>
-
-
-          <div class="allocation-list">
-
-            <article class="project-card">
-
-              <div class="project-main">
-
-                <div class="project-logo">B</div>
-
-                <div>
-                  <h4>Bloom Website</h4>
-                  <p>Frontend Development · Web Application</p>
-
-                  <div class="project-meta">
-                    <span>
-                      <i class="bi bi-calendar3"></i>
-                      01-Aug-2026 — 30-Sep-2026
-                    </span>
-
-                    <span>
-                      <i class="bi bi-person"></i>
-                      Primary
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="allocation-percent">
-                <strong>60%</strong>
-                <span>Allocation</span>
-                <div class="progress-line">
-                  <span style="width:60%"></span>
-                </div>
-              </div>
-
-              <span class="status active-status">Active</span>
-
-            </article>
-
-
-            <article class="project-card">
-
-              <div class="project-main">
-
-                <div class="project-logo blue-logo">A</div>
-
-                <div>
-                  <h4>HRMS Portal</h4>
-                  <p>UI Development · Employee Management</p>
-
-                  <div class="project-meta">
-                    <span>
-                      <i class="bi bi-calendar3"></i>
-                      15-Aug-2026 — 31-Dec-2026
-                    </span>
-
-                    <span>
-                      <i class="bi bi-person"></i>
-                      Secondary
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="allocation-percent">
-                <strong>20%</strong>
-                <span>Allocation</span>
-                <div class="progress-line">
-                  <span style="width:20%"></span>
-                </div>
-              </div>
-
-              <span class="status active-status">Active</span>
-
-            </article>
-
-
-            <article class="project-card">
-
-              <div class="project-main">
-
-                <div class="project-logo purple-logo">D</div>
-
-                <div>
-                  <h4>Digital Transformation</h4>
-                  <p>UI Support · Enhancement</p>
-
-                  <div class="project-meta">
-                    <span>
-                      <i class="bi bi-calendar3"></i>
-                      Starts 01-Sep-2026
-                    </span>
-
-                    <span>
-                      <i class="bi bi-person"></i>
-                      Upcoming
-                    </span>
-                  </div>
-                </div>
-
-              </div>
-
-              <div class="allocation-percent">
-                <strong>0%</strong>
-                <span>Allocation</span>
-                <div class="progress-line">
-                  <span style="width:0%"></span>
-                </div>
-              </div>
-
-              <span class="status upcoming-status">Upcoming</span>
-
-            </article>
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <!-- =================================================
+        <!-- =================================================
            DSR FORM
            ================================================= -->
-      <div class="form-panel" id="dsrFormPanel">
+        <div class="form-panel" id="dsrFormPanel">
 
-        <div class="form-card">
+          <div class="form-card">
 
-          <div class="form-header">
-            <div>
-              <div class="page-eyebrow">Daily Status Report</div>
-              <h2>Create New DSR</h2>
-              <p>Add your project work details for the selected day.</p>
+            <div class="form-header">
+              <div>
+                <div class="page-eyebrow">Daily Status Report</div>
+                <h2>Create New DSR</h2>
+                <p>Add your project work details for the selected day.</p>
+              </div>
+
+              <button class="icon-close" id="closeDsrForm">
+                <i class="bi bi-x-lg"></i>
+              </button>
             </div>
 
-            <button class="icon-close" id="closeDsrForm">
-              <i class="bi bi-x-lg"></i>
-            </button>
-          </div>
 
+            <form id="dsrForm">
 
-          <form id="dsrForm">
+              <div class="form-grid">
 
-            <div class="form-grid">
-
-              <div class="form-group full">
-                <label>Project <span>*</span></label>
-                <select>
-                  <option value="">Select project</option>
-                  <option>Bloom Website</option>
-                  <option>HRMS Portal</option>
-                  <option>Digital Transformation</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label>Date <span>*</span></label>
-                <input type="date" value="2026-08-21">
-              </div>
-
-              <div class="form-group">
-                <label>Estimated / Logged Hours <span>*</span></label>
-                <input type="text" placeholder="e.g. 8:00">
-              </div>
-
-              <div class="form-group full">
-                <label>Description <span>*</span></label>
-                <textarea rows="5" placeholder="Describe the work completed today..."></textarea>
-              </div>
-
-              <div class="form-group full">
-                <label>Did you use AI tools today?</label>
-
-                <div class="radio-row">
-                  <label>
-                    <input type="radio" name="ai" value="yes">
-                    Yes
-                  </label>
-
-                  <label>
-                    <input type="radio" name="ai" value="no">
-                    No
-                  </label>
+                <div class="form-group full">
+                  <label>Project <span>*</span></label>
+                  <select>
+                    <option value="">Select project</option>
+                    <option>Bloom Website</option>
+                    <option>HRMS Portal</option>
+                    <option>Digital Transformation</option>
+                  </select>
                 </div>
+
+                <div class="form-group">
+                  <label>Date <span>*</span></label>
+                  <input type="date" value="2026-08-21">
+                </div>
+
+                <div class="form-group">
+                  <label>Estimated / Logged Hours <span>*</span></label>
+                  <input type="text" placeholder="e.g. 8:00">
+                </div>
+
+                <div class="form-group full">
+                  <label>Description <span>*</span></label>
+                  <textarea rows="5" placeholder="Describe the work completed today..."></textarea>
+                </div>
+
+                <div class="form-group full">
+                  <label>Did you use AI tools today?</label>
+
+                  <div class="radio-row">
+                    <label>
+                      <input type="radio" name="ai" value="yes">
+                      Yes
+                    </label>
+
+                    <label>
+                      <input type="radio" name="ai" value="no">
+                      No
+                    </label>
+                  </div>
+                </div>
+
               </div>
 
-            </div>
 
+              <div class="form-footer">
+                <button type="button" class="btn-outline-custom" id="cancelDsr">
+                  Cancel
+                </button>
 
-            <div class="form-footer">
-              <button type="button" class="btn-outline-custom" id="cancelDsr">
-                Cancel
-              </button>
+                <button type="submit" class="btn-primary-custom">
+                  <i class="bi bi-check2"></i>
+                  Submit DSR
+                </button>
+              </div>
 
-              <button type="submit" class="btn-primary-custom">
-                <i class="bi bi-check2"></i>
-                Submit DSR
-              </button>
-            </div>
+            </form>
 
-          </form>
+          </div>
 
         </div>
 
-      </div>
+      </section>
 
-    </section>
+    </main>
 
-  </main>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
-</div>
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/dsr-allocation.js"></script>
+  </div>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/dsr-allocation.js"></script>
 </body>
+
 </html>
