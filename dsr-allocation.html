@@ -22,90 +22,85 @@
     <!-- =====================================================
        COMMON SIDEBAR
        ===================================================== -->
-    <aside class="app-sidebar" id="sidebar">
+   <aside class="app-sidebar" id="sidebar">
 
-      <div class="brand-area">
-        <div class="brand-mark">A</div>
+      <div class="brand">
+        <div class="brand-logo">A</div>
         <div>
-          <div class="brand-name">Hike Associate</div>
-          <div class="brand-caption">HR MANAGEMENT</div>
+          <div class="brand-title">Hike Associate</div>
+          <div class="brand-subtitle">HR Management</div>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+      <div class="sidebar-scroll">
 
-        <div class="nav-section-title">Overview</div>
+        <div class="nav-label">Overview</div>
 
-        <a href="#" class="nav-item">
-          <i class="bi bi-grid-fill"></i>
+        <a class="nav-link-custom active" href="#">
+          <i class="bi bi-grid-1x2-fill"></i>
           <span>Dashboard</span>
         </a>
 
-        <div class="nav-section-title">Employee</div>
+        <div class="nav-label mt-3">Employee</div>
 
-        <a href="#" class="nav-item">
-          <i class="bi bi-person-vcard"></i>
+        <a class="nav-link-custom" href="myprofile.html">
+          <i class="bi bi-person-badge"></i>
           <span>My Profile</span>
-          <i class="bi bi-chevron-right nav-arrow"></i>
         </a>
-
-        <a href="#" class="nav-item">
-          <i class="bi bi-calendar3"></i>
+        <a class="nav-link-custom" href="attendance.html">
+          <i class="bi bi-calendar-check"></i>
           <span>Attendance</span>
         </a>
-        <a href="permission.html" class="nav-item">
+        <a class="nav-link-custom" href="permission.html">
           <i class="bi bi-shield-check"></i>
-          <span>Permissions</span>
+          <span>Permission</span>
         </a>
-        <a href="#" class="nav-item">
-          <i class="bi bi-calendar2-week"></i>
+        <a class="nav-link-custom" href="#">
+          <i class="bi bi-calendar3"></i>
           <span>Leave & Holidays</span>
         </a>
-
-        <a href="#" class="nav-item">
+        <a class="nav-link-custom" href="#">
           <i class="bi bi-receipt"></i>
           <span>My Payslips</span>
         </a>
 
-        <div class="nav-section-title">Work</div>
+        <div class="nav-label mt-3">Work</div>
 
-        <a href="#" class="nav-item active">
+        <a class="nav-link-custom" href="#">
           <i class="bi bi-clock-history"></i>
           <span>DSR & Allocation</span>
         </a>
-
-        <a href="#" class="nav-item">
+        <a class="nav-link-custom" href="#">
           <i class="bi bi-kanban"></i>
           <span>My Projects</span>
-          <i class="bi bi-chevron-right nav-arrow"></i>
         </a>
 
-        <div class="nav-section-title">People & Support</div>
+        <div class="nav-label mt-3">People & Support</div>
 
-        <a href="#" class="nav-item">
+        <a class="nav-link-custom" href="#">
           <i class="bi bi-briefcase"></i>
           <span>Job Openings</span>
         </a>
-
-        <a href="#" class="nav-item">
+        <a class="nav-link-custom" href="#">
           <i class="bi bi-people"></i>
           <span>Refer a Friend</span>
         </a>
-
-        <a href="#" class="nav-item">
-          <i class="bi bi-chat-square-text"></i>
+        <a class="nav-link-custom" href="#">
+          <i class="bi bi-chat-left-text"></i>
           <span>Complaints</span>
         </a>
 
-      </nav>
+      </div>
 
-      <div class="sidebar-profile">
-        <div class="profile-avatar">LS</div>
-        <div class="profile-copy">
-          <strong>Lovesha Sharma</strong>
-          <span>Employee</span>
+      <div class="sidebar-bottom">
+        <div class="user-mini">
+          <div class="avatar">LS</div>
+          <div class="flex-grow-1 min-w-0">
+            <div class="user-mini-name text-truncate">Lovesha Sharma</div>
+            <div class="user-mini-role">Employee</div>
+          </div>
+          <i class="bi bi-three-dots text-secondary"></i>
         </div>
-        <i class="bi bi-three-dots"></i>
       </div>
 
     </aside>
