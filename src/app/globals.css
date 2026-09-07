@@ -1,0 +1,105 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: var(--font-heebo);
+
+  /* Design tokens ported from the legacy prototype's style/colors.css */
+  --color-primary: #f2382c;
+  --color-primary-dark: #dc2618;
+  --color-primary-light: #fff0ee;
+  --color-primary-soft: #fff0ee;
+  --color-primary-softer: #fff8f7;
+  --color-primary-border: #f5cbc6;
+
+  --color-ink: #25272d;
+  --color-muted: #565a61;
+  --color-muted-light: #96999f;
+  --color-muted-lighter: #999ca2;
+
+  --color-surface: #f7f7f8;
+  --color-surface-card: #ffffff;
+
+  --color-soft-blue: #bfd1ff;
+  --color-avatar-bg: #ffe9e6;
+
+  --color-border: #e8e9ed;
+  --color-border-strong: #dedfe3;
+
+  --color-success: #198754;
+  --color-success-bg: #edf8f2;
+
+  --color-warning: #b77900;
+  --color-warning-bg: #fff7e6;
+
+  --color-info: #315fc7;
+  --color-info-bg: #eef3ff;
+
+  --color-danger: #dc2618;
+  --color-danger-bg: #fff0ee;
+
+  --color-birthday-bg: #fff7f3;
+  --color-birthday-accent: #f07a45;
+  --color-birthday-gold: #f3b33d;
+  --color-birthday-purple: #7650e9;
+  --color-birthday-purple-soft: #f0ebff;
+
+  /* Font-size scale ported from style/fontsize.css, exposed as text-fs-* */
+  --text-fs-2xs: 9px;
+  --text-fs-xs: 10px;
+  --text-fs-sm: 11px;
+  --text-fs-md: 12px;
+  --text-fs-base: 13px;
+  --text-fs-lg: 14px;
+  --text-fs-xl: 16px;
+  --text-fs-2xl: 17px;
+  --text-fs-3xl: 19px;
+  --text-fs-4xl: 21px;
+  --text-fs-5xl: 23px;
+  --text-fs-6xl: 25px;
+  --text-fs-7xl: 28px;
+}
+
+/*
+  Dark theme overrides. Tailwind utilities like bg-surface / text-ink read
+  these custom properties at paint time, so swapping them here is enough to
+  re-theme every component with no per-component dark: classes needed for
+  color tokens.
+*/
+[data-theme="dark"] {
+  --color-primary: #ff5145;
+  --color-primary-dark: #f2382c;
+  --color-primary-light: #3a1f1c;
+  --color-primary-soft: #3a1f1c;
+  --color-primary-softer: #2a1a18;
+  --color-primary-border: #5a2e28;
+
+  --color-ink: #f5f5f6;
+  --color-muted: #c5c7cc;
+  --color-muted-light: #96999f;
+  --color-muted-lighter: #858990;
+
+  --color-surface: #18191d;
+  --color-surface-card: #22242a;
+
+  --color-border: #34363d;
+  --color-border-strong: #41434b;
+
+  --color-success: #35b978;
+  --color-success-bg: #163326;
+
+  --color-warning: #e0a72f;
+  --color-warning-bg: #332b18;
+
+  --color-info: #6f96ff;
+  --color-info-bg: #1b2745;
+
+  --color-danger: #ff5145;
+  --color-danger-bg: #351d1b;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
