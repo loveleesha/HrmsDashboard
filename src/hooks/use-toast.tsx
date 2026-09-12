@@ -9,10 +9,10 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Info, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export type ToastTone = "success" | "info";
+export type ToastTone = "success" | "info" | "error";
 
 interface ToastItem {
   id: number;
@@ -58,20 +58,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         createPortal(
           <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[200] flex flex-col items-center gap-2 px-4 sm:items-end sm:right-4 sm:left-auto">
             {toasts.map((toast) => {
-              const ToneIcon = toast.tone === "success" ? CheckCircle2 : Info;
+              const ToneIcon = toast.tone === "success" ? CheckCircle2 : toast.tone === "error" ? AlertCircle : Info;
               return (
                 <div
                   key={toast.id}
                   className={cn(
                     "pointer-events-auto flex w-full max-w-sm items-start gap-2 rounded-lg border bg-surface-card px-4 py-3 shadow-lg",
-                    toast.tone === "success" ? "border-success/30" : "border-info/30"
+                    toast.tone === "success" ? "border-success/30" : toast.tone === "error" ? "border-danger/30" : "border-info/30"
                   )}
                   role="status"
                 >
                   <ToneIcon
                     className={cn(
                       "mt-0.5 size-4 shrink-0",
-                      toast.tone === "success" ? "text-success" : "text-info"
+                      toast.tone === "success" ? "text-success" : toast.tone === "error" ? "text-danger" : "text-info"
                     )}
                   />
                   <p className="flex-1 text-fs-base text-ink">{toast.message}</p>

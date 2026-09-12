@@ -7,6 +7,7 @@ import type { ModuleKey } from "@/types/rbac";
  */
 export const ROUTE_MODULE_MAP: Record<string, ModuleKey> = {
   "/dashboard": "dashboard",
+  "/employees/onboarding": "employeeOnboarding",
   "/employees": "employees",
   "/attendance": "attendance",
   "/leave": "leave",

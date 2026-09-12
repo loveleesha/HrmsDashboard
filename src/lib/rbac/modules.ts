@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  UserPlus,
   CalendarCheck,
   CalendarDays,
   Wallet,
@@ -32,6 +33,13 @@ import type { ModuleDef } from "@/types/rbac";
 export const MODULE_DEFS: ModuleDef[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["view"], group: "Overview" },
   { key: "employees", label: "Employees", icon: Users, actions: ["view", "add", "edit", "delete", "export"], group: "Workforce" },
+  {
+    key: "employeeOnboarding",
+    label: "Employee Onboarding",
+    icon: UserPlus,
+    actions: ["view", "add", "edit", "verifyDocuments", "activate"],
+    group: "Workforce",
+  },
   { key: "attendance", label: "Attendance", icon: CalendarCheck, actions: ["view", "add", "edit", "approve", "export"], group: "Workforce" },
   { key: "leave", label: "Leave", icon: CalendarDays, actions: ["view", "add", "edit", "delete", "approve", "reject", "export"], group: "Workforce" },
   { key: "payroll", label: "Payroll", icon: Wallet, actions: ["view", "add", "edit", "approve", "export"], group: "Workforce" },

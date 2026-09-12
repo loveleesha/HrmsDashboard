@@ -52,32 +52,30 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [viewAsRole, setViewAsRoleState] = useState<Role>("employee");
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_ROLE_PERMISSIONS);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     // One-time hydration of client-only localStorage state; not derivable during SSR.
+    const storedMatrix = readStoredMatrix();
+    if (storedMatrix) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPermissionMatrix(storedMatrix);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Re-reads on every `user` change (not just on mount): AuthProvider hydrates its
+    // session cookie in its own effect, which — since it's an ancestor — fires *after*
+    // this provider's effects on first mount. Gating this on a "hydrated" flag that
+    // flips true on that same first mount meant `user` reliably arrived one tick too
+    // late and the simulated role got stuck on the "employee" default forever.
     const storedRole = localStorage.getItem(VIEW_AS_STORAGE_KEY) as Role | null;
     if (storedRole && ROLES.includes(storedRole)) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setViewAsRoleState(storedRole);
+    } else if (user) {
+      setViewAsRoleState(user.role);
     }
-    const storedMatrix = readStoredMatrix();
-    if (storedMatrix) {
-      setPermissionMatrix(storedMatrix);
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated && user) {
-      // Default the simulated role to whoever actually logged in, the first time.
-      const storedRole = localStorage.getItem(VIEW_AS_STORAGE_KEY);
-      if (!storedRole) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setViewAsRoleState(user.role);
-      }
-    }
-  }, [hydrated, user]);
+  }, [user]);
 
   const setViewAsRole = useCallback((role: Role) => {
     setViewAsRoleState(role);

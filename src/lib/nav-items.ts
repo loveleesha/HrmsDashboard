@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   Users,
+  UserPlus,
   CalendarCheck,
   CalendarDays,
   Wallet,
@@ -45,6 +46,10 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Users,
         module: "employees",
         roleLabels: { manager: "My Team" },
+        children: [
+          { label: "Directory", href: "/employees", icon: Users, module: "employees" },
+          { label: "Onboarding", href: "/employees/onboarding", icon: UserPlus, module: "employeeOnboarding" },
+        ],
       },
       { label: "Attendance", href: "/attendance", icon: CalendarCheck, module: "attendance" },
       {

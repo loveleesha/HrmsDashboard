@@ -26,6 +26,8 @@ const FULL: ModulePermissions = {
   reject: true,
   export: true,
   toggleStatus: true,
+  verifyDocuments: true,
+  activate: true,
 };
 
 const SELF_SERVICE: RolePermissionMap = {
@@ -51,6 +53,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
   super_admin: {
     dashboard: FULL,
     employees: FULL,
+    employeeOnboarding: FULL,
     attendance: FULL,
     leave: FULL,
     payroll: FULL,
@@ -75,6 +78,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
   hr_admin: {
     ...SELF_SERVICE,
     employees: FULL,
+    employeeOnboarding: { view: true, add: true, edit: true, verifyDocuments: true, activate: true },
     attendance: FULL_NO_DELETE,
     leave: FULL_NO_DELETE,
     payroll: { view: true, add: true, edit: true, approve: true, export: true },
@@ -97,6 +101,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
   hr_executive: {
     ...SELF_SERVICE,
     employees: VIEW_ADD_EDIT,
+    employeeOnboarding: { view: true, add: true, edit: true, verifyDocuments: true },
     attendance: { view: true, add: true, edit: true, approve: true },
     leave: { view: true, add: true, approve: true, reject: true },
     performance: { view: true, edit: true },

@@ -86,6 +86,19 @@ function SidebarItem({
     );
   }
 
+  if (visibleChildren.length === 1) {
+    // A single accessible child isn't worth a toggle — link to it directly.
+    return (
+      <SidebarLink
+        item={{ ...item, href: visibleChildren[0].href, icon: visibleChildren[0].icon }}
+        collapsed={collapsed}
+        active={isItemActive(pathname, visibleChildren[0].href)}
+        label={visibleChildren[0].roleLabels?.[viewAsRole] ?? label}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+
   if (collapsed) {
     // No room for a chevron/sub-list in icon-rail mode — link straight to the first child.
     return (

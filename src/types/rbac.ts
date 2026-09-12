@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react";
 export type ModuleKey =
   | "dashboard"
   | "employees"
+  | "employeeOnboarding"
   | "attendance"
   | "leave"
   | "payroll"
@@ -31,7 +32,9 @@ export type ActionKey =
   | "approve"
   | "reject"
   | "export"
-  | "toggleStatus";
+  | "toggleStatus"
+  | "verifyDocuments"
+  | "activate";
 
 export const ACTION_KEYS: ActionKey[] = [
   "view",
@@ -42,6 +45,8 @@ export const ACTION_KEYS: ActionKey[] = [
   "reject",
   "export",
   "toggleStatus",
+  "verifyDocuments",
+  "activate",
 ];
 
 export const ACTION_LABELS: Record<ActionKey, string> = {
@@ -53,6 +58,8 @@ export const ACTION_LABELS: Record<ActionKey, string> = {
   reject: "Reject",
   export: "Export",
   toggleStatus: "Activate/Deactivate",
+  verifyDocuments: "Verify Documents",
+  activate: "Activate Employee",
 };
 
 export type ModulePermissions = Partial<Record<ActionKey, boolean>>;
