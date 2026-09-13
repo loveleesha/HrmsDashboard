@@ -1,19 +1,27 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AuthLayout } from "@/components/templates/AuthLayout";
 import { FormField } from "@/components/molecules/FormField";
-import { Input } from "@/components/atoms/Input";
+import { PasswordInput } from "@/components/molecules/PasswordInput";
 import { Button } from "@/components/atoms/Button";
+import { resetPassword } from "@/services/auth.service";
+import { useToast } from "@/hooks/use-toast";
 import {
   resetPasswordSchema,
   type ResetPasswordFormValues,
 } from "@/schemas/auth.schema";
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") ?? "";
+  const resetToken = searchParams.get("token") ?? "";
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -24,9 +32,24 @@ export default function ResetPasswordPage() {
     defaultValues: { password: "", confirmPassword: "" },
   });
 
-  async function onSubmit() {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    router.push("/login");
+  async function onSubmit(values: ResetPasswordFormValues) {
+    setFormError(null);
+    if (!email || !resetToken) {
+      setFormError("This reset link is invalid or incomplete. Request a new one.");
+      return;
+    }
+    try {
+      const { message } = await resetPassword({
+        email,
+        resetToken,
+        newPassword: values.password,
+        confirmPassword: values.confirmPassword,
+      });
+      showToast(message);
+      router.push("/login");
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "Could not reset your password.");
+    }
   }
 
   return (
@@ -36,14 +59,20 @@ export default function ResetPasswordPage() {
       subtitle="Choose a strong password that you haven't used before."
     >
       <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
+        {!email || !resetToken ? (
+          <p className="text-fs-base text-danger">
+            This reset link is missing required details. Please request a new one from the forgot
+            password page.
+          </p>
+        ) : null}
+
         <FormField
           label="New password"
           htmlFor="password"
           error={errors.password?.message}
         >
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             placeholder="Enter new password"
             invalid={Boolean(errors.password)}
             {...register("password")}
@@ -55,9 +84,8 @@ export default function ResetPasswordPage() {
           htmlFor="confirmPassword"
           error={errors.confirmPassword?.message}
         >
-          <Input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             placeholder="Confirm new password"
             invalid={Boolean(errors.confirmPassword)}
             {...register("confirmPassword")}
@@ -70,10 +98,20 @@ export default function ResetPasswordPage() {
           <li>• Include at least one number</li>
         </ul>
 
-        <Button type="submit" className="w-full" isLoading={isSubmitting}>
+        {formError && <p className="text-fs-base text-danger">{formError}</p>}
+
+        <Button type="submit" className="w-full" isLoading={isSubmitting} disabled={!email || !resetToken}>
           Update Password
         </Button>
       </form>
     </AuthLayout>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

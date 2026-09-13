@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Heebo } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/use-auth";
+import { ToastProvider } from "@/hooks/use-toast";
 
 const heebo = Heebo({
   variable: "--font-heebo",
@@ -34,7 +35,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen font-sans antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <ToastProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ToastProvider>
       </body>
     </html>
   );

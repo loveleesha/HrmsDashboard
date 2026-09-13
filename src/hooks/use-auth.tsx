@@ -1,62 +1,35 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-import type { User } from "@/types/user";
-import {
-  getSessionUser,
-  login as loginRequest,
-  logout as logoutRequest,
-} from "@/services/auth.service";
+import type { ReactNode } from "react";
+import { useAuthStore } from "@/store/auth.store";
+import { login as loginRequest, logout as logoutRequest } from "@/services/auth.service";
 
-interface AuthContextValue {
-  user: User | null;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
+/**
+ * No context needed — zustand's store is already global. This wrapper exists
+ * only so `<AuthProvider>` in the root layout keeps compiling; the session
+ * itself rehydrates from localStorage via the store's `persist` middleware.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // One-time hydration of client-only session state (cookie read); not derivable during SSR.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUser(getSessionUser());
-    setIsLoading(false);
-  }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const loggedInUser = await loginRequest(email, password);
-    setUser(loggedInUser);
-    return loggedInUser;
-  }, []);
-
-  const logout = useCallback(() => {
-    logoutRequest();
-    setUser(null);
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const setSession = useAuthStore((state) => state.setSession);
+  const clearSession = useAuthStore((state) => state.clearSession);
+
+  async function login(email: string, password: string) {
+    const { user: loggedInUser, token: sessionToken, message } = await loginRequest(email, password);
+    setSession(loggedInUser, sessionToken);
+    return { user: loggedInUser, message };
   }
-  return context;
+
+  function logout() {
+    logoutRequest();
+    clearSession();
+  }
+
+  return { user, token, isLoading, login, logout };
 }

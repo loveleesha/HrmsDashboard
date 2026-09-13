@@ -5,22 +5,21 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff } from "lucide-react";
 import { AuthLayout } from "@/components/templates/AuthLayout";
 import { FormField } from "@/components/molecules/FormField";
 import { Input } from "@/components/atoms/Input";
+import { PasswordInput } from "@/components/molecules/PasswordInput";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { Label } from "@/components/atoms/Label";
 import { useAuth } from "@/hooks/use-auth";
-import { MOCK_USERS } from "@/services/auth.service";
-import { ROLE_LABELS } from "@/types/user";
+import { useToast } from "@/hooks/use-toast";
 import { loginSchema, type LoginFormValues } from "@/schemas/auth.schema";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
+  const { showToast } = useToast();
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -35,7 +34,8 @@ export default function LoginPage() {
   async function onSubmit(values: LoginFormValues) {
     setFormError(null);
     try {
-      await login(values.email, values.password);
+      const { message } = await login(values.email, values.password);
+      showToast(message);
       router.push("/dashboard");
     } catch (error) {
       setFormError(
@@ -71,24 +71,12 @@ export default function LoginPage() {
           htmlFor="password"
           error={errors.password?.message}
         >
-          <div className="relative">
-            <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
-              invalid={Boolean(errors.password)}
-              className="pr-10"
-              {...register("password")}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-light hover:text-ink"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            </button>
-          </div>
+          <PasswordInput
+            id="password"
+            placeholder="Enter your password"
+            invalid={Boolean(errors.password)}
+            {...register("password")}
+          />
         </FormField>
 
         <div className="flex items-center justify-between">
@@ -109,20 +97,6 @@ export default function LoginPage() {
           Sign In
         </Button>
       </form>
-
-      <div className="mt-6 rounded-lg border border-dashed border-border bg-surface px-4 py-3">
-        <p className="mb-2 text-fs-sm font-semibold uppercase tracking-wide text-muted-light">
-          Demo accounts (any password, 6+ characters)
-        </p>
-        <ul className="flex flex-col gap-1 text-fs-sm text-muted">
-          {MOCK_USERS.map((user) => (
-            <li key={user.id} className="flex justify-between gap-2">
-              <span>{user.email}</span>
-              <span className="text-muted-light">{ROLE_LABELS[user.role]}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
     </AuthLayout>
   );
 }
