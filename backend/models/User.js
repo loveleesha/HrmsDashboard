@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    lastLoginAt: {
+      type: Date,
+    },
     otpHash: {
       type: String,
       select: false,

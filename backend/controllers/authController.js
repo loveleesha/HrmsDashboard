@@ -135,6 +135,8 @@ async function login(req, res, next) {
     }
 
     const token = generateToken(user);
+    await User.updateOne({ _id: user._id }, { $set: { lastLoginAt: new Date() } });
+
     res.status(200).json({
       success: true,
       message: MESSAGES.AUTH.LOGIN_SUCCESS,

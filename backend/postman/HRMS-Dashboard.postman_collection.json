@@ -1,0 +1,685 @@
+{
+  "info": {
+    "_postman_id": "6b02d11a-2054-4b83-a7e3-0fdeb49552e1",
+    "name": "Hrms Dashboard",
+    "description": "All HRMS Dashboard APIs in one collection, organized into folders. Import the environment file (HRMS-Dashboard.postman_environment.json) alongside this collection.\n\n1. Auth Module — Register -> (set {{otp}} from email) -> Verify OTP -> Login -> [Change Password any time after this, while logged in] -> Forgot Password -> (copy the token from the emailed reset link into {{resetToken}}) -> Reset Password (not logged in).\n2. Employees — needs {{token}} (from Auth Module) and, for privileged requests, {{hrToken}} (from logging in as an hr/admin/super-admin user). Suggested order: Create Employee (as HR) -> Get My Profile -> Update My Profile -> Upload Profile Picture -> Add Qualification -> List Qualifications -> Update Qualification -> Upload Document -> Verify Document (as HR) -> Download Document -> Delete Qualification -> Delete Document -> Remove Profile Picture -> List Employees (as HR).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Module",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.code === 201);",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('userId', body.user.id);",
+                  "}",
+                  "// Account is created unverified — no token yet. An OTP (purpose: verify-account) is",
+                  "// emailed. Check your email/SMTP logs, set {{otp}}, then run 'Verify OTP'."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"{{role}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('token', body.token);",
+                  "  pm.environment.set('userId', body.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify-otp"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "if (pm.response.code === 200) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('token', body.token);",
+                  "  pm.environment.set('userId', body.user.id);",
+                  "  // If this account's role is hr/admin/super-admin, also copy it into {{hrToken}}",
+                  "  // for the privileged requests in the Employees folder.",
+                  "  if (['hr', 'admin', 'super-admin'].includes(body.user.role)) {",
+                  "    pm.environment.set('hrToken', body.token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// No OTP for this flow. A reset LINK is emailed instead:",
+                  "// {{FRONTEND_URL}}/resetpassword.html?token=<resetToken>&email=<email>",
+                  "// Check your email/SMTP logs, copy the 'token' query param value, and set it",
+                  "// as the {{resetToken}} environment variable before running 'Reset Password'."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Not logged in — authenticated via {{resetToken}} copied from the emailed reset link.",
+                  "// Used by the forgot-password flow. No Authorization header."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"resetToken\": \"{{resetToken}}\",\n  \"newPassword\": \"{{newPassword}}\",\n  \"confirmPassword\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reset-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Logged in — authenticated via the Bearer {{token}} saved by Login/Verify OTP.",
+                  "// Also requires {{password}} as oldPassword (the account's current password).",
+                  "// No email or resetToken needed or accepted."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"{{password}}\",\n  \"newPassword\": \"{{newPassword}}\",\n  \"confirmPassword\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "change-password"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "Create Employee (Privileged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.code === 201);",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('employeeDocId', body.employee.id);",
+                  "}",
+                  "// Run as an hr/admin/super-admin user — set {{hrToken}} by logging in as one first.",
+                  "// {{userId}} must be an existing, verified User (from Auth Module's Register/Verify OTP)."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{hrToken}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"employeeId\": \"{{employeeCode}}\",\n  \"designation\": \"Senior Software Engineer\",\n  \"department\": \"Engineering\",\n  \"seniority\": \"Senior\",\n  \"phone\": \"+91 98100 11234\",\n  \"location\": { \"city\": \"Delhi\", \"officeType\": \"Office\" },\n  \"joiningDate\": \"2022-03-14\",\n  \"skills\": [\"React\", \"TypeScript\", \"Node.js\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Returns Basic Info + Contact + Employment + Skills only — no qualifications/documents",
+                  "// (fetched via their own endpoints, further down this folder)."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Self-editable fields only: phone, location, skills."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+91 99999 00000\",\n  \"skills\": [\"React\", \"TypeScript\", \"Node.js\", \"GraphQL\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload My Profile Picture",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// In the Body tab, select 'photo' as a File field and choose a JPG/PNG under 5MB."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "photo", "type": "file", "src": [] }]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/me/profile-picture",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "me", "profile-picture"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove My Profile Picture",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/me/profile-picture",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "me", "profile-picture"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Employees (Privileged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Run as an hr/admin/super-admin user ({{hrToken}}). A non-privileged {{token}} gets 403."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{hrToken}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "department", "value": "Engineering", "disabled": true },
+                { "key": "status", "value": "active", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee By Id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Self (if {{employeeDocId}} is your own record) or privileged."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee By Id (Privileged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Run as hr/admin/super-admin ({{hrToken}}) — even the employee's own token gets 403 here;",
+                  "// self-edits go through 'Update My Profile' instead."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{hrToken}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Qualifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/qualifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "qualifications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Qualification",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.code === 201);",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  const last = body.qualifications[body.qualifications.length - 1];",
+                  "  pm.environment.set('qualificationId', last._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Graduation\",\n  \"institution\": \"Delhi Technological University\",\n  \"boardOrDegree\": \"B.Tech, Computer Science\",\n  \"startYear\": 2012,\n  \"endYear\": 2016\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/qualifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "qualifications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Qualification",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endYear\": 2017\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/qualifications/{{qualificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "qualifications", "{{qualificationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Qualification",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/qualifications/{{qualificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "qualifications", "{{qualificationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Documents",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "documents"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.code === 201);",
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.environment.set('documentId', body.document.id);",
+                  "}",
+                  "// In the Body tab, select 'file' as a File field and choose a JPG/PNG/PDF under 10MB."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "title", "value": "PAN Card.pdf", "type": "text" },
+                { "key": "category", "value": "Identity", "type": "text" },
+                { "key": "file", "type": "file", "src": [] }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "documents"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Response is the raw file — use Postman's Save Response > Save to a file."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/documents/{{documentId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "documents", "{{documentId}}", "download"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Document (Privileged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.code === 200);",
+                  "// Run as hr/admin/super-admin ({{hrToken}}) — the document owner's own {{token}} gets 403."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{hrToken}}", "type": "string" }] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationStatus\": \"Verified\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/documents/{{documentId}}/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "documents", "{{documentId}}", "verify"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": ["pm.test('Status is 200', () => pm.response.code === 200);"] }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+            "url": {
+              "raw": "{{baseUrl}}/api/employees/{{employeeDocId}}/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "employees", "{{employeeDocId}}", "documents", "{{documentId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
