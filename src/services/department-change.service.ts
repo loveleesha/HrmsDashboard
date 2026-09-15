@@ -5,18 +5,7 @@ import type { DepartmentChangeRequest } from "@/types/department-change";
  * functions with real API calls once the Node.js backend exists.
  */
 
-export const MOCK_DEPARTMENT_CHANGE_REQUESTS: DepartmentChangeRequest[] = [
-  {
-    id: "DCR-01",
-    employeeId: "EMP-1204",
-    employeeName: "Meera Nair",
-    currentDepartment: "Engineering",
-    requestedDepartment: "Operations",
-    reason: "Interested in moving toward process and vendor management work.",
-    status: "Pending",
-    requestedOn: "2026-09-03",
-  },
-];
+export const MOCK_DEPARTMENT_CHANGE_REQUESTS: DepartmentChangeRequest[] = [];
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

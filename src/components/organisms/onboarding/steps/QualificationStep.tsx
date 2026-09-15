@@ -5,10 +5,12 @@ import { GraduationCap, Pencil, Plus, Trash2 } from "lucide-react";
 import { Modal } from "@/components/molecules/Modal";
 import { FormField } from "@/components/molecules/FormField";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
+import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { qualificationEntrySchema } from "@/schemas/onboarding.schema";
-import type { QualificationEntryDraft } from "@/types/onboarding";
+import { uploadOnboardingAsset } from "@/services/onboarding-asset.service";
+import { QUALIFICATION_TYPES, type QualificationEntryDraft, type QualificationType } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 
 export interface QualificationStepProps {
@@ -19,12 +21,15 @@ export interface QualificationStepProps {
 type DraftForm = Omit<QualificationEntryDraft, "id">;
 
 const EMPTY_FORM: DraftForm = {
-  qualification: "",
+  type: "",
   institution: "",
+  boardOrDegree: "",
   specialization: "",
-  passingYear: "",
-  grade: "",
+  startYear: "",
+  endYear: "",
+  percentageOrGrade: "",
   certificateFileName: undefined,
+  certificateUrl: undefined,
 };
 
 export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationStepProps>(function QualificationStep(
@@ -50,12 +55,15 @@ export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationS
   function openEditModal(entry: QualificationEntryDraft) {
     setEditingId(entry.id);
     setForm({
-      qualification: entry.qualification,
+      type: entry.type,
       institution: entry.institution,
+      boardOrDegree: entry.boardOrDegree,
       specialization: entry.specialization ?? "",
-      passingYear: entry.passingYear,
-      grade: entry.grade ?? "",
+      startYear: entry.startYear,
+      endYear: entry.endYear,
+      percentageOrGrade: entry.percentageOrGrade ?? "",
       certificateFileName: entry.certificateFileName,
+      certificateUrl: entry.certificateUrl,
     });
     setErrors({});
     setModalOpen(true);
@@ -110,7 +118,7 @@ export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationS
             <div key={entry.id} className="rounded-xl border border-border bg-surface-card p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <p className="text-fs-lg font-semibold text-ink">{entry.qualification}</p>
+                  <p className="text-fs-lg font-semibold text-ink">{entry.boardOrDegree || entry.type}</p>
                   <p className="text-fs-base text-muted">{entry.institution}</p>
                 </div>
                 <div className="flex shrink-0 gap-1">
@@ -123,9 +131,12 @@ export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationS
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-fs-sm text-muted">
+                {entry.type && <span>{entry.type}</span>}
                 {entry.specialization && <span>{entry.specialization}</span>}
-                <span>Passed {entry.passingYear}</span>
-                {entry.grade && <span>{entry.grade}</span>}
+                <span>
+                  {entry.startYear}–{entry.endYear}
+                </span>
+                {entry.percentageOrGrade && <span>{entry.percentageOrGrade}</span>}
                 {entry.certificateFileName && <span className="text-ink">📎 {entry.certificateFileName}</span>}
               </div>
             </div>
@@ -147,13 +158,21 @@ export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationS
         }
       >
         <div className="flex flex-col gap-4">
-          <FormField label="Qualification" htmlFor="qualification" required error={errors.qualification}>
+          <FormField label="Qualification Type" htmlFor="qualType" required error={errors.type}>
+            <FilterDropdown
+              label="Select Type"
+              options={QUALIFICATION_TYPES.map((t) => ({ label: t, value: t }))}
+              value={form.type}
+              onChange={(v) => setForm({ ...form, type: v as QualificationType })}
+            />
+          </FormField>
+          <FormField label="Board / Degree" htmlFor="boardOrDegree" required error={errors.boardOrDegree}>
             <Input
-              id="qualification"
-              value={form.qualification}
-              onChange={(e) => setForm({ ...form, qualification: e.target.value })}
-              invalid={Boolean(errors.qualification)}
-              placeholder="e.g. B.Tech, MBA, 12th Standard"
+              id="boardOrDegree"
+              value={form.boardOrDegree}
+              onChange={(e) => setForm({ ...form, boardOrDegree: e.target.value })}
+              invalid={Boolean(errors.boardOrDegree)}
+              placeholder="e.g. B.Tech Computer Science"
             />
           </FormField>
           <FormField label="Institution" htmlFor="institution" required error={errors.institution}>
@@ -172,25 +191,41 @@ export const QualificationStep = forwardRef<OnboardingStepHandle, QualificationS
             />
           </FormField>
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Passing Year" htmlFor="passingYear" required error={errors.passingYear}>
+            <FormField label="Start Year" htmlFor="startYear" required error={errors.startYear}>
               <Input
-                id="passingYear"
-                value={form.passingYear}
-                onChange={(e) => setForm({ ...form, passingYear: e.target.value })}
-                invalid={Boolean(errors.passingYear)}
+                id="startYear"
+                value={form.startYear}
+                onChange={(e) => setForm({ ...form, startYear: e.target.value })}
+                invalid={Boolean(errors.startYear)}
+                placeholder="2018"
+                maxLength={4}
+              />
+            </FormField>
+            <FormField label="End Year" htmlFor="endYear" required error={errors.endYear}>
+              <Input
+                id="endYear"
+                value={form.endYear}
+                onChange={(e) => setForm({ ...form, endYear: e.target.value })}
+                invalid={Boolean(errors.endYear)}
                 placeholder="2022"
                 maxLength={4}
               />
             </FormField>
-            <FormField label="Percentage / Grade" htmlFor="grade" error={errors.grade}>
-              <Input id="grade" value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })} placeholder="8.5 CGPA" />
-            </FormField>
           </div>
+          <FormField label="Percentage / Grade" htmlFor="percentageOrGrade" error={errors.percentageOrGrade}>
+            <Input
+              id="percentageOrGrade"
+              value={form.percentageOrGrade}
+              onChange={(e) => setForm({ ...form, percentageOrGrade: e.target.value })}
+              placeholder="8.5 CGPA"
+            />
+          </FormField>
           <FileUploadField
             label="Certificate Upload"
             accept="image/*,.pdf"
-            value={form.certificateFileName ? { fileName: form.certificateFileName } : undefined}
-            onChange={(file) => setForm({ ...form, certificateFileName: file?.fileName })}
+            value={form.certificateFileName ? { fileName: form.certificateFileName, url: form.certificateUrl } : undefined}
+            onUpload={(file) => uploadOnboardingAsset(file, "qualificationCertificate")}
+            onChange={(file) => setForm({ ...form, certificateFileName: file?.fileName, certificateUrl: file?.url })}
           />
         </div>
       </Modal>

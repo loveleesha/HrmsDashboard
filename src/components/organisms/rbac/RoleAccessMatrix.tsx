@@ -7,6 +7,7 @@ import { Button } from "@/components/atoms/Button";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
 import { Spinner } from "@/components/atoms/Spinner";
+import { ConfirmModal } from "@/components/molecules/ConfirmModal";
 import { useToast } from "@/hooks/use-toast";
 import { useRoles } from "@/hooks/use-roles";
 import { CreateRoleModal } from "@/components/organisms/rbac/CreateRoleModal";
@@ -31,6 +32,7 @@ export function RoleAccessMatrix() {
   const [isCreating, setIsCreating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Default to the first role once the list loads, and follow along if the
   // selected role gets deleted out from under it.
@@ -123,13 +125,13 @@ export function RoleAccessMatrix() {
     }
   }
 
-  async function handleDelete() {
+  async function handleDeleteConfirmed() {
     if (!selectedRole) return;
-    if (!window.confirm(`Delete the "${selectedRole.label}" role? This cannot be undone.`)) return;
     setIsDeleting(true);
     try {
       await deleteRole(selectedRole.id);
       showToast(`${selectedRole.label} role deleted.`);
+      setIsDeleteConfirmOpen(false);
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to delete role.", "error");
     } finally {
@@ -250,8 +252,7 @@ export function RoleAccessMatrix() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleDelete}
-                  isLoading={isDeleting}
+                  onClick={() => setIsDeleteConfirmOpen(true)}
                   disabled={selectedRole.isSystem}
                   title={selectedRole.isSystem ? "System roles can't be deleted." : undefined}
                 >
@@ -361,6 +362,19 @@ export function RoleAccessMatrix() {
         onCreate={handleCreate}
         isSubmitting={isCreating}
       />
+
+      {selectedRole && (
+        <ConfirmModal
+          open={isDeleteConfirmOpen}
+          onClose={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleDeleteConfirmed}
+          title="Delete Role"
+          description={selectedRole.label}
+          body={`This permanently deletes the "${selectedRole.label}" role and can't be undone. It can't be deleted while it's still assigned to any employee.`}
+          confirmLabel="Delete Role"
+          isConfirming={isDeleting}
+        />
+      )}
     </div>
   );
 }

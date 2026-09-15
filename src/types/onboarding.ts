@@ -1,26 +1,25 @@
 import type { Role } from "./user";
 
-export const GENDERS = ["Male", "Female", "Other", "Prefer not to say"] as const;
+export const GENDERS = ["male", "female", "other", "Prefer not to say"] as const;
 export type Gender = (typeof GENDERS)[number];
+
+/** Display labels — the values above match the backend's expected casing,
+ * which isn't what should show up in the UI. */
+export const GENDER_LABELS: Record<Gender, string> = {
+  male: "Male",
+  female: "Female",
+  other: "Other",
+  "Prefer not to say": "Prefer not to say",
+};
 
 export const EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Contract", "Intern"] as const;
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
 
 /**
- * Roles assignable during onboarding. A subset of the app-wide Role union —
- * "special_employee" is an internal designation, not something HR picks
- * while bringing a new hire on board.
+ * Roles assignable during onboarding now come live from Settings -> Role &
+ * Access (see useRoles()/role.service.ts) — this is just the fallback
+ * starting value before a role is picked.
  */
-export const ONBOARDING_ROLES: Role[] = [
-  "super_admin",
-  "hr_admin",
-  "hr_executive",
-  "manager",
-  "recruiter",
-  "payroll_admin",
-  "employee",
-];
-
 export const DEFAULT_ONBOARDING_ROLE: Role = "employee";
 
 /**
@@ -88,12 +87,17 @@ export interface BasicInfo {
   lastName: string;
   dateOfBirth: string;
   gender: Gender | "";
+  /**
+   * Lives here, not in ContactInfo, because the backend's step 1 (Basic
+   * Information) is what actually creates the User record — it needs a
+   * unique email up front, before any later step exists to collect one.
+   */
+  email: string;
   profilePictureName?: string;
   profilePictureUrl?: string;
 }
 
 export interface ContactInfo {
-  email: string;
   mobile: string;
   alternateMobile?: string;
   address?: string;
@@ -114,21 +118,39 @@ export interface ProfessionalInfo {
 }
 
 export interface RoleAccessInfo {
-  role: Role;
+  /** A role name from the live Settings -> Role & Access list — not
+   * constrained to this app's built-in Role union, since any role defined
+   * there can be assigned during onboarding. */
+  role: string;
 }
 
 export interface TechnologyInfo {
   technologies: string[];
 }
 
+export const QUALIFICATION_TYPES = [
+  "10th",
+  "12th",
+  "Diploma",
+  "Graduation",
+  "Post Graduation",
+  "Doctorate",
+  "Other",
+] as const;
+export type QualificationType = (typeof QUALIFICATION_TYPES)[number];
+
 export interface QualificationEntryDraft {
   id: string;
-  qualification: string;
+  type: QualificationType | "";
   institution: string;
+  boardOrDegree: string;
   specialization?: string;
-  passingYear: string;
-  grade?: string;
+  startYear: string;
+  endYear: string;
+  percentageOrGrade?: string;
   certificateFileName?: string;
+  /** Set once the certificate has actually been uploaded (see onboarding-asset.service.ts). */
+  certificateUrl?: string;
 }
 
 export interface EmergencyContactDraft {
@@ -143,30 +165,34 @@ export interface EmergencyContactDraft {
 
 export const MAX_EMERGENCY_CONTACTS = 3;
 
+/**
+ * The onboarding wizard's document keys — matched 1:1 to both the fields a
+ * GET progress/{userId} response actually returns and the Onboarding Assets
+ * upload endpoint's `type` values. Aadhaar/PAN/education are required by
+ * step 8's validation; experience certificate and address proof are tracked
+ * by the backend too but never required.
+ */
 export interface DocumentRequirementConfig {
-  key: string;
+  key: "aadhaarCard" | "panCard" | "educationalCertificate" | "experienceCertificate" | "addressProof";
   name: string;
   required: boolean;
 }
 
-/**
- * Configurable checklist of documents HR expects during onboarding. Swap
- * this for a backend-driven list once one exists — nothing else in the
- * module assumes a fixed set of keys.
- */
 export const DEFAULT_DOCUMENT_CHECKLIST: DocumentRequirementConfig[] = [
-  { key: "aadhaar", name: "Aadhaar Card", required: true },
-  { key: "pan", name: "PAN Card", required: true },
-  { key: "educationCertificate", name: "Educational Certificate", required: true },
+  { key: "aadhaarCard", name: "Aadhaar Card", required: true },
+  { key: "panCard", name: "PAN Card", required: true },
+  { key: "educationalCertificate", name: "Educational Certificate", required: true },
   { key: "experienceCertificate", name: "Experience Certificate", required: false },
   { key: "addressProof", name: "Address Proof", required: false },
 ];
 
 export interface OnboardingDocument {
-  key: string;
+  key: DocumentRequirementConfig["key"];
   name: string;
   required: boolean;
   fileName?: string;
+  /** Set once the file has actually been uploaded (see onboarding-asset.service.ts). */
+  fileUrl?: string;
   uploadedDate?: string;
   status: DocumentVerificationStatus;
   rejectionReason?: string;
@@ -202,8 +228,8 @@ export function createEmptyOnboardingRecord(params: { id: string; createdBy: str
     status: "draft",
     currentStepIndex: 0,
     completedSteps: [],
-    basicInfo: { firstName: "", lastName: "", dateOfBirth: "", gender: "" },
-    contactInfo: { email: "", mobile: "" },
+    basicInfo: { firstName: "", lastName: "", dateOfBirth: "", gender: "", email: "" },
+    contactInfo: { mobile: "" },
     professionalInfo: { department: "", designation: "", joiningDate: "" },
     roleAccess: { role: DEFAULT_ONBOARDING_ROLE },
     technology: { technologies: [] },

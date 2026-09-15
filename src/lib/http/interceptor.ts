@@ -12,8 +12,10 @@ import { isAdminTierRole } from "@/types/user";
  * it onto every request. Callers never pass a token or set the Authorization
  * header themselves.
  */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://backend-neon-phi-91.vercel.app";
+
 export const axiosInstance: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://backend-neon-phi-91.vercel.app",
+  baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
@@ -26,7 +28,18 @@ axiosInstance.interceptors.request.use((config) => {
   if (token) {
     config.headers.set("Authorization", `Bearer ${token}`);
   }
-  config.headers.set("Content-Type", "application/json");
+  if (config.data instanceof FormData) {
+    // The axios instance's default headers already stamped Content-Type:
+    // application/json before this interceptor runs — for a FormData body
+    // that header must be removed entirely (not just left alone) so the
+    // browser can generate its own `multipart/form-data; boundary=...`
+    // header. Leaving application/json in place silently strips the
+    // boundary and the server receives an unparseable body (every file
+    // field arrives empty, e.g. `{}`, even though the file was attached).
+    config.headers.delete("Content-Type");
+  } else {
+    config.headers.set("Content-Type", "application/json");
+  }
   return config;
 });
 

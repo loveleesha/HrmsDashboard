@@ -61,7 +61,7 @@ export default function AttendancePage() {
 
   const days = useMemo(() => {
     if (!employeeId) return [];
-    const generated = getAttendanceMonth(employeeId, year, month, TODAY);
+    const generated = getAttendanceMonth(employeeId, year, month);
     return generated.map((day) => override[day.date] ?? day);
   }, [employeeId, year, month, override]);
 

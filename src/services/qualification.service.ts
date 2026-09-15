@@ -5,12 +5,7 @@ import type { QualificationEntry } from "@/types/qualification";
  * a real API call once the Node.js backend exists.
  */
 
-export const MOCK_QUALIFICATIONS: QualificationEntry[] = [
-  { id: "QUAL-01", type: "10th Standard", institution: "Delhi Public School, R.K. Puram", board: "CBSE", period: "2010" },
-  { id: "QUAL-02", type: "12th Standard", institution: "Delhi Public School, R.K. Puram", board: "CBSE", period: "2012" },
-  { id: "QUAL-03", type: "Graduation", institution: "Delhi Technological University", board: "B.Tech, Computer Science", period: "2012 – 2016" },
-  { id: "QUAL-04", type: "Certification", institution: "AWS Certified Solutions Architect – Associate", board: "Amazon Web Services", period: "2023" },
-];
+export const MOCK_QUALIFICATIONS: QualificationEntry[] = [];
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

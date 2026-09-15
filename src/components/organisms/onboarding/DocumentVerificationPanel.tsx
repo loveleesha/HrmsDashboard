@@ -66,7 +66,7 @@ export function DocumentVerificationPanel({ record, onRecordChange }: DocumentVe
           <Avatar name={employeeFullName(record.basicInfo) || "New Hire"} imageUrl={record.basicInfo.profilePictureUrl} size="lg" />
           <div className="flex-1">
             <p className="text-fs-2xl font-semibold text-ink">{employeeFullName(record.basicInfo) || "Unnamed Candidate"}</p>
-            <p className="text-fs-base text-muted">{record.contactInfo.email}</p>
+            <p className="text-fs-base text-muted">{record.basicInfo.email}</p>
           </div>
           <Badge tone={record.status === "verified" ? "success" : "warning"}>{ONBOARDING_STATUS_LABELS[record.status]}</Badge>
         </div>

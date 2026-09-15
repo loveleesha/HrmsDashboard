@@ -78,7 +78,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
   hr_admin: {
     ...SELF_SERVICE,
     employees: FULL,
-    employeeOnboarding: { view: true, add: true, edit: true, verifyDocuments: true, activate: true },
+    employeeOnboarding: { view: true, add: true, edit: true, delete: true, verifyDocuments: true, activate: true },
     attendance: FULL_NO_DELETE,
     leave: FULL_NO_DELETE,
     payroll: { view: true, add: true, edit: true, approve: true, export: true },

@@ -11,13 +11,14 @@ import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { AddTrainingForm, type AddTrainingFormValues } from "@/components/organisms/training/AddTrainingForm";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
+import { useRoles } from "@/hooks/use-roles";
 import { getTrainingPrograms, newTrainingId } from "@/services/training.service";
-import { ROLE_LABELS } from "@/types/user";
 import type { TrainingProgram } from "@/types/training";
 
 export default function TrainingPage() {
   const { showToast } = useToast();
   const { can, viewAsRole } = useRBAC();
+  const { getRoleLabel } = useRoles();
 
   const [programs, setPrograms] = useState<TrainingProgram[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -80,7 +81,7 @@ export default function TrainingPage() {
         <Table
           columns={[
             { key: "topic", header: "Topic", render: (p: TrainingProgram) => <span className="font-medium text-ink">{p.topic}</span> },
-            { key: "role", header: "Role", render: (p: TrainingProgram) => <Badge tone="neutral">{ROLE_LABELS[p.targetRole]}</Badge> },
+            { key: "role", header: "Role", render: (p: TrainingProgram) => <Badge tone="neutral">{getRoleLabel(p.targetRole)}</Badge> },
             { key: "trainer", header: "Trainer", render: (p: TrainingProgram) => p.trainer },
             { key: "mode", header: "Mode", render: (p: TrainingProgram) => p.mode },
             {

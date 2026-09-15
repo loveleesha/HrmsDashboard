@@ -58,7 +58,7 @@ export function EmployeeDashboard() {
       const me = employees.find((e) => e.email === user?.email) ?? employees[0] ?? null;
       setEmployee(me);
       if (me) {
-        const days = getAttendanceMonth(me.id, TODAY.getFullYear(), TODAY.getMonth(), TODAY);
+        const days = getAttendanceMonth(me.id, TODAY.getFullYear(), TODAY.getMonth());
         setTodayAttendance(days[days.length - 1] ?? null);
       }
     });

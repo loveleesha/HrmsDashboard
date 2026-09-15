@@ -62,13 +62,16 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
     );
   }
 
-  async function persist(next: OnboardingRecord) {
+  async function persist(next: OnboardingRecord, stepKey: OnboardingStepKey) {
     setIsSaving(true);
     try {
-      const saved = await saveOnboardingRecord(next);
+      const saved = await saveOnboardingRecord(next, stepKey);
       setRecord(saved);
       onRecordChange?.(saved);
       return saved;
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not save this step. Please try again.", "error");
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -76,7 +79,8 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
 
   async function handleSaveDraft() {
     const next = { ...record, currentStepIndex: stepIndex };
-    await persist(next);
+    const saved = await persist(next, currentStepKey);
+    if (!saved) return;
     showToast("Saved as draft.");
     router.push("/employees/onboarding");
   }
@@ -94,23 +98,25 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
 
     if (isLastStep) {
       const next = { ...record, currentStepIndex: stepIndex, completedSteps: Array.from(new Set([...record.completedSteps, currentStepKey])) };
-      await persist(next);
+      const saved = await persist(next, currentStepKey);
+      if (!saved) return;
 
-      if (record.status !== "draft") {
+      if (saved.status !== "draft") {
         // Editing an already-submitted record: save the corrections without re-running submission side effects.
         showToast("Changes saved.");
-        router.push(`/employees/onboarding/${record.id}`);
+        router.push(`/employees/onboarding/${saved.id}`);
         return;
       }
 
+      setIsSaving(true);
       try {
-        const submitted = await submitOnboarding(record.id);
-        setRecord(submitted);
-        onRecordChange?.(submitted);
-        showToast("Onboarding submitted for HR verification.");
-        router.push(`/employees/onboarding/${record.id}`);
-      } catch {
-        showToast("Could not submit onboarding. Please try again.", "error");
+        await submitOnboarding(saved);
+        showToast("Onboarding submitted.");
+        router.push("/employees/onboarding");
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : "Could not submit onboarding. Please try again.", "error");
+      } finally {
+        setIsSaving(false);
       }
       return;
     }
@@ -121,7 +127,8 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
       currentStepIndex: nextIndex,
       completedSteps: Array.from(new Set([...record.completedSteps, currentStepKey])),
     };
-    await persist(next);
+    const saved = await persist(next, currentStepKey);
+    if (!saved) return;
     setStepIndex(nextIndex);
   }
 
@@ -139,16 +146,16 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
     switch (currentStepKey) {
       case "basicInfo":
         return (
-          <BasicInfoStep ref={stepRef} value={record.basicInfo} onChange={(value) => updateField("basicInfo", value)} />
+          <BasicInfoStep
+            ref={stepRef}
+            value={record.basicInfo}
+            onChange={(value) => updateField("basicInfo", value)}
+            recordId={record.id}
+          />
         );
       case "contactInfo":
         return (
-          <ContactInfoStep
-            ref={stepRef}
-            value={record.contactInfo}
-            onChange={(value) => updateField("contactInfo", value)}
-            recordId={record.id}
-          />
+          <ContactInfoStep ref={stepRef} value={record.contactInfo} onChange={(value) => updateField("contactInfo", value)} />
         );
       case "professionalInfo":
         return (

@@ -5,11 +5,13 @@ import { ChevronDown, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/atoms/Avatar";
-import { ROLE_LABELS, isAdminTierRole } from "@/types/user";
+import { isAdminTierRole } from "@/types/user";
 import { useAuth } from "@/hooks/use-auth";
+import { useRoles } from "@/hooks/use-roles";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
+  const { getRoleLabel } = useRoles();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -41,7 +43,7 @@ export function UserMenu() {
             {user.name}
           </span>
           <span className="block text-fs-sm text-muted">
-            {ROLE_LABELS[user.role]}
+            {getRoleLabel(user.role)}
           </span>
         </span>
         <ChevronDown className="size-4 text-muted-light" />

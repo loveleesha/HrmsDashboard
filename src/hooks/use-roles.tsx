@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import * as roleService from "@/services/role.service";
+import { resolveRoleLabel, resolveRolePermissions } from "@/lib/rbac/role-label";
+import type { RolePermissionMap } from "@/types/rbac";
 import type { ApiRole, CreateRolePayload, UpdateRolePayload } from "@/types/role";
 
 interface RolesContextValue {
@@ -13,6 +15,11 @@ interface RolesContextValue {
   createRole: (payload: CreateRolePayload) => Promise<ApiRole>;
   updateRole: (roleId: string, payload: UpdateRolePayload) => Promise<ApiRole>;
   deleteRole: (roleId: string) => Promise<void>;
+  /** Display label for a role name — the live roles list first, this app's
+   * static fallback labels second, a prettified name as a last resort. */
+  getRoleLabel: (roleName: string) => string;
+  /** Permission set for a role name, same preference order as getRoleLabel. */
+  getRolePermissions: (roleName: string) => RolePermissionMap;
 }
 
 const RolesContext = createContext<RolesContextValue | undefined>(undefined);
@@ -61,7 +68,20 @@ export function RolesProvider({ children }: { children: ReactNode }) {
     setRoles((prev) => prev.filter((r) => r.id !== roleId));
   }, []);
 
-  const value: RolesContextValue = { roles, isLoading, error, refresh, createRole, updateRole, deleteRole };
+  const getRoleLabel = useCallback((roleName: string) => resolveRoleLabel(roles, roleName), [roles]);
+  const getRolePermissions = useCallback((roleName: string) => resolveRolePermissions(roles, roleName), [roles]);
+
+  const value: RolesContextValue = {
+    roles,
+    isLoading,
+    error,
+    refresh,
+    createRole,
+    updateRole,
+    deleteRole,
+    getRoleLabel,
+    getRolePermissions,
+  };
 
   return <RolesContext.Provider value={value}>{children}</RolesContext.Provider>;
 }

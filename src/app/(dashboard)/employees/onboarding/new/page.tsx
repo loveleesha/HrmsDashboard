@@ -1,27 +1,42 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@/components/atoms/Spinner";
+import { ArrowLeft } from "lucide-react";
+import { PageHeader } from "@/components/molecules/PageHeader";
+import { Button } from "@/components/atoms/Button";
 import { useAuth } from "@/hooks/use-auth";
+import { OnboardingWizard } from "@/components/organisms/onboarding/OnboardingWizard";
 import { createDraftOnboarding } from "@/services/onboarding.service";
+import type { OnboardingRecord } from "@/types/onboarding";
 
 export default function NewOnboardingPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const hasCreated = useRef(false);
+  // No backend record exists until Basic Information (step 1) is saved —
+  // this page stays put for that first step, then hands off to the record's
+  // real URL once saveOnboardingRecord returns a real userId.
+  const initialRecord = useMemo(() => createDraftOnboarding(user?.name ?? "HR Team"), [user]);
 
-  useEffect(() => {
-    if (hasCreated.current) return;
-    hasCreated.current = true;
-    const record = createDraftOnboarding(user?.name ?? "HR Team");
-    router.replace(`/employees/onboarding/${record.id}`);
-  }, [router, user]);
+  function handleRecordChange(record: OnboardingRecord) {
+    if (record.id) {
+      router.replace(`/employees/onboarding/${record.id}`);
+    }
+  }
 
   return (
-    <div className="flex items-center justify-center gap-2 py-24 text-muted">
-      <Spinner />
-      Starting a new onboarding…
+    <div>
+      <PageHeader
+        title="Add Employee"
+        description="Bring a new hire on board — from basic details through documents."
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => router.push("/employees/onboarding")}>
+            <ArrowLeft className="size-4" />
+            Back to List
+          </Button>
+        }
+      />
+      <OnboardingWizard initialRecord={initialRecord} onRecordChange={handleRecordChange} />
     </div>
   );
 }

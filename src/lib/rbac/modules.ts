@@ -37,7 +37,7 @@ export const MODULE_DEFS: ModuleDef[] = [
     key: "employeeOnboarding",
     label: "Employee Onboarding",
     icon: UserPlus,
-    actions: ["view", "add", "edit", "verifyDocuments", "activate"],
+    actions: ["view", "add", "edit", "delete", "verifyDocuments", "activate"],
     group: "Workforce",
   },
   { key: "attendance", label: "Attendance", icon: CalendarCheck, actions: ["view", "add", "edit", "approve", "export"], group: "Workforce" },

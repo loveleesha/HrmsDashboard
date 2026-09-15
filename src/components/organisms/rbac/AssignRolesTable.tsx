@@ -7,13 +7,14 @@ import { Avatar } from "@/components/atoms/Avatar";
 import { Spinner } from "@/components/atoms/Spinner";
 import { useToast } from "@/hooks/use-toast";
 import { useRoleAssignments } from "@/hooks/use-role-assignments";
+import { useRoles } from "@/hooks/use-roles";
 import { getEmployees } from "@/services/employee.service";
-import { ROLES, ROLE_LABELS, type Role } from "@/types/user";
 import type { Employee } from "@/types/employee";
 
 export function AssignRolesTable() {
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const { getRole, setRole } = useRoleAssignments();
+  const { roles, getRoleLabel } = useRoles();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -59,11 +60,11 @@ export function AssignRolesTable() {
           render: (e: Employee) => (
             <FilterDropdown
               label="Role"
-              options={ROLES.map((r) => ({ label: ROLE_LABELS[r], value: r }))}
+              options={roles.map((r) => ({ label: r.label, value: r.name }))}
               value={getRole(e.id)}
               onChange={(value) => {
-                setRole(e.id, value as Role);
-                showToast(`${e.name} is now assigned the ${ROLE_LABELS[value as Role]} role.`);
+                setRole(e.id, value);
+                showToast(`${e.name} is now assigned the ${getRoleLabel(value)} role.`);
               }}
               className="w-48"
             />

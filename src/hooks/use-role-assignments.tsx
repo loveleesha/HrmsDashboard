@@ -1,12 +1,13 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import type { Role } from "@/types/user";
 import { MOCK_USERS } from "@/services/auth.service";
 
 const STORAGE_KEY = "hrms-role-assignments";
 
-type Assignments = Record<string, Role>;
+/** Role names, not the built-in Role union — any role from the live
+ * Settings -> Role & Access list can be assigned. */
+type Assignments = Record<string, string>;
 
 function defaultAssignments(): Assignments {
   const assignments: Assignments = {};
@@ -18,8 +19,8 @@ function defaultAssignments(): Assignments {
 
 interface RoleAssignmentsContextValue {
   assignments: Assignments;
-  getRole: (employeeId: string) => Role;
-  setRole: (employeeId: string, role: Role) => void;
+  getRole: (employeeId: string) => string;
+  setRole: (employeeId: string, role: string) => void;
 }
 
 const RoleAssignmentsContext = createContext<RoleAssignmentsContextValue | undefined>(undefined);
@@ -40,7 +41,7 @@ export function RoleAssignmentsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const setRole = useCallback((employeeId: string, role: Role) => {
+  const setRole = useCallback((employeeId: string, role: string) => {
     setAssignments((prev) => {
       const next = { ...prev, [employeeId]: role };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

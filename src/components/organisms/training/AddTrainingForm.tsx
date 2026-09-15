@@ -7,12 +7,12 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { DatePickerField } from "@/components/molecules/DatePickerField";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
-import { ROLES, ROLE_LABELS, type Role } from "@/types/user";
+import { useRoles } from "@/hooks/use-roles";
 import type { TrainingMode } from "@/types/training";
 
 export interface AddTrainingFormValues {
   topic: string;
-  targetRole: Role;
+  targetRole: string;
   trainer: string;
   mode: TrainingMode;
   date: string;
@@ -25,8 +25,9 @@ export interface AddTrainingFormProps {
 }
 
 export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProps) {
+  const { roles } = useRoles();
   const [topic, setTopic] = useState("");
-  const [targetRole, setTargetRole] = useState<Role | "">("");
+  const [targetRole, setTargetRole] = useState("");
   const [trainer, setTrainer] = useState("");
   const [mode, setMode] = useState<TrainingMode | "">("");
   const [date, setDate] = useState("");
@@ -59,7 +60,7 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
       return;
     }
 
-    onSubmit({ topic: topic.trim(), targetRole: targetRole as Role, trainer: trainer.trim(), mode: mode as TrainingMode, date });
+    onSubmit({ topic: topic.trim(), targetRole, trainer: trainer.trim(), mode: mode as TrainingMode, date });
     reset();
   }
 
@@ -85,9 +86,9 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
           <FormField label="Role" htmlFor="training-role" error={errors.targetRole} required>
             <FilterDropdown
               label="Select Role"
-              options={ROLES.map((r) => ({ label: ROLE_LABELS[r], value: r }))}
+              options={roles.map((r) => ({ label: r.label, value: r.name }))}
               value={targetRole}
-              onChange={(v) => setTargetRole(v as Role)}
+              onChange={setTargetRole}
             />
           </FormField>
           <FormField label="Mode" htmlFor="training-mode" error={errors.mode} required>

@@ -1,19 +1,28 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { FileText, UploadCloud, X } from "lucide-react";
+import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/cn";
 
 export interface FileUploadValue {
   fileName: string;
   previewUrl?: string;
+  /** The real, uploaded URL — set once `onUpload` resolves. */
+  url?: string;
 }
 
 export interface FileUploadFieldProps {
   label?: string;
   value?: FileUploadValue;
   onChange: (value: FileUploadValue | null) => void;
+  /**
+   * When provided, the field uploads the file itself — showing a busy state
+   * while in flight — and only calls `onChange` (with `url` set) once the
+   * upload actually succeeds. Without it, `onChange` fires immediately with
+   * just the local file name/preview (no real upload happens).
+   */
+  onUpload?: (file: File) => Promise<string>;
   accept?: string;
   maxSizeMb?: number;
   /** Renders an image thumbnail instead of a generic file row. */
@@ -36,6 +45,7 @@ export function FileUploadField({
   label,
   value,
   onChange,
+  onUpload,
   accept,
   maxSizeMb = 5,
   imagePreview = false,
@@ -46,6 +56,7 @@ export function FileUploadField({
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
@@ -58,7 +69,21 @@ export function FileUploadField({
 
     setLocalError(null);
     const previewUrl = imagePreview ? await readFileAsDataUrl(file) : undefined;
-    onChange({ fileName: file.name, previewUrl });
+
+    if (!onUpload) {
+      onChange({ fileName: file.name, previewUrl });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await onUpload(file);
+      onChange({ fileName: file.name, previewUrl, url });
+    } catch (err) {
+      setLocalError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   }
 
   function handleRemove() {
@@ -83,10 +108,16 @@ export function FileUploadField({
         type="file"
         accept={accept}
         className="sr-only"
+        disabled={isUploading}
         onChange={(event) => handleFiles(event.target.files)}
       />
 
-      {!value ? (
+      {isUploading ? (
+        <div className="flex items-center gap-3 rounded-lg border border-dashed border-border-strong px-4 py-6">
+          <Loader2 className="size-5 animate-spin text-primary" />
+          <span className="text-fs-base text-muted">Uploading…</span>
+        </div>
+      ) : !value ? (
         <label
           htmlFor={inputId}
           className={cn(

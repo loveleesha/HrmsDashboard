@@ -4,6 +4,7 @@ import { forwardRef, useImperativeHandle, useState } from "react";
 import { FileText } from "lucide-react";
 import { FileUploadField } from "@/components/molecules/FileUploadField";
 import { Badge } from "@/components/atoms/Badge";
+import { uploadOnboardingAsset, type OnboardingAssetType } from "@/services/onboarding-asset.service";
 import type { OnboardingDocument } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 
@@ -22,7 +23,7 @@ export const DocumentsStep = forwardRef<OnboardingStepHandle, DocumentsStepProps
 
   useImperativeHandle(ref, () => ({
     validate: () => {
-      const missingRequired = value.filter((doc) => doc.required && !doc.fileName);
+      const missingRequired = value.filter((doc) => doc.required && !doc.fileUrl);
       if (missingRequired.length > 0) {
         setError(`Upload all required documents before continuing: ${missingRequired.map((d) => d.name).join(", ")}.`);
         return false;
@@ -32,13 +33,13 @@ export const DocumentsStep = forwardRef<OnboardingStepHandle, DocumentsStepProps
     },
   }));
 
-  function handleUpload(key: string, fileName?: string) {
+  function handleUpload(key: OnboardingDocument["key"], fileName?: string, fileUrl?: string) {
     onChange(
       value.map((doc) =>
         doc.key === key
-          ? fileName
-            ? { ...doc, fileName, uploadedDate: new Date().toISOString().slice(0, 10), status: "PENDING", rejectionReason: undefined }
-            : { ...doc, fileName: undefined, uploadedDate: undefined, status: "PENDING", rejectionReason: undefined }
+          ? fileUrl
+            ? { ...doc, fileName, fileUrl, uploadedDate: new Date().toISOString().slice(0, 10), status: "PENDING", rejectionReason: undefined }
+            : { ...doc, fileName: undefined, fileUrl: undefined, uploadedDate: undefined, status: "PENDING", rejectionReason: undefined }
           : doc
       )
     );
@@ -48,10 +49,7 @@ export const DocumentsStep = forwardRef<OnboardingStepHandle, DocumentsStepProps
     <div className="flex flex-col gap-5">
       <div>
         <h2 className="text-fs-3xl font-semibold text-ink">Documents</h2>
-        <p className="mt-1 text-fs-base text-muted">
-          Documents are verified manually by HR after submission — every upload starts as{" "}
-          <span className="font-medium text-ink">PENDING</span>.
-        </p>
+        <p className="mt-1 text-fs-base text-muted">Upload identity and education documents.</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -73,8 +71,9 @@ export const DocumentsStep = forwardRef<OnboardingStepHandle, DocumentsStepProps
             <div className="mt-3">
               <FileUploadField
                 accept="image/*,.pdf"
-                value={doc.fileName ? { fileName: doc.fileName } : undefined}
-                onChange={(file) => handleUpload(doc.key, file?.fileName)}
+                value={doc.fileName ? { fileName: doc.fileName, url: doc.fileUrl } : undefined}
+                onUpload={(file) => uploadOnboardingAsset(file, doc.key as OnboardingAssetType)}
+                onChange={(file) => handleUpload(doc.key, file?.fileName, file?.url)}
               />
             </div>
 

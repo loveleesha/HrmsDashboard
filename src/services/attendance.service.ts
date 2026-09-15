@@ -1,10 +1,12 @@
-import type { AttendanceDay, AttendanceMonthSummary, AttendanceTimelineEvent } from "@/types/attendance";
+import type { AttendanceDay, AttendanceMonthSummary } from "@/types/attendance";
 import { toDateKey } from "@/lib/attendance-utils";
 
 /**
- * Mock attendance service. Replace the body of getAttendanceMonth /
- * getAttendanceSummary with real API calls once the Node.js backend
- * exists — callers only depend on these functions' signatures.
+ * Attendance service. Weekend/holiday classification is real calendar math;
+ * everything else (actual punch-in/out records) has no backend yet, so this
+ * returns no entry for ordinary working days rather than fabricating one.
+ * Replace with real API calls once the Node.js backend exists — callers
+ * only depend on these functions' signatures.
  */
 
 export const HOLIDAYS: Record<string, string> = {
@@ -16,14 +18,6 @@ export const HOLIDAYS: Record<string, string> = {
   "2026-10-20": "Diwali",
   "2026-12-25": "Christmas",
 };
-
-function seededRandom(seed: string): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    hash = (Math.imul(31, hash) + seed.charCodeAt(i)) | 0;
-  }
-  return ((hash >>> 0) % 10000) / 10000;
-}
 
 function formatTime(totalMinutes: number): string {
   const hour = Math.floor(totalMinutes / 60) % 24;
@@ -39,79 +33,12 @@ function formatDuration(totalMinutes: number): string {
   return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`;
 }
 
-const SHIFT_LABEL = "09:00 AM – 06:00 PM";
-
-function buildWorkingDay(employeeId: string, dateKey: string, isToday: boolean): AttendanceDay {
-  const rand = seededRandom(`${employeeId}-${dateKey}`);
-
-  if (rand < 0.05) {
-    return { date: dateKey, status: "absent", shift: SHIFT_LABEL };
-  }
-
-  if (rand < 0.12) {
-    return {
-      date: dateKey,
-      status: "leave",
-      shift: SHIFT_LABEL,
-      notes: "Approved leave.",
-    };
-  }
-
-  const isLate = rand < 0.2;
-  const punchInMinutes = isLate
-    ? 9 * 60 + 35 + Math.floor(rand * 70)
-    : 8 * 60 + 45 + Math.floor(rand * 30);
-  const breakStartMinutes = 13 * 60 + Math.floor(rand * 20);
-  const breakLengthMinutes = 45 + Math.floor(rand * 30);
-  const breakEndMinutes = breakStartMinutes + breakLengthMinutes;
-
-  if (isToday) {
-    const timeline: AttendanceTimelineEvent[] = [
-      { time: formatTime(punchInMinutes), label: "Punch In" },
-    ];
-    return {
-      date: dateKey,
-      status: isLate ? "late" : "present",
-      punchIn: formatTime(punchInMinutes),
-      shift: SHIFT_LABEL,
-      location: rand > 0.7 ? "Remote" : "Office",
-      timeline,
-    };
-  }
-
-  const workedMinutes = 8 * 60 + 30 + Math.floor(rand * 90);
-  const punchOutMinutes = punchInMinutes + breakLengthMinutes + workedMinutes;
-  const overtimeMinutes = Math.max(0, workedMinutes - 9 * 60);
-
-  const timeline: AttendanceTimelineEvent[] = [
-    { time: formatTime(punchInMinutes), label: "Punch In" },
-    { time: formatTime(breakStartMinutes), label: "Break Started" },
-    { time: formatTime(breakEndMinutes), label: "Break Ended" },
-    { time: formatTime(punchOutMinutes), label: "Punch Out" },
-  ];
-
-  return {
-    date: dateKey,
-    status: isLate ? "late" : "present",
-    punchIn: formatTime(punchInMinutes),
-    punchOut: formatTime(punchOutMinutes),
-    workingHours: formatDuration(workedMinutes),
-    breakDuration: formatDuration(breakLengthMinutes),
-    overtime: formatDuration(overtimeMinutes),
-    shift: SHIFT_LABEL,
-    location: rand > 0.75 ? "Remote" : "Office",
-    timeline,
-  };
-}
-
-export function getAttendanceMonth(
-  employeeId: string,
-  year: number,
-  month: number,
-  today: Date = new Date()
-): AttendanceDay[] {
+/**
+ * `employeeId` is kept in the signature (unused for now) so callers don't
+ * need to change once this reads from a real per-employee attendance source.
+ */
+export function getAttendanceMonth(employeeId: string, year: number, month: number): AttendanceDay[] {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const todayKey = toDateKey(today);
   const days: AttendanceDay[] = [];
 
   for (let day = 1; day <= daysInMonth; day++) {
@@ -130,11 +57,8 @@ export function getAttendanceMonth(
       continue;
     }
 
-    if (dateKey > todayKey) {
-      continue;
-    }
-
-    days.push(buildWorkingDay(employeeId, dateKey, dateKey === todayKey));
+    // No real punch-in/out record source yet — leave ordinary working days
+    // unlisted rather than fabricating a status for them.
   }
 
   return days;

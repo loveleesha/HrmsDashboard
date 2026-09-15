@@ -2,56 +2,30 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, PlayCircle, PowerOff, ShieldCheck, UserPlus, Users } from "lucide-react";
+import { PlayCircle, Trash2, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Spinner } from "@/components/atoms/Spinner";
 import { SearchInput } from "@/components/molecules/SearchInput";
-import { FilterDropdown } from "@/components/molecules/FilterDropdown";
+import { ActionMenu } from "@/components/molecules/ActionMenu";
+import { ConfirmModal } from "@/components/molecules/ConfirmModal";
 import { Table, type TableColumn } from "@/components/molecules/Table";
 import { useRBAC } from "@/hooks/use-rbac";
-import { getOnboardingRecords } from "@/services/onboarding.service";
-import { ROLE_LABELS } from "@/types/user";
-import {
-  documentOverallStatus,
-  employeeFullName,
-  ONBOARDING_STATUS_LABELS,
-  type OnboardingRecord,
-  type OnboardingStatus,
-} from "@/types/onboarding";
-
-const STATUS_FILTER_OPTIONS: { label: string; value: string }[] = [
-  { label: "Draft", value: "draft" },
-  { label: "Pending Verification", value: "pending_verification" },
-  { label: "Verified", value: "verified" },
-  { label: "Rejected", value: "rejected" },
-  { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-];
-
-const STATUS_TONE: Record<OnboardingStatus, "neutral" | "warning" | "success" | "danger"> = {
-  draft: "neutral",
-  pending_verification: "warning",
-  verified: "success",
-  active: "success",
-  inactive: "neutral",
-};
-
-const ACCOUNT_STATUS_LABEL: Record<OnboardingStatus, string> = {
-  draft: "Not Activated",
-  pending_verification: "Not Activated",
-  verified: "Not Activated",
-  active: "Active",
-  inactive: "Inactive",
-};
+import { useRoles } from "@/hooks/use-roles";
+import { useToast } from "@/hooks/use-toast";
+import { discardOnboarding, getOnboardingRecords } from "@/services/onboarding.service";
+import { ONBOARDING_STEP_KEYS, employeeFullName, type OnboardingRecord } from "@/types/onboarding";
 
 export function OnboardingList() {
   const router = useRouter();
   const { can } = useRBAC();
+  const { getRoleLabel } = useRoles();
+  const { showToast } = useToast();
   const [records, setRecords] = useState<OnboardingRecord[] | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [discardTarget, setDiscardTarget] = useState<OnboardingRecord | null>(null);
+  const [isDiscarding, setIsDiscarding] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,23 +40,33 @@ export function OnboardingList() {
   const filtered = useMemo(() => {
     if (!records) return [];
     const query = search.trim().toLowerCase();
+    if (!query) return records;
 
     return records.filter((record) => {
       const name = employeeFullName(record.basicInfo).toLowerCase();
-      const matchesQuery =
-        !query ||
+      return (
         name.includes(query) ||
-        record.contactInfo.email.toLowerCase().includes(query) ||
+        record.basicInfo.email.toLowerCase().includes(query) ||
         record.professionalInfo.department.toLowerCase().includes(query) ||
-        (record.employeeId ?? "").toLowerCase().includes(query);
-
-      const matchesStatus =
-        !statusFilter ||
-        (statusFilter === "rejected" ? documentOverallStatus(record) === "Rejected" : record.status === statusFilter);
-
-      return matchesQuery && matchesStatus;
+        (record.employeeId ?? "").toLowerCase().includes(query)
+      );
     });
-  }, [records, search, statusFilter]);
+  }, [records, search]);
+
+  async function handleDiscardConfirmed() {
+    if (!discardTarget) return;
+    setIsDiscarding(true);
+    try {
+      await discardOnboarding(discardTarget.id);
+      setRecords((prev) => prev?.filter((r) => r.id !== discardTarget.id) ?? prev);
+      showToast(`Discarded ${employeeFullName(discardTarget.basicInfo) || "this"} onboarding.`);
+      setDiscardTarget(null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not discard this onboarding.", "error");
+    } finally {
+      setIsDiscarding(false);
+    }
+  }
 
   const columns: TableColumn<OnboardingRecord>[] = [
     {
@@ -95,75 +79,46 @@ export function OnboardingList() {
         </div>
       ),
     },
-    { key: "email", header: "Email", render: (record) => record.contactInfo.email || "—" },
+    { key: "email", header: "Email", render: (record) => record.basicInfo.email || "—" },
     { key: "department", header: "Department", render: (record) => record.professionalInfo.department || "—" },
     { key: "designation", header: "Designation", render: (record) => record.professionalInfo.designation || "—" },
-    { key: "role", header: "Assigned Role", render: (record) => ROLE_LABELS[record.roleAccess.role] },
+    { key: "role", header: "Assigned Role", render: (record) => getRoleLabel(record.roleAccess.role) },
     { key: "employeeId", header: "Employee ID", render: (record) => record.employeeId ?? "—" },
     {
-      key: "onboardingStatus",
-      header: "Onboarding Status",
-      render: (record) => <Badge tone={STATUS_TONE[record.status]}>{ONBOARDING_STATUS_LABELS[record.status]}</Badge>,
-    },
-    {
-      key: "documentStatus",
-      header: "Document Status",
-      render: (record) => {
-        const status = documentOverallStatus(record);
-        return <Badge tone={status === "Verified" ? "success" : status === "Rejected" ? "danger" : "warning"}>{status}</Badge>;
-      },
-    },
-    {
-      key: "accountStatus",
-      header: "Account Status",
+      key: "progress",
+      header: "Progress",
       render: (record) => (
-        <Badge tone={record.status === "active" ? "success" : record.status === "inactive" ? "danger" : "neutral"}>
-          {ACCOUNT_STATUS_LABEL[record.status]}
+        <Badge tone="warning">
+          Step {Math.min(record.currentStepIndex + 1, ONBOARDING_STEP_KEYS.length)} of {ONBOARDING_STEP_KEYS.length}
         </Badge>
       ),
     },
     { key: "createdAt", header: "Created Date", render: (record) => record.createdAt.slice(0, 10) },
     {
       key: "actions",
-      header: "Actions",
+      header: "",
+      headerClassName: "w-10",
+      className: "text-right",
       render: (record) => (
-        <div className="flex flex-wrap gap-1.5">
-          {can("employeeOnboarding", "view") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}`)}>
-              <Eye className="size-3.5" />
-              View
-            </Button>
-          )}
-          {record.status === "draft" && can("employeeOnboarding", "edit") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}`)}>
-              <PlayCircle className="size-3.5" />
-              Continue
-            </Button>
-          )}
-          {record.status !== "draft" && can("employeeOnboarding", "edit") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}?mode=edit`)}>
-              <Pencil className="size-3.5" />
-              Edit
-            </Button>
-          )}
-          {record.status === "pending_verification" && can("employeeOnboarding", "verifyDocuments") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}/verify`)}>
-              <ShieldCheck className="size-3.5" />
-              Verify
-            </Button>
-          )}
-          {record.status === "verified" && can("employeeOnboarding", "activate") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}`)}>
-              <PlayCircle className="size-3.5" />
-              Activate
-            </Button>
-          )}
-          {record.status === "active" && can("employeeOnboarding", "activate") && (
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/employees/onboarding/${record.id}`)}>
-              <PowerOff className="size-3.5" />
-              Deactivate
-            </Button>
-          )}
+        <div className="flex justify-end">
+          <ActionMenu
+            ariaLabel={`Actions for ${employeeFullName(record.basicInfo) || "this record"}`}
+            items={[
+              {
+                label: "Continue Setup",
+                icon: PlayCircle,
+                onClick: () => router.push(`/employees/onboarding/${record.id}`),
+                hidden: !can("employeeOnboarding", "view"),
+              },
+              {
+                label: "Discard",
+                icon: Trash2,
+                tone: "danger",
+                onClick: () => setDiscardTarget(record),
+                hidden: !can("employeeOnboarding", "delete"),
+              },
+            ]}
+          />
         </div>
       ),
     },
@@ -180,19 +135,11 @@ export function OnboardingList() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row">
+      <div className="mb-4 rounded-xl border border-border bg-surface-card p-4">
         <SearchInput
           placeholder="Search by name, email, department, Employee ID…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="sm:flex-1"
-        />
-        <FilterDropdown
-          label="All Statuses"
-          options={STATUS_FILTER_OPTIONS}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          className="sm:w-56"
         />
       </div>
 
@@ -205,7 +152,7 @@ export function OnboardingList() {
           <p className="max-w-md text-fs-lg text-muted">
             {records.length === 0
               ? "Start onboarding a new hire to see them listed here."
-              : "Try a different search term or status filter."}
+              : "Try a different search term."}
           </p>
           {can("employeeOnboarding", "add") && records.length === 0 && (
             <Button onClick={() => router.push("/employees/onboarding/new")}>
@@ -217,6 +164,17 @@ export function OnboardingList() {
       ) : (
         <Table columns={columns} data={filtered} keyField={(record) => record.id} />
       )}
+
+      <ConfirmModal
+        open={Boolean(discardTarget)}
+        onClose={() => setDiscardTarget(null)}
+        onConfirm={handleDiscardConfirmed}
+        title="Discard Onboarding"
+        description={discardTarget ? employeeFullName(discardTarget.basicInfo) || "Unnamed candidate" : undefined}
+        body="This permanently deletes this onboarding record, including the account it created, and can't be undone."
+        confirmLabel="Discard Onboarding"
+        isConfirming={isDiscarding}
+      />
     </div>
   );
 }

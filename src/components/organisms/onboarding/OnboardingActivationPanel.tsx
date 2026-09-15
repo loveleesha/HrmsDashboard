@@ -7,9 +7,9 @@ import { Button } from "@/components/atoms/Button";
 import { Avatar } from "@/components/atoms/Avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
+import { useRoles } from "@/hooks/use-roles";
 import { activateEmployee } from "@/services/onboarding.service";
 import { employeeFullName, type OnboardingRecord } from "@/types/onboarding";
-import { ROLE_LABELS } from "@/types/user";
 
 export interface OnboardingActivationPanelProps {
   record: OnboardingRecord;
@@ -18,6 +18,7 @@ export interface OnboardingActivationPanelProps {
 
 export function OnboardingActivationPanel({ record, onRecordChange }: OnboardingActivationPanelProps) {
   const { can } = useRBAC();
+  const { getRoleLabel } = useRoles();
   const { showToast } = useToast();
   const router = useRouter();
   const [isActivating, setIsActivating] = useState(false);
@@ -61,11 +62,11 @@ export function OnboardingActivationPanel({ record, onRecordChange }: Onboarding
           </div>
           <div>
             <p className="text-fs-sm text-muted-light">Email</p>
-            <p className="text-fs-base text-ink">{record.contactInfo.email}</p>
+            <p className="text-fs-base text-ink">{record.basicInfo.email}</p>
           </div>
           <div>
             <p className="text-fs-sm text-muted-light">Role</p>
-            <p className="text-fs-base text-ink">{ROLE_LABELS[record.roleAccess.role]}</p>
+            <p className="text-fs-base text-ink">{getRoleLabel(record.roleAccess.role)}</p>
           </div>
         </div>
 

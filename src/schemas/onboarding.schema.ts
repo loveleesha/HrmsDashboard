@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { EMPLOYMENT_TYPES, GENDERS } from "@/types/onboarding";
+import { EMPLOYMENT_TYPES, GENDERS, QUALIFICATION_TYPES } from "@/types/onboarding";
 
 const MOBILE_REGEX = /^[+]?[\d\s-]{7,15}$/;
 const PINCODE_REGEX = /^\d{4,8}$/;
+const YEAR_REGEX = /^\d{4}$/;
 
 export const basicInfoSchema = z.object({
   firstName: z.string().trim().min(1, "First name is required"),
@@ -13,13 +14,15 @@ export const basicInfoSchema = z.object({
     .refine((value) => !Number.isNaN(new Date(value).getTime()), "Enter a valid date")
     .refine((value) => new Date(value) <= new Date(), "Date of birth cannot be in the future"),
   gender: z.enum(GENDERS, { message: "Select a gender" }),
+  // The backend creates the User account from this step, so the email that
+  // account logs in with is collected here — not in Contact Information.
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
   profilePictureName: z.string().optional(),
   profilePictureUrl: z.string().optional(),
 });
 export type BasicInfoValues = z.infer<typeof basicInfoSchema>;
 
 export const contactInfoSchema = z.object({
-  email: z.string().trim().min(1, "Email is required").email("Enter a valid email address"),
   mobile: z.string().trim().min(1, "Mobile number is required").regex(MOBILE_REGEX, "Enter a valid mobile number"),
   alternateMobile: z
     .string()
@@ -57,17 +60,22 @@ export const technologySchema = z.object({
   technologies: z.array(z.string()).min(1, "Select at least one technology"),
 });
 
-export const qualificationEntrySchema = z.object({
-  qualification: z.string().trim().min(1, "Qualification is required"),
-  institution: z.string().trim().min(1, "Institution is required"),
-  specialization: z.string().trim().optional(),
-  passingYear: z
-    .string()
-    .min(1, "Passing year is required")
-    .regex(/^\d{4}$/, "Enter a valid 4-digit year"),
-  grade: z.string().trim().optional(),
-  certificateFileName: z.string().optional(),
-});
+export const qualificationEntrySchema = z
+  .object({
+    type: z.enum(QUALIFICATION_TYPES, { message: "Select a qualification type" }),
+    institution: z.string().trim().min(1, "Institution is required"),
+    boardOrDegree: z.string().trim().min(1, "Board / degree is required"),
+    specialization: z.string().trim().optional(),
+    startYear: z.string().min(1, "Start year is required").regex(YEAR_REGEX, "Enter a valid 4-digit year"),
+    endYear: z.string().min(1, "End year is required").regex(YEAR_REGEX, "Enter a valid 4-digit year"),
+    percentageOrGrade: z.string().trim().optional(),
+    certificateFileName: z.string().optional(),
+    certificateUrl: z.string().optional(),
+  })
+  .refine((data) => Number(data.endYear) >= Number(data.startYear), {
+    message: "End year can't be before start year",
+    path: ["endYear"],
+  });
 export type QualificationEntryValues = z.infer<typeof qualificationEntrySchema>;
 
 export const emergencyContactSchema = z.object({

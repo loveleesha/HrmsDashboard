@@ -5,12 +5,12 @@ import { Lock, ShieldCheck } from "lucide-react";
 import { FormField } from "@/components/molecules/FormField";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Badge } from "@/components/atoms/Badge";
+import { Spinner } from "@/components/atoms/Spinner";
 import { useAuth } from "@/hooks/use-auth";
-import { DEFAULT_ROLE_PERMISSIONS } from "@/lib/rbac/permissions";
+import { useRoles } from "@/hooks/use-roles";
 import { MODULE_DEFS } from "@/lib/rbac/modules";
 import { ACTION_KEYS, ACTION_LABELS, type ActionKey } from "@/types/rbac";
-import { ROLE_LABELS, type Role } from "@/types/user";
-import { ELEVATED_ONBOARDING_ROLES, ONBOARDING_ROLES, type RoleAccessInfo } from "@/types/onboarding";
+import { ELEVATED_ONBOARDING_ROLES, type RoleAccessInfo } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 import { cn } from "@/lib/cn";
 
@@ -24,6 +24,7 @@ export const RoleAccessStep = forwardRef<OnboardingStepHandle, RoleAccessStepPro
   ref
 ) {
   const { user } = useAuth();
+  const { roles, isLoading, getRoleLabel, getRolePermissions } = useRoles();
   const canAssignElevatedRoles = user?.role === "super_admin" || user?.role === "hr_admin";
 
   useImperativeHandle(ref, () => ({
@@ -31,11 +32,14 @@ export const RoleAccessStep = forwardRef<OnboardingStepHandle, RoleAccessStepPro
   }));
 
   const assignableRoles = useMemo(
-    () => ONBOARDING_ROLES.filter((role) => canAssignElevatedRoles || !ELEVATED_ONBOARDING_ROLES.includes(role)),
-    [canAssignElevatedRoles]
+    () =>
+      roles.filter(
+        (role) => canAssignElevatedRoles || !ELEVATED_ONBOARDING_ROLES.includes(role.name as (typeof ELEVATED_ONBOARDING_ROLES)[number])
+      ),
+    [roles, canAssignElevatedRoles]
   );
 
-  const rolePermissions = DEFAULT_ROLE_PERMISSIONS[value.role] ?? {};
+  const rolePermissions = getRolePermissions(value.role);
   const accessibleModules = MODULE_DEFS.filter((mod) => Object.values(rolePermissions[mod.key] ?? {}).some(Boolean));
 
   return (
@@ -49,13 +53,20 @@ export const RoleAccessStep = forwardRef<OnboardingStepHandle, RoleAccessStepPro
       </div>
 
       <FormField label="Assigned Role" htmlFor="assignedRole" required>
-        <FilterDropdown
-          label="Select Role"
-          options={assignableRoles.map((role) => ({ label: ROLE_LABELS[role], value: role }))}
-          value={value.role}
-          onChange={(v) => onChange({ role: v as Role })}
-          className="sm:w-72"
-        />
+        {isLoading && roles.length === 0 ? (
+          <div className="flex items-center gap-2 text-fs-base text-muted">
+            <Spinner size={16} />
+            Loading roles…
+          </div>
+        ) : (
+          <FilterDropdown
+            label="Select Role"
+            options={assignableRoles.map((role) => ({ label: role.label, value: role.name }))}
+            value={value.role}
+            onChange={(v) => onChange({ role: v })}
+            className="sm:w-72"
+          />
+        )}
       </FormField>
 
       {!canAssignElevatedRoles && (
@@ -68,7 +79,7 @@ export const RoleAccessStep = forwardRef<OnboardingStepHandle, RoleAccessStepPro
       <div className="rounded-xl border border-border bg-surface-card p-4">
         <p className="mb-3 flex items-center gap-2 text-fs-lg font-semibold text-ink">
           <ShieldCheck className="size-4 text-primary" />
-          Access Summary — {ROLE_LABELS[value.role]}
+          Access Summary — {getRoleLabel(value.role)}
         </p>
         {accessibleModules.length === 0 ? (
           <p className="text-fs-base text-muted">This role has no module access by default.</p>
@@ -87,7 +98,7 @@ export const RoleAccessStep = forwardRef<OnboardingStepHandle, RoleAccessStepPro
       <div>
         <p className="mb-2 text-fs-lg font-semibold text-ink">Role Permissions</p>
         <p className="mb-3 text-fs-sm text-muted-light">
-          Read-only preview of what {ROLE_LABELS[value.role]} can do per module. Final enforcement always happens
+          Read-only preview of what {getRoleLabel(value.role)} can do per module. Final enforcement always happens
           on the backend.
         </p>
         <div className="overflow-x-auto rounded-xl border border-border bg-surface-card">

@@ -9,84 +9,10 @@ import { setSessionCookie, clearSessionCookie } from "@/lib/session";
  */
 
 /**
- * Demo/simulation accounts used by unrelated mock features (Settings ->
- * Role & Access -> Assign Roles). Not read by the real login flow below —
- * kept only so those still-mocked screens keep working.
+ * Demo/simulation accounts used by an unrelated mock feature (Settings ->
+ * Role & Access -> Assign Roles). Not read by the real login flow below.
  */
-export const MOCK_USERS: User[] = [
-  {
-    id: "u-1000",
-    employeeId: "EMP-1000",
-    name: "Vikram Mehta",
-    email: "vikram.mehta@hikeassociate.com",
-    role: "super_admin",
-    designation: "Chief Executive Officer",
-    department: "Leadership",
-  },
-  {
-    id: "u-1021",
-    employeeId: "EMP-1021",
-    name: "Ananya Iyer",
-    email: "ananya.iyer@hikeassociate.com",
-    role: "hr_admin",
-    designation: "HR Manager",
-    department: "Human Resources",
-  },
-  {
-    id: "u-1042",
-    employeeId: "EMP-1042",
-    name: "Riya Kapoor",
-    email: "riya.kapoor@hikeassociate.com",
-    role: "hr_executive",
-    designation: "HR Executive",
-    department: "Human Resources",
-  },
-  {
-    id: "u-1015",
-    employeeId: "EMP-1015",
-    name: "Karan Malhotra",
-    email: "karan.malhotra@hikeassociate.com",
-    role: "manager",
-    designation: "Engineering Manager",
-    department: "Engineering",
-  },
-  {
-    id: "u-1101",
-    employeeId: "EMP-1101",
-    name: "Aarav Sharma",
-    email: "aarav.sharma@hikeassociate.com",
-    role: "employee",
-    designation: "Senior Software Engineer",
-    department: "Engineering",
-  },
-  {
-    id: "u-1033",
-    employeeId: "EMP-1033",
-    name: "Simran Kaur",
-    email: "simran.kaur@hikeassociate.com",
-    role: "recruiter",
-    designation: "Talent Acquisition Specialist",
-    department: "Recruitment",
-  },
-  {
-    id: "u-1027",
-    employeeId: "EMP-1027",
-    name: "Rohan Desai",
-    email: "rohan.desai@hikeassociate.com",
-    role: "payroll_admin",
-    designation: "Payroll Manager",
-    department: "Finance",
-  },
-  {
-    id: "u-1301",
-    employeeId: "EMP-1301",
-    name: "Tanvi Shah",
-    email: "tanvi.shah@hikeassociate.com",
-    role: "special_employee",
-    designation: "DevOps Engineer",
-    department: "Engineering",
-  },
-];
+export const MOCK_USERS: User[] = [];
 
 interface ApiUser {
   id?: string;

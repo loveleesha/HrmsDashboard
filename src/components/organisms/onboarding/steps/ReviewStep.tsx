@@ -6,8 +6,8 @@ import { Badge } from "@/components/atoms/Badge";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { Label } from "@/components/atoms/Label";
 import { Button } from "@/components/atoms/Button";
-import { ROLE_LABELS } from "@/types/user";
-import { employeeFullName, ONBOARDING_STEP_KEYS, type OnboardingRecord } from "@/types/onboarding";
+import { useRoles } from "@/hooks/use-roles";
+import { employeeFullName, GENDER_LABELS, ONBOARDING_STEP_KEYS, type OnboardingRecord } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 
 export interface ReviewStepProps {
@@ -58,6 +58,8 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
   { record, onEditStep, onConfirmChange, hideConfirmation },
   ref
 ) {
+  const { getRoleLabel } = useRoles();
+
   useImperativeHandle(ref, () => ({
     validate: () => record.confirmedAccurate,
   }));
@@ -77,17 +79,18 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
       <SectionCard title="Basic Information" stepKey="basicInfo" onEdit={() => onEditStep(stepIndex("basicInfo"))}>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <Field label="Full Name" value={employeeFullName(record.basicInfo)} />
+          <Field label="Email" value={record.basicInfo.email} />
           <Field label="Date of Birth" value={record.basicInfo.dateOfBirth} />
-          <Field label="Gender" value={record.basicInfo.gender} />
+          <Field label="Gender" value={record.basicInfo.gender ? GENDER_LABELS[record.basicInfo.gender] : undefined} />
         </div>
       </SectionCard>
 
       <SectionCard title="Contact Information" stepKey="contactInfo" onEdit={() => onEditStep(stepIndex("contactInfo"))}>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <Field label="Email" value={record.contactInfo.email} />
           <Field label="Mobile" value={record.contactInfo.mobile} />
           <Field label="City" value={record.contactInfo.city} />
           <Field label="State" value={record.contactInfo.state} />
+          <Field label="Pincode" value={record.contactInfo.pincode} />
         </div>
       </SectionCard>
 
@@ -105,7 +108,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
       </SectionCard>
 
       <SectionCard title="Role & Access" stepKey="roleAccess" onEdit={() => onEditStep(stepIndex("roleAccess"))}>
-        <Field label="Assigned Role" value={ROLE_LABELS[record.roleAccess.role]} />
+        <Field label="Assigned Role" value={getRoleLabel(record.roleAccess.role)} />
       </SectionCard>
 
       <SectionCard title="Technology & Skills" stepKey="technology" onEdit={() => onEditStep(stepIndex("technology"))}>
@@ -129,7 +132,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
           <ul className="flex flex-col gap-1.5 text-fs-base text-ink">
             {record.qualifications.map((q) => (
               <li key={q.id}>
-                {q.qualification} — {q.institution} ({q.passingYear})
+                {q.boardOrDegree || q.type} — {q.institution} ({q.startYear}–{q.endYear})
               </li>
             ))}
           </ul>
