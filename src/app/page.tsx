@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE, isJwtShaped } from "@/services/auth.service";
+import { SESSION_COOKIE, isJwtShaped } from "@/lib/session";
 
 export default async function RootPage() {
   const cookieStore = await cookies();

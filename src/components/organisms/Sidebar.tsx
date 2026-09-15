@@ -12,8 +12,25 @@ import type { NavItem } from "@/types/nav";
 import type { Role } from "@/types/user";
 import type { ModuleKey } from "@/types/rbac";
 
-function isItemActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+const ALL_NAV_HREFS: string[] = NAV_SECTIONS.flatMap((section) =>
+  section.items.flatMap((item) => [item.href, ...(item.children?.map((child) => child.href) ?? [])])
+);
+
+/**
+ * A child href can be a prefix of a sibling's (e.g. Employees' "/employees"
+ * vs its own child "/employees/onboarding"), so naive prefix matching marks
+ * both active at once. Resolve it the way routers do: whichever known href
+ * matches the current path most specifically (longest) wins, and every
+ * other item — even ones that also technically prefix-match — is inactive.
+ */
+function findActiveHref(pathname: string): string | null {
+  let best: string | null = null;
+  for (const href of ALL_NAV_HREFS) {
+    if (pathname === href || pathname.startsWith(`${href}/`)) {
+      if (!best || href.length > best.length) best = href;
+    }
+  }
+  return best;
 }
 
 function SidebarLink({
@@ -55,7 +72,7 @@ function SidebarLink({
 function SidebarItem({
   item,
   collapsed,
-  pathname,
+  activeHref,
   viewAsRole,
   can,
   onNavigate,
@@ -64,7 +81,7 @@ function SidebarItem({
 }: {
   item: NavItem;
   collapsed: boolean;
-  pathname: string;
+  activeHref: string | null;
   viewAsRole: Role;
   can: (module: ModuleKey, action?: "view") => boolean;
   onNavigate: () => void;
@@ -79,7 +96,7 @@ function SidebarItem({
       <SidebarLink
         item={item}
         collapsed={collapsed}
-        active={isItemActive(pathname, item.href)}
+        active={item.href === activeHref}
         label={label}
         onNavigate={onNavigate}
       />
@@ -92,7 +109,7 @@ function SidebarItem({
       <SidebarLink
         item={{ ...item, href: visibleChildren[0].href, icon: visibleChildren[0].icon }}
         collapsed={collapsed}
-        active={isItemActive(pathname, visibleChildren[0].href)}
+        active={visibleChildren[0].href === activeHref}
         label={visibleChildren[0].roleLabels?.[viewAsRole] ?? label}
         onNavigate={onNavigate}
       />
@@ -105,14 +122,14 @@ function SidebarItem({
       <SidebarLink
         item={{ ...item, href: visibleChildren[0].href }}
         collapsed
-        active={visibleChildren.some((child) => isItemActive(pathname, child.href))}
+        active={visibleChildren.some((child) => child.href === activeHref)}
         label={label}
         onNavigate={onNavigate}
       />
     );
   }
 
-  const anyChildActive = visibleChildren.some((child) => isItemActive(pathname, child.href));
+  const anyChildActive = visibleChildren.some((child) => child.href === activeHref);
   const isOpen = openGroups.has(item.href) || anyChildActive;
 
   return (
@@ -138,7 +155,7 @@ function SidebarItem({
               key={child.href}
               item={child}
               collapsed={collapsed}
-              active={isItemActive(pathname, child.href)}
+              active={child.href === activeHref}
               label={child.roleLabels?.[viewAsRole] ?? child.label}
               onNavigate={onNavigate}
               indent
@@ -171,6 +188,8 @@ export function Sidebar() {
       item.children ? item.children.some((child) => can(child.module, "view")) : can(item.module, "view")
     ),
   })).filter((section) => section.items.length > 0);
+
+  const activeHref = findActiveHref(pathname);
 
   return (
     <>
@@ -230,7 +249,7 @@ export function Sidebar() {
                     key={item.href}
                     item={item}
                     collapsed={collapsed}
-                    pathname={pathname}
+                    activeHref={activeHref}
                     viewAsRole={viewAsRole}
                     can={can}
                     onNavigate={closeMobile}

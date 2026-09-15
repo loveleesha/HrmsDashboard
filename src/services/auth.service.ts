@@ -1,26 +1,12 @@
-import type { Role, User } from "@/types/user";
+import { ROLES, type Role, type User } from "@/types/user";
+import { httpService } from "@/lib/http/http.service";
+import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 
 /**
  * Auth service — wired to the real HRMS backend (see the "Hrms Dashboard"
  * Postman collection, Auth Module). Every other module in this app is still
  * mock data; this is the first one wired to a live API.
  */
-
-export const SESSION_COOKIE = "hrms_session";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://backend-neon-phi-91.vercel.app";
-
-const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-
-/**
- * Cheap structural check (3 base64url segments), not a signature
- * verification — this only decides whether the session cookie is worth
- * trusting for route-gating in proxy.ts. Every real API call still sends
- * the token as-is and the backend is the one that actually verifies it.
- */
-export function isJwtShaped(value: string): boolean {
-  return JWT_SHAPE.test(value);
-}
 
 /**
  * Demo/simulation accounts used by unrelated mock features (Settings ->
@@ -129,53 +115,22 @@ interface MessageResponse {
   message?: string;
 }
 
-class ApiError extends Error {
-  status: number;
-  constructor(message: string, status: number) {
-    super(message);
-    this.status = status;
-  }
-}
-
-async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
-
-  const body = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new ApiError(body?.message ?? "Something went wrong. Please try again.", response.status);
-  }
-
-  return body as T;
-}
-
 /**
- * The real backend's role vocabulary (employee/hr/admin/super-admin, per the
- * collection's login test script) is coarser than this app's RBAC role set
+ * The real backend's role vocabulary (see the "HRMS API" Postman collection —
+ * User > Auth > Register's {{role}} and Admin > Auth > Register's
+ * {{adminRole}}) already matches this app's RBAC role set one-for-one
  * (super_admin/hr_admin/hr_executive/manager/employee/special_employee/
- * recruiter/payroll_admin — see src/types/user.ts). Until the backend grows
- * matching granularity, unknown or narrower roles fall back to the closest
- * equivalent so RBAC has *something* valid to key off, rather than silently
- * denying every permission.
+ * recruiter/payroll_admin — see src/types/user.ts). Only a genuinely
+ * unrecognized value (a role added backend-side that the frontend doesn't
+ * know about yet) falls back, so RBAC has *something* valid to key off
+ * rather than silently denying every permission.
  */
-const API_ROLE_MAP: Record<string, Role> = {
-  "super-admin": "super_admin",
-  superadmin: "super_admin",
-  admin: "hr_admin",
-  hr: "hr_executive",
-  employee: "employee",
-};
-
 function mapApiRole(apiRole: string): Role {
-  const mapped = API_ROLE_MAP[apiRole?.toLowerCase()];
-  if (!mapped) {
-    console.warn(`[auth] Unrecognized API role "${apiRole}" — defaulting to "employee".`);
-    return "employee";
+  if ((ROLES as readonly string[]).includes(apiRole)) {
+    return apiRole as Role;
   }
-  return mapped;
+  console.warn(`[auth] Unrecognized API role "${apiRole}" — defaulting to "employee".`);
+  return "employee";
 }
 
 function mapApiUser(apiUser: ApiUser): User {
@@ -192,26 +147,21 @@ function mapApiUser(apiUser: ApiUser): User {
   };
 }
 
-function setSessionCookie(token: string) {
-  const maxAgeSeconds = 60 * 60 * 24 * 7;
-  // Not httpOnly — this cookie only exists so the server-side proxy (see
-  // src/proxy.ts) can gate routes; the actual bearer token used for API
-  // calls lives in the zustand auth store (src/store/auth.store.ts).
-  document.cookie = `${SESSION_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${maxAgeSeconds}; samesite=lax`;
-}
+/** The two audiences the "HRMS API" collection logs in separately: regular
+ * users hit /api/user/login, admin-tier accounts hit /api/admin/login. */
+export type AuthAudience = "user" | "admin";
 
-function clearSessionCookie() {
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0`;
-}
+const LOGIN_ENDPOINT: Record<AuthAudience, string> = {
+  user: "/api/user/login",
+  admin: "/api/admin/login",
+};
 
 export async function login(
   email: string,
-  password: string
+  password: string,
+  audience: AuthAudience = "user"
 ): Promise<{ user: User; token: string; message: string }> {
-  const data = await apiRequest<AuthResponse>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password }),
-  });
+  const data = await httpService.post<AuthResponse>(LOGIN_ENDPOINT[audience], { email, password });
   setSessionCookie(data.token);
   return { user: mapApiUser(data.user), token: data.token, message: data.message ?? "Login successful." };
 }
@@ -228,10 +178,7 @@ export async function register(params: {
   password: string;
   role: RegisterRole;
 }): Promise<{ user: User; message: string }> {
-  const data = await apiRequest<RegisterResponse>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify(params),
-  });
+  const data = await httpService.post<RegisterResponse>("/api/auth/register", params);
   return { user: mapApiUser(data.user), message: data.message ?? "Registration successful." };
 }
 
@@ -239,19 +186,13 @@ export async function verifyOtp(
   email: string,
   otp: string
 ): Promise<{ user: User; token: string; message: string }> {
-  const data = await apiRequest<AuthResponse>("/api/auth/verify-otp", {
-    method: "POST",
-    body: JSON.stringify({ email, otp }),
-  });
+  const data = await httpService.post<AuthResponse>("/api/auth/verify-otp", { email, otp });
   setSessionCookie(data.token);
   return { user: mapApiUser(data.user), token: data.token, message: data.message ?? "Account verified." };
 }
 
 export async function forgotPassword(email: string): Promise<{ message: string }> {
-  const data = await apiRequest<MessageResponse>("/api/auth/forgot-password", {
-    method: "POST",
-    body: JSON.stringify({ email }),
-  });
+  const data = await httpService.post<MessageResponse>("/api/auth/forgot-password", { email });
   return { message: data?.message ?? "If an account with that email exists, a password reset link has been sent." };
 }
 
@@ -261,24 +202,19 @@ export async function resetPassword(params: {
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const data = await apiRequest<MessageResponse>("/api/auth/reset-password", {
-    method: "POST",
-    body: JSON.stringify(params),
-  });
+  const data = await httpService.post<MessageResponse>("/api/auth/reset-password", params);
   return { message: data?.message ?? "Password reset successfully." };
 }
 
+/**
+ * No token param — the shared Axios instance (src/lib/http/interceptor.ts)
+ * attaches the current session's Bearer token to every request automatically.
+ */
 export async function changePassword(params: {
-  token: string;
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const { token, ...body } = params;
-  const data = await apiRequest<MessageResponse>("/api/auth/change-password", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
-  });
+  const data = await httpService.post<MessageResponse>("/api/auth/change-password", params);
   return { message: data?.message ?? "Password updated successfully." };
 }

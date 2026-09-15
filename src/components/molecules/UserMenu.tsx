@@ -5,7 +5,7 @@ import { ChevronDown, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/atoms/Avatar";
-import { ROLE_LABELS } from "@/types/user";
+import { ROLE_LABELS, isAdminTierRole } from "@/types/user";
 import { useAuth } from "@/hooks/use-auth";
 
 export function UserMenu() {
@@ -70,9 +70,10 @@ export function UserMenu() {
             type="button"
             role="menuitem"
             onClick={() => {
+              const loginRoute = isAdminTierRole(user.role) ? "/admin/login" : "/login";
               logout();
               setOpen(false);
-              router.push("/login");
+              router.push(loginRoute);
             }}
             className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-fs-base text-danger hover:bg-danger-bg"
           >

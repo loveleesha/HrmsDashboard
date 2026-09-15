@@ -5,7 +5,6 @@ import { Menu, Moon, Sun } from "lucide-react";
 import { SearchInput } from "@/components/molecules/SearchInput";
 import { UserMenu } from "@/components/molecules/UserMenu";
 import { NotificationPanel, type NotificationItem } from "@/components/organisms/NotificationPanel";
-import { RoleSwitcher } from "@/components/organisms/RoleSwitcher";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useTheme } from "@/hooks/use-theme";
 import { getDashboardData } from "@/services/dashboard.service";
@@ -52,8 +51,6 @@ export function Header() {
           className="hidden max-w-sm sm:block"
         />
       </div>
-
-      <RoleSwitcher />
 
       <button
         type="button"

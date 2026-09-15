@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useAuthStore } from "@/store/auth.store";
-import { login as loginRequest, logout as logoutRequest } from "@/services/auth.service";
+import { login as loginRequest, logout as logoutRequest, type AuthAudience } from "@/services/auth.service";
 
 /**
  * No context needed — zustand's store is already global. This wrapper exists
@@ -20,8 +20,8 @@ export function useAuth() {
   const setSession = useAuthStore((state) => state.setSession);
   const clearSession = useAuthStore((state) => state.clearSession);
 
-  async function login(email: string, password: string) {
-    const { user: loggedInUser, token: sessionToken, message } = await loginRequest(email, password);
+  async function login(email: string, password: string, audience: AuthAudience = "user") {
+    const { user: loggedInUser, token: sessionToken, message } = await loginRequest(email, password, audience);
     setSession(loggedInUser, sessionToken);
     return { user: loggedInUser, message };
   }

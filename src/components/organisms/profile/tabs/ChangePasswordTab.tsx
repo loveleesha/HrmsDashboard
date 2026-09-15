@@ -9,11 +9,12 @@ import { Button } from "@/components/atoms/Button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { changePassword } from "@/services/auth.service";
+import { isAdminTierRole } from "@/types/user";
 
 export function ChangePasswordTab() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { token, logout } = useAuth();
+  const { token, user, logout } = useAuth();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -39,7 +40,6 @@ export function ChangePasswordTab() {
     setIsSubmitting(true);
     try {
       const { message } = await changePassword({
-        token,
         oldPassword: current,
         newPassword: next,
         confirmPassword: confirm,
@@ -48,8 +48,9 @@ export function ChangePasswordTab() {
       // The old session token is still technically valid until it expires,
       // so just navigating to /login would get bounced straight back to the
       // dashboard by the route guard — clear it here to force a real re-login.
+      const loginRoute = isAdminTierRole(user?.role) ? "/admin/login" : "/login";
       logout();
-      router.push("/login");
+      router.push(loginRoute);
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not update password.", "error");
       setIsSubmitting(false);
