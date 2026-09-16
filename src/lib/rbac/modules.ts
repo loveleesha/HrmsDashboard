@@ -32,7 +32,7 @@ import type { ModuleDef } from "@/types/rbac";
  */
 export const MODULE_DEFS: ModuleDef[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, actions: ["view"], group: "Overview" },
-  { key: "employees", label: "Employees", icon: Users, actions: ["view", "add", "edit", "delete", "export"], group: "Workforce" },
+  { key: "employees", label: "Employees", icon: Users, actions: ["view", "add", "edit", "delete", "toggleStatus", "export"], group: "Workforce" },
   {
     key: "employeeOnboarding",
     label: "Employee Onboarding",

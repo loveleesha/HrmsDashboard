@@ -57,6 +57,13 @@ export function FileUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [trackedPreviewUrl, setTrackedPreviewUrl] = useState(value?.previewUrl);
+
+  if (value?.previewUrl !== trackedPreviewUrl) {
+    setTrackedPreviewUrl(value?.previewUrl);
+    setPreviewFailed(false);
+  }
 
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
@@ -91,6 +98,13 @@ export function FileUploadField({
     setLocalError(null);
     if (inputRef.current) inputRef.current.value = "";
   }
+
+  // A resumed record's previewUrl points at a remote asset (unlike a
+  // freshly-selected file's local blob/data URL), which can 404 or be
+  // unreachable — fall back to the generic file row instead of a broken
+  // image icon. Reset whenever the value changes so a new file gets a
+  // fresh attempt.
+  const showImagePreview = imagePreview && value?.previewUrl && !previewFailed;
 
   const displayError = error ?? localError ?? undefined;
 
@@ -131,10 +145,15 @@ export function FileUploadField({
             {accept ? accept.replaceAll(",", ", ") : "Any file"} up to {maxSizeMb}MB
           </span>
         </label>
-      ) : imagePreview && value.previewUrl ? (
+      ) : showImagePreview ? (
         <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-card p-3">
-          {/* eslint-disable-next-line @next/next/no-img-element -- local blob/data URL preview, not an optimizable remote asset */}
-          <img src={value.previewUrl} alt="Preview" className="size-16 shrink-0 rounded-lg object-cover" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- local blob/data URL preview or a remote asset, not optimizable by next/image without domain config */}
+          <img
+            src={value.previewUrl}
+            alt="Preview"
+            onError={() => setPreviewFailed(true)}
+            className="size-16 shrink-0 rounded-lg object-cover"
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-fs-base font-medium text-ink">{value.fileName}</p>
             <p className="text-fs-sm text-muted-light">Uploaded</p>

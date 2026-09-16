@@ -5,25 +5,28 @@ import { UserX } from "lucide-react";
 import { Spinner } from "@/components/atoms/Spinner";
 import { Button } from "@/components/atoms/Button";
 import { EmployeeCard } from "@/components/organisms/employees/EmployeeCard";
-import { TopPerformers } from "@/components/organisms/employees/TopPerformers";
 import {
   EmployeeFiltersBar,
   type EmployeeFiltersState,
 } from "@/components/organisms/employees/EmployeeFiltersBar";
 import { EmployeeProfileDrawer } from "@/components/organisms/employees/EmployeeProfileDrawer";
-import { getEmployees } from "@/services/employee.service";
+import { useRBAC } from "@/hooks/use-rbac";
+import { useToast } from "@/hooks/use-toast";
+import { getEmployees, updateEmployeeStatus } from "@/services/employee.service";
 import type { Employee } from "@/types/employee";
 
 const DEFAULT_FILTERS: EmployeeFiltersState = {
   search: "",
   department: "",
-  level: "",
+  employmentType: "",
   status: "",
   location: "",
-  sort: "performance-desc",
+  sort: "name-asc",
 };
 
 export function EmployeeDirectory() {
+  const { can } = useRBAC();
+  const { showToast } = useToast();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [filters, setFilters] = useState<EmployeeFiltersState>(DEFAULT_FILTERS);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -38,10 +41,9 @@ export function EmployeeDirectory() {
     };
   }, []);
 
-  const rankMap = useMemo(() => {
-    if (!employees) return new Map<string, number>();
-    const sorted = [...employees].sort((a, b) => b.performanceScore - a.performanceScore);
-    return new Map(sorted.map((employee, index) => [employee.id, index + 1]));
+  const locationOptions = useMemo(() => {
+    const distinct = new Set((employees ?? []).map((e) => e.location).filter((l): l is string => Boolean(l)));
+    return [...distinct].sort();
   }, [employees]);
 
   const filteredEmployees = useMemo(() => {
@@ -53,25 +55,21 @@ export function EmployeeDirectory() {
       const matchesQuery =
         !query ||
         employee.name.toLowerCase().includes(query) ||
-        employee.id.toLowerCase().includes(query) ||
+        (employee.employeeId ?? "").toLowerCase().includes(query) ||
         employee.designation.toLowerCase().includes(query) ||
         employee.department.toLowerCase().includes(query) ||
         employee.skills.some((skill) => skill.toLowerCase().includes(query));
 
       const matchesDepartment = !filters.department || employee.department === filters.department;
-      const matchesLevel = !filters.level || employee.level === filters.level;
+      const matchesEmploymentType = !filters.employmentType || employee.employmentType === filters.employmentType;
       const matchesStatus = !filters.status || employee.status === filters.status;
-      const matchesLocation = !filters.location || employee.workLocationType === filters.location;
+      const matchesLocation = !filters.location || employee.location === filters.location;
 
-      return matchesQuery && matchesDepartment && matchesLevel && matchesStatus && matchesLocation;
+      return matchesQuery && matchesDepartment && matchesEmploymentType && matchesStatus && matchesLocation;
     });
 
     const sorted = [...result].sort((a, b) => {
       switch (filters.sort) {
-        case "performance-desc":
-          return b.performanceScore - a.performanceScore;
-        case "performance-asc":
-          return a.performanceScore - b.performanceScore;
         case "name-asc":
           return a.name.localeCompare(b.name);
         case "name-desc":
@@ -87,8 +85,20 @@ export function EmployeeDirectory() {
   }, [employees, filters]);
 
   const hasActiveFilters = Boolean(
-    filters.search || filters.department || filters.level || filters.status || filters.location
+    filters.search || filters.department || filters.employmentType || filters.status || filters.location
   );
+
+  async function handleUpdateStatus(employee: Employee, nextStatus: "active" | "inactive") {
+    try {
+      await updateEmployeeStatus(employee.id, nextStatus);
+      setEmployees((prev) => prev?.map((e) => (e.id === employee.id ? { ...e, status: nextStatus } : e)) ?? prev);
+      setSelectedEmployee((prev) => (prev && prev.id === employee.id ? { ...prev, status: nextStatus } : prev));
+      showToast(`${employee.name} is now ${nextStatus === "active" ? "active" : "inactive"}.`);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not update employee status.", "error");
+      throw err;
+    }
+  }
 
   if (!employees) {
     return (
@@ -101,12 +111,11 @@ export function EmployeeDirectory() {
 
   return (
     <div>
-      <TopPerformers employees={employees} />
-
       <EmployeeFiltersBar
         filters={filters}
         onChange={setFilters}
         hasActiveFilters={hasActiveFilters}
+        locationOptions={locationOptions}
       />
 
       <p className="mb-3 text-fs-base text-muted">
@@ -120,7 +129,9 @@ export function EmployeeDirectory() {
           </span>
           <h2 className="text-fs-4xl font-semibold text-ink">No employees found</h2>
           <p className="max-w-md text-fs-lg text-muted">
-            Try searching with a different name, role or department.
+            {employees.length === 0
+              ? "Onboarded employees will show up here."
+              : "Try searching with a different name, role or department."}
           </p>
           {hasActiveFilters && (
             <Button variant="secondary" size="sm" onClick={() => setFilters(DEFAULT_FILTERS)}>
@@ -131,17 +142,17 @@ export function EmployeeDirectory() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredEmployees.map((employee) => (
-            <EmployeeCard
-              key={employee.id}
-              employee={employee}
-              rank={rankMap.get(employee.id)}
-              onViewProfile={setSelectedEmployee}
-            />
+            <EmployeeCard key={employee.id} employee={employee} onViewProfile={setSelectedEmployee} />
           ))}
         </div>
       )}
 
-      <EmployeeProfileDrawer employee={selectedEmployee} onClose={() => setSelectedEmployee(null)} />
+      <EmployeeProfileDrawer
+        employee={selectedEmployee}
+        onClose={() => setSelectedEmployee(null)}
+        onUpdateStatus={handleUpdateStatus}
+        canUpdateStatus={can("employees", "toggleStatus")}
+      />
     </div>
   );
 }

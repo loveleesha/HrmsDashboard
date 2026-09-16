@@ -221,8 +221,8 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
       <div className="min-w-0 flex-1">
         <div className="rounded-xl border border-border bg-surface-card p-5 sm:p-6">{renderStep()}</div>
 
-        <div className="mt-4 flex flex-col-reverse gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-2">
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
             <Button variant="secondary" onClick={handleBack} disabled={isFirstStep || isSaving}>
               Back
             </Button>
@@ -231,7 +231,7 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
               Cancel
             </Button>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
             <Button variant="secondary" onClick={handleSaveDraft} isLoading={isSaving}>
               Save as Draft
             </Button>

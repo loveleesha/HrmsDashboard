@@ -12,7 +12,13 @@ export const basicInfoSchema = z.object({
     .string()
     .min(1, "Date of birth is required")
     .refine((value) => !Number.isNaN(new Date(value).getTime()), "Enter a valid date")
-    .refine((value) => new Date(value) <= new Date(), "Date of birth cannot be in the future"),
+    .refine((value) => new Date(value) <= new Date(), "Date of birth cannot be in the future")
+    .refine((value) => {
+      const dob = new Date(value);
+      const sixteenYearsAgo = new Date();
+      sixteenYearsAgo.setFullYear(sixteenYearsAgo.getFullYear() - 16);
+      return dob <= sixteenYearsAgo;
+    }, "Must be at least 16 years old"),
   gender: z.enum(GENDERS, { message: "Select a gender" }),
   // The backend creates the User account from this step, so the email that
   // account logs in with is collected here — not in Contact Information.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlayCircle, Trash2, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Spinner } from "@/components/atoms/Spinner";
 import { SearchInput } from "@/components/molecules/SearchInput";
+import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { ActionMenu } from "@/components/molecules/ActionMenu";
 import { ConfirmModal } from "@/components/molecules/ConfirmModal";
 import { Table, type TableColumn } from "@/components/molecules/Table";
@@ -15,6 +16,7 @@ import { useRBAC } from "@/hooks/use-rbac";
 import { useRoles } from "@/hooks/use-roles";
 import { useToast } from "@/hooks/use-toast";
 import { discardOnboarding, getOnboardingRecords } from "@/services/onboarding.service";
+import { DEPARTMENTS } from "@/types/employee";
 import { ONBOARDING_STEP_KEYS, employeeFullName, type OnboardingRecord } from "@/types/onboarding";
 
 export function OnboardingList() {
@@ -24,34 +26,27 @@ export function OnboardingList() {
   const { showToast } = useToast();
   const [records, setRecords] = useState<OnboardingRecord[] | null>(null);
   const [search, setSearch] = useState("");
+  const [department, setDepartment] = useState("");
   const [discardTarget, setDiscardTarget] = useState<OnboardingRecord | null>(null);
   const [isDiscarding, setIsDiscarding] = useState(false);
 
+  // Search and department are real server-side filters (see
+  // employee.service.ts's listEmployeesRemote) — debounce the search input
+  // so it doesn't refetch on every keystroke.
   useEffect(() => {
     let isMounted = true;
-    getOnboardingRecords().then((result) => {
-      if (isMounted) setRecords(result);
-    });
+    const timer = setTimeout(() => {
+      getOnboardingRecords({ search: search.trim() || undefined, department: department || undefined }).then(
+        (result) => {
+          if (isMounted) setRecords(result);
+        }
+      );
+    }, 300);
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
-  }, []);
-
-  const filtered = useMemo(() => {
-    if (!records) return [];
-    const query = search.trim().toLowerCase();
-    if (!query) return records;
-
-    return records.filter((record) => {
-      const name = employeeFullName(record.basicInfo).toLowerCase();
-      return (
-        name.includes(query) ||
-        record.basicInfo.email.toLowerCase().includes(query) ||
-        record.professionalInfo.department.toLowerCase().includes(query) ||
-        (record.employeeId ?? "").toLowerCase().includes(query)
-      );
-    });
-  }, [records, search]);
+  }, [search, department]);
 
   async function handleDiscardConfirmed() {
     if (!discardTarget) return;
@@ -124,6 +119,8 @@ export function OnboardingList() {
     },
   ];
 
+  const hasActiveFilters = Boolean(search || department);
+
   if (!records) {
     return (
       <div className="flex items-center justify-center gap-2 py-24 text-muted">
@@ -135,26 +132,34 @@ export function OnboardingList() {
 
   return (
     <div>
-      <div className="mb-4 rounded-xl border border-border bg-surface-card p-4">
+      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row">
         <SearchInput
-          placeholder="Search by name, email, department, Employee ID…"
+          placeholder="Search by name, email, department, Employee ID, role…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          className="sm:flex-1"
+        />
+        <FilterDropdown
+          label="Department"
+          options={DEPARTMENTS.map((d) => ({ label: d, value: d }))}
+          value={department}
+          onChange={setDepartment}
+          className="sm:w-48"
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {records.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-card px-6 py-20 text-center">
           <span className="flex size-14 items-center justify-center rounded-full bg-primary-soft text-primary">
             <Users className="size-7" />
           </span>
           <h2 className="text-fs-4xl font-semibold text-ink">No onboarding records found</h2>
           <p className="max-w-md text-fs-lg text-muted">
-            {records.length === 0
-              ? "Start onboarding a new hire to see them listed here."
-              : "Try a different search term."}
+            {hasActiveFilters
+              ? "Try a different search term or department."
+              : "Start onboarding a new hire to see them listed here."}
           </p>
-          {can("employeeOnboarding", "add") && records.length === 0 && (
+          {can("employeeOnboarding", "add") && !hasActiveFilters && (
             <Button onClick={() => router.push("/employees/onboarding/new")}>
               <UserPlus className="size-4" />
               Add Employee
@@ -162,7 +167,7 @@ export function OnboardingList() {
           )}
         </div>
       ) : (
-        <Table columns={columns} data={filtered} keyField={(record) => record.id} />
+        <Table columns={columns} data={records} keyField={(record) => record.id} />
       )}
 
       <ConfirmModal

@@ -1,34 +1,38 @@
-import {
-  Mail,
-  Phone,
-  Building2,
-  MapPin,
-  CalendarDays,
-  BadgeCheck,
-  Award,
-} from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Mail, Phone, Building2, MapPin, CalendarDays, BadgeCheck, Power } from "lucide-react";
 import { Drawer } from "@/components/molecules/Drawer";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Badge } from "@/components/atoms/Badge";
+import { Button } from "@/components/atoms/Button";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
-import { Meter } from "@/components/molecules/Meter";
-import { getPerformanceLabel, PERFORMANCE_BAR_COLOR, PERFORMANCE_TEXT_COLOR } from "@/lib/performance";
-import type { Employee } from "@/types/employee";
-import { cn } from "@/lib/cn";
-
-const RECENT_ACTIVITY = [
-  "Submitted timesheet for last week",
-  "Completed \"Q3 Security Training\" module",
-  "Received a Team Player recognition",
-];
+import { ConfirmModal } from "@/components/molecules/ConfirmModal";
+import { EMPLOYMENT_STATUS_LABELS, type Employee } from "@/types/employee";
 
 export interface EmployeeProfileDrawerProps {
   employee: Employee | null;
   onClose: () => void;
+  onUpdateStatus: (employee: Employee, nextStatus: "active" | "inactive") => Promise<void>;
+  canUpdateStatus: boolean;
 }
 
-export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDrawerProps) {
-  const label = employee ? getPerformanceLabel(employee.performanceScore) : "Average";
+export function EmployeeProfileDrawer({ employee, onClose, onUpdateStatus, canUpdateStatus }: EmployeeProfileDrawerProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const nextStatus: "active" | "inactive" = employee?.status === "active" ? "inactive" : "active";
+
+  async function handleConfirm() {
+    if (!employee) return;
+    setIsUpdating(true);
+    try {
+      await onUpdateStatus(employee, nextStatus);
+      setConfirmOpen(false);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   return (
     <Drawer open={Boolean(employee)} onClose={onClose} title="Employee Profile">
@@ -38,35 +42,41 @@ export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDraw
             <Avatar name={employee.name} imageUrl={employee.avatarUrl} size="lg" />
             <div>
               <p className="text-fs-2xl font-semibold text-ink">{employee.name}</p>
-              <p className="text-fs-base text-muted">{employee.designation}</p>
+              <p className="text-fs-base text-muted">{employee.designation || "—"}</p>
             </div>
             <div className="flex items-center gap-2">
-              <StatusBadge status={employee.status} />
-              <Badge tone="neutral">{employee.id}</Badge>
+              <StatusBadge status={EMPLOYMENT_STATUS_LABELS[employee.status]} />
+              {employee.employeeId && <Badge tone="neutral">{employee.employeeId}</Badge>}
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-2 rounded-lg border border-border p-3 text-fs-base sm:grid-cols-2">
             <div className="flex items-center gap-2 text-muted">
               <Building2 className="size-4 shrink-0" />
-              {employee.department}
+              {employee.department || "—"}
             </div>
-            <div className="flex items-center gap-2 text-muted">
-              <MapPin className="size-4 shrink-0" />
-              {employee.city} · {employee.workLocationType}
-            </div>
+            {employee.location && (
+              <div className="flex items-center gap-2 text-muted">
+                <MapPin className="size-4 shrink-0" />
+                {employee.location}
+              </div>
+            )}
             <div className="flex items-center gap-2 text-muted">
               <Mail className="size-4 shrink-0" />
-              <span className="truncate">{employee.email}</span>
+              <span className="truncate">{employee.email || "—"}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted">
-              <Phone className="size-4 shrink-0" />
-              {employee.phone}
-            </div>
-            <div className="flex items-center gap-2 text-muted">
-              <CalendarDays className="size-4 shrink-0" />
-              Joined {new Date(employee.joinedDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-            </div>
+            {employee.phone && (
+              <div className="flex items-center gap-2 text-muted">
+                <Phone className="size-4 shrink-0" />
+                {employee.phone}
+              </div>
+            )}
+            {employee.joinedDate && (
+              <div className="flex items-center gap-2 text-muted">
+                <CalendarDays className="size-4 shrink-0" />
+                Joined {new Date(employee.joinedDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+              </div>
+            )}
             {employee.manager && (
               <div className="flex items-center gap-2 text-muted">
                 <BadgeCheck className="size-4 shrink-0" />
@@ -75,75 +85,47 @@ export function EmployeeProfileDrawer({ employee, onClose }: EmployeeProfileDraw
             )}
           </div>
 
-          <div>
-            <p className="mb-2 text-fs-base font-semibold text-ink">Skills</p>
-            <div className="flex flex-wrap gap-1.5">
-              {employee.skills.map((skill) => (
-                <Badge key={skill} tone="neutral">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border p-3">
-            <div className="mb-1.5 flex items-center justify-between text-fs-base">
-              <span className="font-semibold text-ink">Performance</span>
-              <span className={cn("font-semibold", PERFORMANCE_TEXT_COLOR[label])}>{label}</span>
-            </div>
-            <Meter value={employee.performanceScore} colorClassName={PERFORMANCE_BAR_COLOR[label]} />
-            <p className="mt-1 text-right text-fs-sm text-muted">{employee.performanceScore}%</p>
-          </div>
-
-          <div>
-            <p className="mb-2 flex items-center gap-1.5 text-fs-base font-semibold text-ink">
-              <Award className="size-4 text-primary" />
-              Recognition Badges
-            </p>
-            {employee.badges.length > 0 ? (
+          {employee.skills.length > 0 && (
+            <div>
+              <p className="mb-2 text-fs-base font-semibold text-ink">Skills</p>
               <div className="flex flex-wrap gap-1.5">
-                {employee.badges.map((badge) => (
-                  <Badge key={badge} tone="primary">
-                    {badge}
+                {employee.skills.map((skill) => (
+                  <Badge key={skill} tone="neutral">
+                    {skill}
                   </Badge>
                 ))}
               </div>
-            ) : (
-              <p className="text-fs-base text-muted">No recognitions yet.</p>
-            )}
-          </div>
-
-          <div className="rounded-lg border border-border p-3">
-            <p className="mb-2 text-fs-base font-semibold text-ink">Attendance Summary</p>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <p className="text-fs-2xl font-semibold text-success">21</p>
-                <p className="text-fs-sm text-muted">Present</p>
-              </div>
-              <div>
-                <p className="text-fs-2xl font-semibold text-warning">3</p>
-                <p className="text-fs-sm text-muted">Leave</p>
-              </div>
-              <div>
-                <p className="text-fs-2xl font-semibold text-ink">92.5%</p>
-                <p className="text-fs-sm text-muted">Rate</p>
-              </div>
             </div>
-          </div>
+          )}
 
-          <div>
-            <p className="mb-2 text-fs-base font-semibold text-ink">Recent Activity</p>
-            <ul className="flex flex-col gap-2">
-              {RECENT_ACTIVITY.map((activity) => (
-                <li key={activity} className="flex items-start gap-2 text-fs-base text-muted">
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
-                  {activity}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {canUpdateStatus && (employee.status === "active" || employee.status === "inactive") && (
+            <Button
+              variant={nextStatus === "inactive" ? "danger" : "primary"}
+              size="sm"
+              onClick={() => setConfirmOpen(true)}
+            >
+              <Power className="size-3.5" />
+              {nextStatus === "inactive" ? "Deactivate Employee" : "Activate Employee"}
+            </Button>
+          )}
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirm}
+        title={nextStatus === "inactive" ? "Deactivate Employee" : "Activate Employee"}
+        description={employee?.name}
+        body={
+          nextStatus === "inactive"
+            ? "This deactivates the employee's account — they will no longer be able to sign in."
+            : "This reactivates the employee's account and restores sign-in access."
+        }
+        confirmLabel={nextStatus === "inactive" ? "Deactivate" : "Activate"}
+        tone={nextStatus === "inactive" ? "danger" : "default"}
+        isConfirming={isUpdating}
+      />
     </Drawer>
   );
 }

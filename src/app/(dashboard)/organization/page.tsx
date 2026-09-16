@@ -32,13 +32,16 @@ export default function OrganizationPage() {
     };
   }, []);
 
-  const cities = useMemo(() => new Set((employees ?? []).map((e) => e.city)), [employees]);
+  const locations = useMemo(
+    () => new Set((employees ?? []).map((e) => e.location).filter((location): location is string => Boolean(location))),
+    [employees]
+  );
 
   const departmentSummary = useMemo(() => {
     if (!employees) return [];
     return DEPARTMENTS.map((department) => {
       const members = employees.filter((e) => e.department === department);
-      const head = members.find((m) => m.level === "Manager") ?? members[0];
+      const head = members.find((m) => m.designation.toLowerCase().includes("manager")) ?? members[0];
       return { department, members, head };
     });
   }, [employees]);
@@ -57,7 +60,7 @@ export default function OrganizationPage() {
           <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatCard label="Total Employees" value={String(employees.length)} icon={Users} />
             <StatCard label="Departments" value={String(DEPARTMENTS.length)} icon={Building2} />
-            <StatCard label="Office Locations" value={String(cities.size)} icon={MapPin} />
+            <StatCard label="Office Locations" value={String(locations.size)} icon={MapPin} />
           </div>
 
           <div className="mb-4 flex items-center gap-2">

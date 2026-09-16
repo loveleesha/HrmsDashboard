@@ -1,7 +1,7 @@
 import { Mail, Phone, MapPin, Building2, CalendarDays, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
-import type { Employee } from "@/types/employee";
+import { EMPLOYMENT_STATUS_LABELS, type Employee } from "@/types/employee";
 
 export function BasicInfoTab({ employee }: { employee: Employee }) {
   return (
@@ -19,7 +19,7 @@ export function BasicInfoTab({ employee }: { employee: Employee }) {
           </div>
           <div className="flex items-center gap-2 text-muted">
             <MapPin className="size-4 shrink-0" />
-            {employee.city} · {employee.workLocationType}
+            {employee.location ?? "—"}
           </div>
         </div>
       </div>
@@ -29,17 +29,19 @@ export function BasicInfoTab({ employee }: { employee: Employee }) {
         <div className="flex flex-col gap-3 text-fs-base">
           <div className="flex items-center gap-2 text-muted">
             <Building2 className="size-4 shrink-0" />
-            {employee.department} · {employee.level}
+            {employee.department}
           </div>
-          <div className="flex items-center gap-2 text-muted">
-            <CalendarDays className="size-4 shrink-0" />
-            Joined{" "}
-            {new Date(employee.joinedDate).toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </div>
+          {employee.joinedDate && (
+            <div className="flex items-center gap-2 text-muted">
+              <CalendarDays className="size-4 shrink-0" />
+              Joined{" "}
+              {new Date(employee.joinedDate).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+          )}
           {employee.manager && (
             <div className="flex items-center gap-2 text-muted">
               <BadgeCheck className="size-4 shrink-0" />
@@ -47,7 +49,7 @@ export function BasicInfoTab({ employee }: { employee: Employee }) {
             </div>
           )}
           <div className="flex items-center gap-2">
-            <StatusBadge status={employee.status} />
+            <StatusBadge status={EMPLOYMENT_STATUS_LABELS[employee.status]} />
           </div>
         </div>
       </div>

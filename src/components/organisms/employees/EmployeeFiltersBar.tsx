@@ -2,23 +2,12 @@ import { X } from "lucide-react";
 import { SearchInput } from "@/components/molecules/SearchInput";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Button } from "@/components/atoms/Button";
-import {
-  DEPARTMENTS,
-  DESIGNATION_LEVELS,
-  EMPLOYMENT_STATUSES,
-  WORK_LOCATION_TYPES,
-} from "@/types/employee";
+import { DEPARTMENTS, EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/types/employee";
+import { EMPLOYMENT_TYPES } from "@/types/onboarding";
 
-export type SortOption =
-  | "performance-desc"
-  | "performance-asc"
-  | "name-asc"
-  | "name-desc"
-  | "department";
+export type SortOption = "name-asc" | "name-desc" | "department";
 
 const SORT_OPTIONS: { label: string; value: SortOption }[] = [
-  { label: "Performance: High → Low", value: "performance-desc" },
-  { label: "Performance: Low → High", value: "performance-asc" },
   { label: "Name: A → Z", value: "name-asc" },
   { label: "Name: Z → A", value: "name-desc" },
   { label: "Department", value: "department" },
@@ -27,7 +16,7 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
 export interface EmployeeFiltersState {
   search: string;
   department: string;
-  level: string;
+  employmentType: string;
   status: string;
   location: string;
   sort: SortOption;
@@ -37,9 +26,11 @@ export interface EmployeeFiltersBarProps {
   filters: EmployeeFiltersState;
   onChange: (filters: EmployeeFiltersState) => void;
   hasActiveFilters: boolean;
+  /** Distinct location values actually present in the loaded employees — location is free text server-side, not a fixed enum. */
+  locationOptions: string[];
 }
 
-export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters }: EmployeeFiltersBarProps) {
+export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters, locationOptions }: EmployeeFiltersBarProps) {
   function update<K extends keyof EmployeeFiltersState>(key: K, value: EmployeeFiltersState[K]) {
     onChange({ ...filters, [key]: value });
   }
@@ -71,26 +62,28 @@ export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters }: Empl
           className="w-[calc(50%-4px)] sm:w-40"
         />
         <FilterDropdown
-          label="Designation"
-          options={DESIGNATION_LEVELS.map((d) => ({ label: d, value: d }))}
-          value={filters.level}
-          onChange={(value) => update("level", value)}
+          label="Employment Type"
+          options={EMPLOYMENT_TYPES.map((t) => ({ label: t, value: t }))}
+          value={filters.employmentType}
+          onChange={(value) => update("employmentType", value)}
           className="w-[calc(50%-4px)] sm:w-40"
         />
         <FilterDropdown
           label="Status"
-          options={EMPLOYMENT_STATUSES.map((s) => ({ label: s, value: s }))}
+          options={EMPLOYMENT_STATUSES.map((s) => ({ label: EMPLOYMENT_STATUS_LABELS[s], value: s }))}
           value={filters.status}
           onChange={(value) => update("status", value)}
           className="w-[calc(50%-4px)] sm:w-40"
         />
-        <FilterDropdown
-          label="Location"
-          options={WORK_LOCATION_TYPES.map((l) => ({ label: l, value: l }))}
-          value={filters.location}
-          onChange={(value) => update("location", value)}
-          className="w-[calc(50%-4px)] sm:w-40"
-        />
+        {locationOptions.length > 0 && (
+          <FilterDropdown
+            label="Location"
+            options={locationOptions.map((l) => ({ label: l, value: l }))}
+            value={filters.location}
+            onChange={(value) => update("location", value)}
+            className="w-[calc(50%-4px)] sm:w-40"
+          />
+        )}
         {hasActiveFilters && (
           <Button
             variant="ghost"
@@ -99,7 +92,7 @@ export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters }: Empl
               onChange({
                 search: "",
                 department: "",
-                level: "",
+                employmentType: "",
                 status: "",
                 location: "",
                 sort: filters.sort,

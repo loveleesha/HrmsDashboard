@@ -28,7 +28,7 @@ const AUDIENCE_COPY: Record<AuthAudience, { eyebrow: string; title: string; subt
   },
   admin: {
     eyebrow: "Admin access",
-    title: "Sign in to the admin console",
+    title: "Sign in to the admin",
     subtitle: "Manage employees, roles, and organization-wide settings.",
     route: "/admin/login",
   },
@@ -132,9 +132,11 @@ export function LoginForm({ audience }: LoginFormProps) {
               Remember me
             </Label>
           </div>
-          <Link href="/forgot-password" className="text-fs-base text-primary hover:underline">
-            Forgot password?
-          </Link>
+          {audience === "user" && (
+            <Link href="/forgot-password" className="text-fs-base text-primary hover:underline">
+              Forgot password?
+            </Link>
+          )}
         </div>
 
         {formError && <p className="text-fs-base text-danger">{formError}</p>}

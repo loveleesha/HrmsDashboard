@@ -1,7 +1,8 @@
 import { httpService } from "@/lib/http/http.service";
-import { API_BASE_URL } from "@/lib/http/interceptor";
+import { fileNameFromPath, toAbsoluteAssetUrl } from "@/lib/asset-url";
 import { listRoles } from "@/services/role.service";
-import { MOCK_EMPLOYEES } from "@/services/employee.service";
+import { listEmployeesRemote } from "@/services/employee.service";
+import type { Employee } from "@/types/employee";
 import {
   allRequiredDocumentsVerified,
   createEmptyOnboardingRecord,
@@ -85,16 +86,16 @@ export interface EmailCheckResult {
  * legacy demo record).
  */
 export async function checkEmailExists(email: string, excludeRecordId?: string): Promise<EmailCheckResult> {
-  await delay(200);
   const normalized = email.trim().toLowerCase();
   if (!normalized) return { exists: false, conflict: false };
 
-  const matchesEmployee = MOCK_EMPLOYEES.some((employee) => employee.email.toLowerCase() === normalized);
-  const matchesLegacy = readStore().some(
+  // Cheap local check against leftover legacy demo records only — the real,
+  // authoritative check (against every real account) happens server-side
+  // when step 1 is submitted; there's no separate "check email" endpoint.
+  await delay(200);
+  const exists = readStore().some(
     (record) => record.id !== excludeRecordId && record.basicInfo.email.toLowerCase() === normalized
   );
-
-  const exists = matchesEmployee || matchesLegacy;
   return { exists, conflict: exists };
 }
 
@@ -304,18 +305,6 @@ interface OnboardProgressResponse {
   updatedAt?: string;
 }
 
-/** Uploaded files come back as backend-relative paths (e.g.
- * "/uploads/profile-pictures/...jpg") — resolve against the API host to get
- * something a browser can actually load. */
-function toAbsoluteAssetUrl(pathOrUrl: string): string {
-  if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  return `${API_BASE_URL}${pathOrUrl.startsWith("/") ? "" : "/"}${pathOrUrl}`;
-}
-
-function fileNameFromPath(pathOrUrl: string): string {
-  return pathOrUrl.split("/").pop() || pathOrUrl;
-}
-
 /** Maps a GET progress/{userId} (or one entry of GET progress) response into
  * this app's OnboardingRecord shape, repopulating every step's fields —
  * not just the current one — so resuming shows previously entered data
@@ -430,13 +419,66 @@ async function getOnboardingRemoteById(userId: string, createdBy: string): Promi
   }
 }
 
-async function listOnboardingRemote(createdBy: string): Promise<OnboardingRecord[]> {
+/** Best-effort mapping from an Employee List row into this app's
+ * OnboardingRecord shape — the list endpoint returns far fewer fields than
+ * GET progress/{userId} (no dateOfBirth, gender, address, qualifications,
+ * documents, ...), so most of the record stays at its empty default; this
+ * is only ever used for the onboarding list's summary columns, never to
+ * resume the wizard (getOnboardingById fetches the full record for that). */
+function mapEmployeeToOnboardingRecord(employee: Employee, createdBy: string): OnboardingRecord {
+  const record = createEmptyOnboardingRecord({ id: employee.id, createdBy });
+  const [firstName, ...rest] = employee.name.split(" ");
+
+  record.employeeId = employee.employeeId;
+  record.basicInfo = {
+    ...record.basicInfo,
+    firstName: firstName ?? employee.name,
+    lastName: rest.join(" "),
+    email: employee.email,
+    profilePictureUrl: employee.avatarUrl,
+  };
+  record.contactInfo = { ...record.contactInfo, mobile: employee.phone ?? "" };
+  record.professionalInfo = {
+    ...record.professionalInfo,
+    department: employee.department,
+    designation: employee.designation,
+    employmentType: (employee.employmentType as EmploymentType) || "",
+    workLocation: employee.location,
+  };
+  record.roleAccess = { role: employee.role || DEFAULT_ONBOARDING_ROLE };
+  record.technology = { technologies: employee.skills };
+  record.status = "draft";
+  return record;
+}
+
+export interface OnboardingListParams {
+  search?: string;
+  department?: string;
+}
+
+async function listOnboardingRemote(createdBy: string, params: OnboardingListParams = {}): Promise<OnboardingRecord[]> {
   try {
-    const data = await httpService.get<{ records?: OnboardProgressResponse[] } | OnboardProgressResponse[]>(
-      "/api/admin/employees/onboard/progress"
+    const { employees } = await listEmployeesRemote({
+      onboardingStatus: "in_progress",
+      search: params.search,
+      department: params.department,
+      limit: 100,
+    });
+
+    // The employee list endpoint doesn't return per-record step progress
+    // (see mapEmployeeToOnboardingRecord's note above) — without this, every
+    // row's currentStepIndex stays at its empty-record default of 0, which
+    // is why the listing's "Progress" badge always read "Step 1 of 9".
+    // Fetch each record's real progress in parallel from the same endpoint
+    // the wizard resumes from, and merge in just the step fields.
+    return await Promise.all(
+      employees.map(async (employee) => {
+        const base = mapEmployeeToOnboardingRecord(employee, createdBy);
+        const progress = await getOnboardingRemoteById(employee.id, createdBy);
+        if (!progress) return base;
+        return { ...base, currentStepIndex: progress.currentStepIndex, completedSteps: progress.completedSteps };
+      })
     );
-    const entries = Array.isArray(data) ? data : (data.records ?? []);
-    return entries.map((entry) => mapProgressToRecord(entry, createdBy));
   } catch {
     return [];
   }
@@ -451,8 +493,8 @@ export async function discardOnboarding(userId: string): Promise<void> {
  * ("onb-"-prefixed) records only; see the module comment above.
  * ------------------------------------------------------------------------ */
 
-export async function getOnboardingRecords(): Promise<OnboardingRecord[]> {
-  return listOnboardingRemote("HR Team");
+export async function getOnboardingRecords(params: OnboardingListParams = {}): Promise<OnboardingRecord[]> {
+  return listOnboardingRemote("HR Team", params);
 }
 
 export function getOnboardingByIdSync(id: string): OnboardingRecord | undefined {

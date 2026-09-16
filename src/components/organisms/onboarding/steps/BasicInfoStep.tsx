@@ -19,6 +19,14 @@ export interface BasicInfoStepProps {
   recordId: string;
 }
 
+function getMaxDateOfBirth() {
+  const sixteenYearsAgo = new Date();
+  sixteenYearsAgo.setFullYear(sixteenYearsAgo.getFullYear() - 16);
+  return sixteenYearsAgo.toISOString().slice(0, 10);
+}
+
+const MAX_DATE_OF_BIRTH = getMaxDateOfBirth();
+
 export const BasicInfoStep = forwardRef<OnboardingStepHandle, BasicInfoStepProps>(function BasicInfoStep(
   { value, onChange, recordId },
   ref
@@ -137,11 +145,17 @@ export const BasicInfoStep = forwardRef<OnboardingStepHandle, BasicInfoStepProps
             )}
           </div>
         </FormField>
-        <FormField label="Date of Birth" htmlFor="dateOfBirth" required error={errors.dateOfBirth}>
+        <FormField
+          label="Date of Birth"
+          htmlFor="dateOfBirth"
+          required
+          error={errors.dateOfBirth}
+          hint={!errors.dateOfBirth ? "Must be at least 16 years old." : undefined}
+        >
           <Input
             id="dateOfBirth"
             type="date"
-            max={new Date().toISOString().slice(0, 10)}
+            max={MAX_DATE_OF_BIRTH}
             value={value.dateOfBirth}
             onChange={(e) => update("dateOfBirth", e.target.value)}
             invalid={Boolean(errors.dateOfBirth)}

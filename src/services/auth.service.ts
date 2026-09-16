@@ -117,30 +117,38 @@ export async function verifyOtp(
   return { user: mapApiUser(data.user), token: data.token, message: data.message ?? "Account verified." };
 }
 
+/** Always 200 with a generic message, whether or not the email exists (no
+ * enumeration). Shared by both audiences — mounted under /api/user for both,
+ * per the collection's note on Change Password below. */
 export async function forgotPassword(email: string): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/auth/forgot-password", { email });
+  const data = await httpService.post<MessageResponse>("/api/user/forgot-password", { email });
   return { message: data?.message ?? "If an account with that email exists, a password reset link has been sent." };
 }
 
+/** Not logged in — authenticated via the resetToken copied from the emailed
+ * reset link. Single-use: the token is cleared server-side once this
+ * succeeds, so re-running with the same token fails with 400. */
 export async function resetPassword(params: {
   email: string;
   resetToken: string;
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/auth/reset-password", params);
+  const data = await httpService.post<MessageResponse>("/api/user/reset-password", params);
   return { message: data?.message ?? "Password reset successfully." };
 }
 
 /**
  * No token param — the shared Axios instance (src/lib/http/interceptor.ts)
  * attaches the current session's Bearer token to every request automatically.
+ * Works for admin-tier accounts too — this endpoint is shared by both
+ * audiences, just mounted under /api/user for both.
  */
 export async function changePassword(params: {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/auth/change-password", params);
+  const data = await httpService.post<MessageResponse>("/api/user/change-password", params);
   return { message: data?.message ?? "Password updated successfully." };
 }

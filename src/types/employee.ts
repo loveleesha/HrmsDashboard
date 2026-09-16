@@ -1,69 +1,46 @@
-export type Department =
-  | "Engineering"
-  | "HR"
-  | "Finance"
-  | "Marketing"
-  | "Sales"
-  | "Operations";
+/**
+ * A curated pick-list used by forms that set a department (onboarding,
+ * department-change requests, job postings, ...) — the real API treats
+ * `department` as free text for search/filter purposes, but a fixed list
+ * keeps data entry consistent instead of inviting typos.
+ */
+export type Department = "Engineering" | "HR" | "Finance" | "Marketing" | "Sales" | "Operations";
 
-export type DesignationLevel =
-  | "Manager"
-  | "Senior"
-  | "Associate"
-  | "Executive"
-  | "Intern";
+export const DEPARTMENTS: Department[] = ["Engineering", "HR", "Finance", "Marketing", "Sales", "Operations"];
 
-export type EmploymentStatus = "Active" | "On Leave" | "Remote" | "Inactive";
+/** The real API's status enum (Admin > Employees) — lowercase, hyphenated.
+ * Only "active"/"inactive" are settable via the status-toggle endpoint;
+ * "on-leave"/"terminated" come from separate workflows. */
+export type EmploymentStatus = "active" | "inactive" | "on-leave" | "terminated";
 
-export type WorkLocationType = "Office" | "Remote" | "Hybrid";
+export const EMPLOYMENT_STATUSES: EmploymentStatus[] = ["active", "inactive", "on-leave", "terminated"];
 
-export type PerformanceLabel = "Excellent" | "Good" | "Average" | "Low";
+export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
+  active: "Active",
+  inactive: "Inactive",
+  "on-leave": "On Leave",
+  terminated: "Terminated",
+};
 
 export interface Employee {
+  /** The account's userId — what every admin employee endpoint keys by. */
   id: string;
+  employeeId?: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   avatarUrl?: string;
   designation: string;
-  level: DesignationLevel;
-  department: Department;
-  city: string;
-  workLocationType: WorkLocationType;
+  department: string;
+  /** Free-text (case-insensitive partial match server-side), not a fixed enum. */
+  location?: string;
+  /** Free-text ("Full-time", "Part-time", ...) — matches the onboarding wizard's EmploymentType. */
+  employmentType?: string;
   status: EmploymentStatus;
-  performanceScore: number;
+  /** Role name from Settings -> Role & Access. */
+  role?: string;
   skills: string[];
-  badges: string[];
-  joinedDate: string;
+  joinedDate?: string;
   manager?: string;
+  onboardingStatus?: string;
 }
-
-export const DEPARTMENTS: Department[] = [
-  "Engineering",
-  "HR",
-  "Finance",
-  "Marketing",
-  "Sales",
-  "Operations",
-];
-
-export const DESIGNATION_LEVELS: DesignationLevel[] = [
-  "Manager",
-  "Senior",
-  "Associate",
-  "Executive",
-  "Intern",
-];
-
-export const EMPLOYMENT_STATUSES: EmploymentStatus[] = [
-  "Active",
-  "On Leave",
-  "Remote",
-  "Inactive",
-];
-
-export const WORK_LOCATION_TYPES: WorkLocationType[] = [
-  "Office",
-  "Remote",
-  "Hybrid",
-];

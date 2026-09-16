@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cn } from "@/lib/cn";
 
 export interface AvatarProps {
@@ -20,17 +23,24 @@ function getInitials(name: string) {
 }
 
 export function Avatar({ name, imageUrl, size = "md", className }: AvatarProps) {
-  if (imageUrl) {
+  const [failed, setFailed] = useState(false);
+  const [trackedUrl, setTrackedUrl] = useState(imageUrl);
+
+  // A new imageUrl deserves a fresh attempt — otherwise switching from one
+  // broken image to a different, valid one would stay stuck on the fallback.
+  if (imageUrl !== trackedUrl) {
+    setTrackedUrl(imageUrl);
+    setFailed(false);
+  }
+
+  if (imageUrl && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- avatar sources are arbitrary external URLs, not optimizable by next/image without domain config
       <img
         src={imageUrl}
         alt={name}
-        className={cn(
-          "rounded-full object-cover",
-          SIZE_STYLES[size],
-          className
-        )}
+        onError={() => setFailed(true)}
+        className={cn("rounded-full object-cover", SIZE_STYLES[size], className)}
       />
     );
   }
