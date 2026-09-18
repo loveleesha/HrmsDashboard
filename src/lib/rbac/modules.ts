@@ -21,6 +21,7 @@ import {
   FolderKanban,
   LifeBuoy,
   PartyPopper,
+  Building,
 } from "lucide-react";
 import type { ModuleDef } from "@/types/rbac";
 
@@ -56,6 +57,7 @@ export const MODULE_DEFS: ModuleDef[] = [
   { key: "announcements", label: "Announcements", icon: Megaphone, actions: ["view", "add", "edit", "delete"], group: "Resources" },
   { key: "holidays", label: "Holiday Calendar", icon: PartyPopper, actions: ["view", "add", "edit", "delete"], group: "Resources" },
   { key: "organization", label: "Organization", icon: Building2, actions: ["view", "add", "edit", "delete"], group: "Administration" },
+  { key: "departments", label: "Departments", icon: Building, actions: ["view", "add", "edit", "delete"], group: "Administration" },
   { key: "reports", label: "Reports", icon: BarChart3, actions: ["view", "export"], group: "Administration" },
   { key: "settings", label: "Settings", icon: Settings, actions: ["view", "edit"], group: "Administration" },
   { key: "roleAccess", label: "Role & Access", icon: ShieldCheck, actions: ["view", "edit"], group: "Administration" },

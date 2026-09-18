@@ -14,15 +14,16 @@ import { ConfirmModal } from "@/components/molecules/ConfirmModal";
 import { Table, type TableColumn } from "@/components/molecules/Table";
 import { useRBAC } from "@/hooks/use-rbac";
 import { useRoles } from "@/hooks/use-roles";
+import { useDepartments } from "@/hooks/use-departments";
 import { useToast } from "@/hooks/use-toast";
 import { discardOnboarding, getOnboardingRecords } from "@/services/onboarding.service";
-import { DEPARTMENTS } from "@/types/employee";
 import { ONBOARDING_STEP_KEYS, employeeFullName, type OnboardingRecord } from "@/types/onboarding";
 
 export function OnboardingList() {
   const router = useRouter();
   const { can } = useRBAC();
   const { getRoleLabel } = useRoles();
+  const { departments } = useDepartments();
   const { showToast } = useToast();
   const [records, setRecords] = useState<OnboardingRecord[] | null>(null);
   const [search, setSearch] = useState("");
@@ -141,7 +142,7 @@ export function OnboardingList() {
         />
         <FilterDropdown
           label="Department"
-          options={DEPARTMENTS.map((d) => ({ label: d, value: d }))}
+          options={departments.map((d) => ({ label: d.name, value: d.name }))}
           value={department}
           onChange={setDepartment}
           className="sm:w-48"

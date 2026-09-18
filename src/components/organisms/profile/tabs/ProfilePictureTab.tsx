@@ -5,9 +5,17 @@ import { Upload, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { useToast } from "@/hooks/use-toast";
-import type { Employee } from "@/types/employee";
+import type { MyProfile } from "@/types/profile";
 
-export function ProfilePictureTab({ employee }: { employee: Employee }) {
+/**
+ * There's no "update my profile picture" endpoint in the collection — only
+ * the onboarding wizard's step 1 sets it, and Onboarding Assets uploads are
+ * scoped to admins onboarding a new hire, not the account's own profile.
+ * Upload/Remove here are placeholders (no request is made) until such an
+ * endpoint exists; the current real picture from GET /api/user/profile is
+ * still shown so this isn't misleadingly blank.
+ */
+export function ProfilePictureTab({ employee }: { employee: MyProfile }) {
   const { showToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -15,7 +23,7 @@ export function ProfilePictureTab({ employee }: { employee: Employee }) {
     <div className="rounded-xl border border-border bg-surface-card p-6">
       <h3 className="mb-4 text-fs-xl font-semibold text-ink">Profile Picture</h3>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-        <Avatar name={employee.name} size="lg" className="size-24 text-fs-6xl" />
+        <Avatar name={employee.name} imageUrl={employee.avatarUrl} size="lg" className="size-24 text-fs-6xl" />
         <div className="flex flex-1 flex-col gap-3">
           <p className="text-fs-base text-muted">
             Upload a clear, front-facing photo. JPG or PNG, up to 5 MB. Square images work best.

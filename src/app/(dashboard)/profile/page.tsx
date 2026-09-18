@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User as UserIcon, Camera, GraduationCap, CalendarClock, Lock, Star, FileText, Repeat } from "lucide-react";
+import { User as UserIcon, Camera, GraduationCap, CalendarClock, Lock, Star, FileText, Repeat, UserX } from "lucide-react";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { Spinner } from "@/components/atoms/Spinner";
 import { ProfileBanner } from "@/components/organisms/profile/ProfileBanner";
@@ -15,8 +15,8 @@ import { AppraisalTab } from "@/components/organisms/profile/tabs/AppraisalTab";
 import { MyDocumentsTab } from "@/components/organisms/documents/MyDocumentsTab";
 import { DepartmentChangeTab } from "@/components/organisms/profile/tabs/DepartmentChangeTab";
 import { useAuth } from "@/hooks/use-auth";
-import { getEmployees } from "@/services/employee.service";
-import type { Employee } from "@/types/employee";
+import { getMyProfile, ProfileNotFoundError } from "@/services/profile.service";
+import type { MyProfile } from "@/types/profile";
 
 const TABS: ProfileTabDef[] = [
   { value: "basic", label: "Basic Information", icon: UserIcon },
@@ -39,15 +39,22 @@ const LAST_LOGIN = new Intl.DateTimeFormat("en-IN", {
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [profileMissing, setProfileMissing] = useState(false);
   const [tab, setTab] = useState("basic");
 
   useEffect(() => {
     let isMounted = true;
-    getEmployees().then((employees) => {
-      if (!isMounted) return;
-      setEmployee(employees.find((e) => e.email === user?.email) ?? employees[0] ?? null);
-    });
+    getMyProfile()
+      .then((data) => {
+        if (isMounted) setProfile(data);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        if (err instanceof ProfileNotFoundError) {
+          setProfileMissing(true);
+        }
+      });
     return () => {
       isMounted = false;
     };
@@ -59,7 +66,21 @@ export default function ProfilePage() {
 
       {user && <ProfileBanner user={user} lastLogin={LAST_LOGIN} />}
 
-      {!employee ? (
+      {profileMissing ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center">
+          <span className="flex size-14 items-center justify-center rounded-full bg-warning-bg text-warning">
+            <UserX className="size-7" />
+          </span>
+          <h2 className="text-fs-2xl font-semibold text-ink">No employee profile on file</h2>
+          <p className="max-w-md text-fs-base text-muted">
+            This account hasn&apos;t been onboarded as an employee yet, so there&apos;s no personal or employment
+            information to show. You can still change your password below.
+          </p>
+          <div className="mt-2 w-full max-w-md">
+            <ChangePasswordTab />
+          </div>
+        </div>
+      ) : !profile ? (
         <div className="flex items-center justify-center gap-2 py-24 text-muted">
           <Spinner />
           Loading profile…
@@ -69,14 +90,14 @@ export default function ProfilePage() {
           <ProfileTabNav tabs={TABS} value={tab} onChange={setTab} />
 
           <div>
-            {tab === "basic" && <BasicInfoTab employee={employee} />}
-            {tab === "picture" && <ProfilePictureTab employee={employee} />}
-            {tab === "qualification" && <QualificationTab />}
+            {tab === "basic" && <BasicInfoTab employee={profile} />}
+            {tab === "picture" && <ProfilePictureTab employee={profile} />}
+            {tab === "qualification" && <QualificationTab initialQualifications={profile.qualifications} />}
             {tab === "shift" && <ShiftTab />}
             {tab === "password" && <ChangePasswordTab />}
             {tab === "appraisal" && <AppraisalTab />}
             {tab === "documents" && <MyDocumentsTab />}
-            {tab === "department" && <DepartmentChangeTab employee={employee} />}
+            {tab === "department" && <DepartmentChangeTab employee={profile} />}
           </div>
         </div>
       )}

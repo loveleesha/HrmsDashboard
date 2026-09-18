@@ -10,14 +10,15 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
+import { useDepartments } from "@/hooks/use-departments";
 import { getDepartmentChangeRequests, newDepartmentChangeId } from "@/services/department-change.service";
-import { DEPARTMENTS } from "@/types/employee";
-import type { Employee } from "@/types/employee";
+import type { MyProfile } from "@/types/profile";
 import type { DepartmentChangeRequest } from "@/types/department-change";
 
-export function DepartmentChangeTab({ employee }: { employee: Employee }) {
+export function DepartmentChangeTab({ employee }: { employee: MyProfile }) {
   const { showToast } = useToast();
   const { can } = useRBAC();
+  const { departments } = useDepartments();
   const canManage = can("employees", "edit");
 
   const [requests, setRequests] = useState<DepartmentChangeRequest[] | null>(null);
@@ -107,7 +108,9 @@ export function DepartmentChangeTab({ employee }: { employee: Employee }) {
             <FormField label="Requested Department" htmlFor="dept-requested" error={error ?? undefined} required>
               <FilterDropdown
                 label="Select Department"
-                options={DEPARTMENTS.filter((d) => d !== employee.department).map((d) => ({ label: d, value: d }))}
+                options={departments
+                  .filter((d) => d.name !== employee.department)
+                  .map((d) => ({ label: d.name, value: d.name }))}
                 value={requestedDepartment}
                 onChange={setRequestedDepartment}
               />

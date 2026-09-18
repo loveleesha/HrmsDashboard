@@ -2,7 +2,8 @@ import { X } from "lucide-react";
 import { SearchInput } from "@/components/molecules/SearchInput";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Button } from "@/components/atoms/Button";
-import { DEPARTMENTS, EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/types/employee";
+import { useDepartments } from "@/hooks/use-departments";
+import { EMPLOYMENT_STATUSES, EMPLOYMENT_STATUS_LABELS } from "@/types/employee";
 import { EMPLOYMENT_TYPES } from "@/types/onboarding";
 
 export type SortOption = "name-asc" | "name-desc" | "department";
@@ -31,6 +32,8 @@ export interface EmployeeFiltersBarProps {
 }
 
 export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters, locationOptions }: EmployeeFiltersBarProps) {
+  const { departments } = useDepartments();
+
   function update<K extends keyof EmployeeFiltersState>(key: K, value: EmployeeFiltersState[K]) {
     onChange({ ...filters, [key]: value });
   }
@@ -56,7 +59,7 @@ export function EmployeeFiltersBar({ filters, onChange, hasActiveFilters, locati
       <div className="flex flex-wrap items-center gap-2">
         <FilterDropdown
           label="Department"
-          options={DEPARTMENTS.map((d) => ({ label: d, value: d }))}
+          options={departments.map((d) => ({ label: d.name, value: d.name }))}
           value={filters.department}
           onChange={(value) => update("department", value)}
           className="w-[calc(50%-4px)] sm:w-40"

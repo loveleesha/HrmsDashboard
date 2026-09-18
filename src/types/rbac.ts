@@ -22,7 +22,8 @@ export type ModuleKey =
   | "dsr"
   | "projects"
   | "tickets"
-  | "holidays";
+  | "holidays"
+  | "departments";
 
 export type ActionKey =
   | "view"

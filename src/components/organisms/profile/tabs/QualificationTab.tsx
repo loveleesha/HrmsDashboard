@@ -1,23 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { Table } from "@/components/molecules/Table";
 import { FormField } from "@/components/molecules/FormField";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
-import { Spinner } from "@/components/atoms/Spinner";
 import { useToast } from "@/hooks/use-toast";
-import { getMyQualifications, newQualificationId } from "@/services/qualification.service";
+import { newQualificationId } from "@/services/qualification.service";
 import { QUALIFICATION_TYPES, type QualificationEntry, type QualificationType } from "@/types/qualification";
+import type { QualificationEntryDraft } from "@/types/onboarding";
 import { cn } from "@/lib/cn";
 
 const YEARS = Array.from({ length: 20 }, (_, i) => String(2026 - i));
 
-export function QualificationTab() {
+function toDisplayEntry(q: QualificationEntryDraft): QualificationEntry {
+  return {
+    id: q.id,
+    type: q.type as QualificationType,
+    institution: q.institution,
+    board: q.boardOrDegree,
+    period: [q.startYear, q.endYear].filter(Boolean).join(" - "),
+  };
+}
+
+export interface QualificationTabProps {
+  /** The account's real, already-onboarded qualifications (from
+   * GET /api/user/profile) — there's no separate endpoint to edit these
+   * post-onboarding, so "Add New Qualification" below only appends locally. */
+  initialQualifications: QualificationEntryDraft[];
+}
+
+export function QualificationTab({ initialQualifications }: QualificationTabProps) {
   const { showToast } = useToast();
-  const [qualifications, setQualifications] = useState<QualificationEntry[] | null>(null);
+  const [qualifications, setQualifications] = useState<QualificationEntry[]>(() =>
+    initialQualifications.map(toDisplayEntry)
+  );
   const [formOpen, setFormOpen] = useState(false);
 
   const [type, setType] = useState<QualificationType | "">("");
@@ -25,16 +44,6 @@ export function QualificationTab() {
   const [board, setBoard] = useState("");
   const [year, setYear] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    getMyQualifications().then((data) => {
-      if (isMounted) setQualifications(data);
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   function handleSave() {
     if (!type || !institution.trim() || !board.trim() || !year) {
@@ -56,15 +65,6 @@ export function QualificationTab() {
     setError(null);
     setFormOpen(false);
     showToast("Qualification added.");
-  }
-
-  if (!qualifications) {
-    return (
-      <div className="flex items-center justify-center gap-2 py-24 text-muted">
-        <Spinner />
-        Loading education details…
-      </div>
-    );
   }
 
   return (

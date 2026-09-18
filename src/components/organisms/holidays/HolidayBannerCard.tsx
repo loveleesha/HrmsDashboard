@@ -1,20 +1,19 @@
-import { PartyPopper, Gift, Sparkles, Flag, Sun } from "lucide-react";
+import { PartyPopper, Sparkles, ShieldAlert, CalendarCheck, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
-import type { Holiday, HolidayType } from "@/types/holiday";
+import { ActionMenu } from "@/components/molecules/ActionMenu";
+import { HOLIDAY_TYPE_LABELS, type Holiday, type HolidayType } from "@/types/holiday";
 import { cn } from "@/lib/cn";
 
 const TYPE_ICON: Record<HolidayType, typeof PartyPopper> = {
-  National: Flag,
-  Festival: PartyPopper,
-  Regional: Sun,
-  Company: Gift,
+  public: CalendarCheck,
+  restricted: ShieldAlert,
+  optional: PartyPopper,
 };
 
 const TYPE_TONE: Record<HolidayType, "primary" | "info" | "success" | "warning"> = {
-  National: "info",
-  Festival: "primary",
-  Regional: "success",
-  Company: "warning",
+  public: "info",
+  restricted: "warning",
+  optional: "success",
 };
 
 const BANNER_THEMES = [
@@ -29,12 +28,15 @@ export interface HolidayBannerCardProps {
   holiday: Holiday;
   bannerIndex: number;
   daysAway: number | null;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function HolidayBannerCard({ holiday, bannerIndex, daysAway }: HolidayBannerCardProps) {
+export function HolidayBannerCard({ holiday, bannerIndex, daysAway, onEdit, onDelete }: HolidayBannerCardProps) {
   const TypeIcon = TYPE_ICON[holiday.type];
   const theme = BANNER_THEMES[bannerIndex % BANNER_THEMES.length];
   const date = new Date(holiday.date);
+  const hasActions = Boolean(onEdit || onDelete);
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface-card">
@@ -42,6 +44,17 @@ export function HolidayBannerCard({ holiday, bannerIndex, daysAway }: HolidayBan
         <div className="pointer-events-none absolute -right-6 -top-6 size-24 rounded-full bg-white/10" />
         <div className="pointer-events-none absolute -bottom-8 -left-8 size-28 rounded-full bg-white/10" />
         <Sparkles className="pointer-events-none absolute right-4 top-4 size-4 text-white/70" />
+        {hasActions && (
+          <div className="absolute left-2 top-2 [&_button]:text-white [&_button]:hover:bg-white/20">
+            <ActionMenu
+              ariaLabel={`Actions for ${holiday.name}`}
+              items={[
+                { label: "Edit", icon: Pencil, onClick: () => onEdit?.(), hidden: !onEdit },
+                { label: "Delete", icon: Trash2, tone: "danger", onClick: () => onDelete?.(), hidden: !onDelete },
+              ]}
+            />
+          </div>
+        )}
         <TypeIcon className="relative size-9" />
         <p className="relative px-4 text-center text-fs-xl font-bold leading-tight">{holiday.name}</p>
       </div>
@@ -54,7 +67,7 @@ export function HolidayBannerCard({ holiday, bannerIndex, daysAway }: HolidayBan
             </p>
             <p className="text-fs-sm text-muted">{date.toLocaleDateString("en-IN", { weekday: "long" })}</p>
           </div>
-          <Badge tone={TYPE_TONE[holiday.type]}>{holiday.type}</Badge>
+          <Badge tone={TYPE_TONE[holiday.type]}>{HOLIDAY_TYPE_LABELS[holiday.type]}</Badge>
         </div>
 
         <p className="text-fs-base text-muted">{holiday.description}</p>

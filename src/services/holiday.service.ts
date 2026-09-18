@@ -1,17 +1,54 @@
-import type { Holiday } from "@/types/holiday";
+import { httpService } from "@/lib/http/http.service";
+import type { Holiday, HolidayPayload, HolidayType } from "@/types/holiday";
 
 /**
- * Mock holiday calendar service. Replace the body of getHolidays with a
- * real API call once the Node.js backend exists.
+ * Holiday calendar service — wired to the real HRMS backend's Admin >
+ * Holidays API (see the "HRMS API" Postman collection). Simple CRUD
+ * (holidays.* permissions); sorted by date ascending, ?year= optionally
+ * narrows the list to a calendar year.
  */
 
-export const MOCK_HOLIDAYS: Holiday[] = [];
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+interface HolidayRaw {
+  id?: string;
+  _id?: string;
+  name: string;
+  date: string;
+  type?: string;
+  description?: string;
 }
 
-export async function getHolidays(): Promise<Holiday[]> {
-  await delay(200);
-  return [...MOCK_HOLIDAYS].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+function mapHoliday(raw: HolidayRaw): Holiday {
+  const type = raw.type as HolidayType;
+  return {
+    id: raw.id ?? raw._id ?? "",
+    name: raw.name,
+    date: raw.date,
+    type: type === "restricted" || type === "optional" ? type : "public",
+    description: raw.description ?? "",
+  };
+}
+
+export async function listHolidays(year?: string): Promise<Holiday[]> {
+  const data = await httpService.get<{ holidays?: HolidayRaw[] } | HolidayRaw[]>(
+    "/api/admin/holidays",
+    year ? { year } : undefined
+  );
+  const holidays = Array.isArray(data) ? data : (data.holidays ?? []);
+  return holidays.map(mapHoliday).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+}
+
+export async function createHoliday(payload: HolidayPayload): Promise<Holiday> {
+  const data = await httpService.post<{ holiday?: HolidayRaw } | HolidayRaw>("/api/admin/holidays", payload);
+  const holiday = "holiday" in data && data.holiday ? data.holiday : (data as HolidayRaw);
+  return mapHoliday(holiday);
+}
+
+export async function updateHoliday(id: string, payload: Partial<HolidayPayload>): Promise<Holiday> {
+  const data = await httpService.patch<{ holiday?: HolidayRaw } | HolidayRaw>(`/api/admin/holidays/${id}`, payload);
+  const holiday = "holiday" in data && data.holiday ? data.holiday : (data as HolidayRaw);
+  return mapHoliday(holiday);
+}
+
+export async function deleteHoliday(id: string): Promise<void> {
+  await httpService.delete<{ message?: string }>(`/api/admin/holidays/${id}`);
 }

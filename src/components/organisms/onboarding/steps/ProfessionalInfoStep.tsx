@@ -5,7 +5,7 @@ import { FormField } from "@/components/molecules/FormField";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { professionalInfoSchema } from "@/schemas/onboarding.schema";
-import { DEPARTMENTS } from "@/types/employee";
+import { useDepartments } from "@/hooks/use-departments";
 import { EMPLOYMENT_TYPES, type EmploymentType, type ProfessionalInfo } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 
@@ -17,6 +17,7 @@ export interface ProfessionalInfoStepProps {
 export const ProfessionalInfoStep = forwardRef<OnboardingStepHandle, ProfessionalInfoStepProps>(
   function ProfessionalInfoStep({ value, onChange }, ref) {
     const [errors, setErrors] = useState<Partial<Record<keyof ProfessionalInfo, string>>>({});
+    const { departments } = useDepartments();
 
     useImperativeHandle(ref, () => ({
       validate: () => {
@@ -52,7 +53,7 @@ export const ProfessionalInfoStep = forwardRef<OnboardingStepHandle, Professiona
           <FormField label="Department" htmlFor="department" required error={errors.department}>
             <FilterDropdown
               label="Select Department"
-              options={DEPARTMENTS.map((d) => ({ label: d, value: d }))}
+              options={departments.map((d) => ({ label: d.name, value: d.name }))}
               value={value.department}
               onChange={(v) => update("department", v)}
             />

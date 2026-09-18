@@ -9,7 +9,7 @@ export function ProfileBanner({ user, lastLogin }: { user: User; lastLogin: stri
       <div className="pointer-events-none absolute -right-24 bottom-0 size-64 rounded-full bg-white/5" />
       <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
         <span className="flex size-20 shrink-0 items-center justify-center rounded-full border-4 border-white/30 bg-white/15 text-fs-6xl font-semibold">
-          <Avatar name={user.name} size="lg" className="size-[72px] bg-white/20 text-white" />
+          <Avatar name={user.name} imageUrl={user.avatarUrl} size="lg" className="size-[72px] bg-white/20 text-white" />
         </span>
         <div className="min-w-0">
           <p className="text-fs-6xl font-bold">{user.name}</p>
