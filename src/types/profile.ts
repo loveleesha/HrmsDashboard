@@ -26,6 +26,10 @@ export interface MyProfile extends Employee {
   dateOfBirth?: string;
   gender?: Gender | "";
   alternateMobile?: string;
+  /** Human label of the resolved Role document (Employee.role holds its machine name). */
+  roleLabel?: string;
+  /** The account's userType from User (admin | hr | employee). */
+  userType?: string;
   address?: ProfileAddress;
   previousCompany?: string;
   experience?: string;

@@ -22,6 +22,7 @@ import {
   LifeBuoy,
   PartyPopper,
   Building,
+  Headset,
 } from "lucide-react";
 import type { ModuleDef } from "@/types/rbac";
 
@@ -48,7 +49,7 @@ export const MODULE_DEFS: ModuleDef[] = [
   { key: "performance", label: "Performance", icon: Target, actions: ["view", "add", "edit", "approve"], group: "Talent" },
   { key: "training", label: "Training", icon: GraduationCap, actions: ["view", "add", "edit", "delete"], group: "Talent" },
   { key: "dsr", label: "DSR", icon: ClipboardList, actions: ["view", "add", "edit", "approve"], group: "My Workspace" },
-  { key: "projects", label: "My Projects & Hours", icon: FolderKanban, actions: ["view"], group: "My Workspace" },
+  { key: "projects", label: "Projects", icon: FolderKanban, actions: ["view", "add", "edit", "delete"], group: "My Workspace" },
   { key: "tickets", label: "Support Tickets", icon: LifeBuoy, actions: ["view", "add", "edit", "delete"], group: "My Workspace" },
   { key: "documents", label: "Documents", icon: FileText, actions: ["view", "add", "edit", "delete"], group: "Resources" },
   { key: "expenses", label: "Expenses", icon: Receipt, actions: ["view", "add", "edit", "delete", "approve", "reject"], group: "Resources" },
@@ -57,6 +58,7 @@ export const MODULE_DEFS: ModuleDef[] = [
   { key: "announcements", label: "Announcements", icon: Megaphone, actions: ["view", "add", "edit", "delete"], group: "Resources" },
   { key: "holidays", label: "Holiday Calendar", icon: PartyPopper, actions: ["view", "add", "edit", "delete"], group: "Resources" },
   { key: "organization", label: "Organization", icon: Building2, actions: ["view", "add", "edit", "delete"], group: "Administration" },
+  { key: "supportTickets", label: "Support Tickets (Admin)", icon: Headset, actions: ["view", "edit", "delete"], group: "Administration" },
   { key: "departments", label: "Departments", icon: Building, actions: ["view", "add", "edit", "delete"], group: "Administration" },
   { key: "reports", label: "Reports", icon: BarChart3, actions: ["view", "export"], group: "Administration" },
   { key: "settings", label: "Settings", icon: Settings, actions: ["view", "edit"], group: "Administration" },

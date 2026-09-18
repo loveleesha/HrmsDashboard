@@ -1,14 +1,21 @@
-export type ProjectStatus = "Active" | "Released";
+export type ProjectStatus = "active" | "inactive";
 
-export interface Project {
+export interface ApiProject {
   id: string;
   name: string;
+  description?: string;
+  lead?: string;
+  status: ProjectStatus;
 }
 
-export interface ProjectAllocation {
-  projectId: string;
-  projectName: string;
-  allocatedHoursPerDay: number;
-  status: ProjectStatus;
-  dsrLoggedHours: number;
+export interface CreateProjectPayload {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateProjectPayload {
+  name?: string;
+  description?: string;
+  lead?: string;
+  status?: ProjectStatus;
 }

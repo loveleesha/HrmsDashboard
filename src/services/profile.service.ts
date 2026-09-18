@@ -33,6 +33,14 @@ interface RawEmergencyContact {
   isPrimary?: boolean;
 }
 
+/** The full Role document, resolved from roleId (id, name, label, permissions, isSystem, ...). */
+interface RawRole {
+  id?: string;
+  _id?: string;
+  name?: string;
+  label?: string;
+}
+
 interface RawProfile {
   userId?: string;
   id?: string;
@@ -64,9 +72,12 @@ interface RawProfile {
   previousCompany?: string;
   reportsTo?: string;
   manager?: string;
-  role?: string;
+  role?: RawRole | string | null;
+  userType?: string;
   status?: string;
   skills?: string[];
+  technologies?: string[];
+  technicalSkills?: string[];
   qualifications?: RawQualification[];
   qualificationCertificates?: string[];
   emergencyContacts?: RawEmergencyContact[];
@@ -86,6 +97,8 @@ function mapProfile(raw: RawProfile): MyProfile {
   const name = raw.name ?? [raw.firstName, raw.lastName].filter(Boolean).join(" ").trim();
   const status = raw.status?.toLowerCase();
   const certificates = raw.qualificationCertificates ?? [];
+  const role = typeof raw.role === "object" && raw.role ? raw.role : undefined;
+  const roleName = role ? (role.name ?? role.label) : (raw.role as string | undefined);
 
   const documentEntries = DEFAULT_DOCUMENT_CHECKLIST.map((doc) => {
     const value = raw[doc.key];
@@ -106,8 +119,10 @@ function mapProfile(raw: RawProfile): MyProfile {
     location: raw.location ?? raw.workLocation,
     employmentType: raw.employmentType,
     status: isKnownStatus(status) ? status : "active",
-    role: raw.role,
-    skills: raw.skills ?? [],
+    role: roleName ?? undefined,
+    roleLabel: role?.label,
+    userType: raw.userType,
+    skills: raw.skills ?? raw.technologies ?? raw.technicalSkills ?? [],
     joinedDate: raw.joiningDate ?? raw.joinedDate,
     manager: raw.reportsTo ?? raw.manager,
     dateOfBirth: raw.dateOfBirth ? raw.dateOfBirth.slice(0, 10) : undefined,

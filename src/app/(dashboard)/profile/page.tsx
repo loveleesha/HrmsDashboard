@@ -29,18 +29,11 @@ const TABS: ProfileTabDef[] = [
   { value: "department", label: "Department Change", icon: Repeat },
 ];
 
-const LAST_LOGIN = new Intl.DateTimeFormat("en-IN", {
-  month: "short",
-  day: "2-digit",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-}).format(new Date());
-
 export default function ProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
 
   useEffect(() => {
@@ -53,6 +46,8 @@ export default function ProfilePage() {
         if (!isMounted) return;
         if (err instanceof ProfileNotFoundError) {
           setProfileMissing(true);
+        } else {
+          setLoadError(err instanceof Error ? err.message : "Could not load your profile.");
         }
       });
     return () => {
@@ -64,7 +59,7 @@ export default function ProfilePage() {
     <div>
       <PageHeader title="My Profile" description="Your personal and employment information" />
 
-      {user && <ProfileBanner user={user} lastLogin={LAST_LOGIN} />}
+      {user && <ProfileBanner user={user} profile={profile} />}
 
       {profileMissing ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center">
@@ -80,6 +75,10 @@ export default function ProfilePage() {
             <ChangePasswordTab />
           </div>
         </div>
+      ) : loadError ? (
+        <p className="rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center text-fs-base text-danger">
+          {loadError}
+        </p>
       ) : !profile ? (
         <div className="flex items-center justify-center gap-2 py-24 text-muted">
           <Spinner />

@@ -6,7 +6,7 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { DSR_STATUSES } from "@/types/dsr";
-import { MOCK_PROJECTS } from "@/services/project.service";
+import { useActiveProjects } from "@/hooks/use-active-projects";
 
 export interface DsrFilters {
   fromDate: string;
@@ -24,6 +24,8 @@ export function DsrFilterBar({
   filters: DsrFilters;
   onChange: (filters: DsrFilters) => void;
 }) {
+  const projects = useActiveProjects();
+
   function update<K extends keyof DsrFilters>(key: K, value: DsrFilters[K]) {
     onChange({ ...filters, [key]: value });
   }
@@ -54,7 +56,7 @@ export function DsrFilterBar({
           <FilterDropdown
             label="All"
             ariaLabel="Filter by project"
-            options={MOCK_PROJECTS.map((p) => ({ label: p.name, value: p.name }))}
+            options={projects.map((p) => ({ label: p.name, value: p.name }))}
             value={filters.project}
             onChange={(v) => update("project", v)}
           />

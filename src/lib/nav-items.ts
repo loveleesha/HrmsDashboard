@@ -80,7 +80,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: LayoutGrid,
         module: "projects",
         children: [
-          { label: "My Projects & Hours", href: "/projects", icon: FolderKanban, module: "projects" },
+          { label: "Projects", href: "/projects", icon: FolderKanban, module: "projects" },
           { label: "DSR", href: "/dsr", icon: ClipboardList, module: "dsr" },
           { label: "Support Tickets", href: "/tickets", icon: LifeBuoy, module: "tickets" },
           { label: "My Leave", href: "/leave", icon: CalendarDays, module: "leave" },

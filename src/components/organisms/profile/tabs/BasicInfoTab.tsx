@@ -55,7 +55,7 @@ export function BasicInfoTab({ employee }: { employee: MyProfile }) {
           {employee.role && (
             <div className="flex items-center gap-2 text-muted">
               <ShieldCheck className="size-4 shrink-0" />
-              {getRoleLabel(employee.role)}
+              {employee.roleLabel ?? getRoleLabel(employee.role)}
             </div>
           )}
           {employee.joinedDate && (

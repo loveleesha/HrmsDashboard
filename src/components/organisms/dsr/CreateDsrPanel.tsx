@@ -11,7 +11,7 @@ import { Radio } from "@/components/atoms/Radio";
 import { Label } from "@/components/atoms/Label";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
-import { MOCK_PROJECTS } from "@/services/project.service";
+import { useActiveProjects } from "@/hooks/use-active-projects";
 import { cn } from "@/lib/cn";
 
 export interface CreateDsrValues {
@@ -23,8 +23,6 @@ export interface CreateDsrValues {
   description: string;
 }
 
-const PROJECT_OPTIONS = MOCK_PROJECTS.map((p) => ({ label: p.name, value: p.name }));
-
 const EMPTY: CreateDsrValues = {
   project: "",
   date: "",
@@ -35,6 +33,7 @@ const EMPTY: CreateDsrValues = {
 };
 
 export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValues) => void }) {
+  const projects = useActiveProjects();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<CreateDsrValues>(EMPTY);
   const [usedAi, setUsedAi] = useState<"yes" | "no" | "">("");
@@ -85,7 +84,7 @@ export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValue
           <div className="grid grid-cols-1 gap-4 border-t border-border p-5 lg:grid-cols-2">
             <div className="flex flex-col gap-4">
               <FormField label="Project" htmlFor="dsr-project">
-                <FilterDropdown label="Project" options={PROJECT_OPTIONS} value={values.project} onChange={(v) => update("project", v)} />
+                <FilterDropdown label="Project" options={projects.map((p) => ({ label: p.name, value: p.name }))} value={values.project} onChange={(v) => update("project", v)} />
               </FormField>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

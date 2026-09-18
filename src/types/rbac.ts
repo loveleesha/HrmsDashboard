@@ -23,7 +23,8 @@ export type ModuleKey =
   | "projects"
   | "tickets"
   | "holidays"
-  | "departments";
+  | "departments"
+  | "supportTickets";
 
 export type ActionKey =
   | "view"

@@ -7,32 +7,26 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
-import { TICKET_PRIORITIES, TICKET_CATEGORIES, type TicketCategory, type TicketPriority } from "@/types/ticket";
-
-export interface TicketFormValues {
-  category: TicketCategory;
-  subject: string;
-  description: string;
-  priority: TicketPriority;
-}
+import { TICKET_PRIORITIES, TICKET_CATEGORIES, type CreateTicketPayload, type TicketPriority } from "@/types/ticket";
 
 export interface TicketFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (values: TicketFormValues) => void;
+  onSubmit: (payload: CreateTicketPayload) => Promise<boolean>;
+  isSubmitting?: boolean;
 }
 
-export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
-  const [category, setCategory] = useState<TicketCategory | "">("");
+export function TicketForm({ open, onClose, onSubmit, isSubmitting }: TicketFormProps) {
+  const [category, setCategory] = useState("");
   const [subject, setSubject] = useState("");
-  const [description, setDescription] = useState("");
+  const [message, setMessage] = useState("");
   const [priority, setPriority] = useState<TicketPriority | "">("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   function reset() {
     setCategory("");
     setSubject("");
-    setDescription("");
+    setMessage("");
     setPriority("");
     setErrors({});
   }
@@ -42,11 +36,11 @@ export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
     onClose();
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const nextErrors: Record<string, string> = {};
     if (!category) nextErrors.category = "Select a category.";
     if (!subject.trim()) nextErrors.subject = "Add a short subject.";
-    if (!description.trim()) nextErrors.description = "Describe the issue.";
+    if (!message.trim()) nextErrors.message = "Describe the issue.";
     if (!priority) nextErrors.priority = "Select a priority.";
 
     if (Object.keys(nextErrors).length > 0) {
@@ -54,13 +48,13 @@ export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
       return;
     }
 
-    onSubmit({
-      category: category as TicketCategory,
+    const created = await onSubmit({
+      category,
       subject: subject.trim(),
-      description: description.trim(),
+      message: message.trim(),
       priority: priority as TicketPriority,
     });
-    reset();
+    if (created) reset();
   }
 
   return (
@@ -71,10 +65,12 @@ export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
       description="Fill in the details below to raise a support request."
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit Ticket</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            Submit Ticket
+          </Button>
         </div>
       }
     >
@@ -85,7 +81,7 @@ export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
               label="Select Category"
               options={TICKET_CATEGORIES.map((c) => ({ label: c, value: c }))}
               value={category}
-              onChange={(value) => setCategory(value as TicketCategory)}
+              onChange={setCategory}
             />
           </FormField>
           <FormField label="Priority" htmlFor="ticket-priority" error={errors.priority} required>
@@ -108,14 +104,14 @@ export function TicketForm({ open, onClose, onSubmit }: TicketFormProps) {
           />
         </FormField>
 
-        <FormField label="Description" htmlFor="ticket-description" error={errors.description} required>
+        <FormField label="Description" htmlFor="ticket-message" error={errors.message} required>
           <Textarea
-            id="ticket-description"
+            id="ticket-message"
             rows={4}
             placeholder="Describe the issue in detail…"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            invalid={Boolean(errors.description)}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            invalid={Boolean(errors.message)}
           />
         </FormField>
       </div>
