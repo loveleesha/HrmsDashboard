@@ -115,34 +115,43 @@ export function BasicInfoTab({ employee }: { employee: MyProfile }) {
         </div>
       )}
 
-      {employee.documents.length > 0 && (
-        <div className="rounded-xl border border-border bg-surface-card p-5 lg:col-span-2">
-          <h3 className="mb-3 text-fs-xl font-semibold text-ink">Documents on File</h3>
+      <div className="rounded-xl border border-border bg-surface-card p-5 lg:col-span-2">
+        <h3 className="mb-3 text-fs-xl font-semibold text-ink">Documents on File</h3>
+        {employee.documents.length === 0 ? (
+          <p className="text-fs-base text-muted">No documents on file.</p>
+        ) : (
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {employee.documents.map((doc) => (
-              <div key={doc.key} className="flex items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2">
-                <div className="flex items-center gap-2 text-fs-base text-ink">
-                  <FileText className="size-4 shrink-0 text-muted-light" />
-                  {doc.name}
+              <div key={doc.id} className="flex items-center justify-between gap-2 rounded-lg bg-surface px-3 py-2">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-fs-base text-ink">
+                    <FileText className="size-4 shrink-0 text-muted-light" />
+                    <span className="truncate">{doc.name}</span>
+                  </p>
+                  {doc.verificationStatus && (
+                    <div className="mt-1">
+                      <StatusBadge status={doc.verificationStatus} />
+                    </div>
+                  )}
                 </div>
                 {doc.fileUrl ? (
                   <a
                     href={doc.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-fs-sm text-primary hover:underline"
+                    className="flex shrink-0 items-center gap-1 text-fs-sm text-primary hover:underline"
                   >
                     <Download className="size-3.5" />
                     View
                   </a>
                 ) : (
-                  <span className="text-fs-sm text-muted-light">Not uploaded</span>
+                  <span className="text-fs-sm text-muted-light">No file</span>
                 )}
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

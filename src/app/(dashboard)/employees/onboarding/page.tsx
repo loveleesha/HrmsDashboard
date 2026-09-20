@@ -1,15 +1,21 @@
 "use client";
 
+import { useState } from "react";
 import { UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/molecules/PageHeader";
+import { Tabs } from "@/components/molecules/Tabs";
 import { Button } from "@/components/atoms/Button";
 import { OnboardingList } from "@/components/organisms/onboarding/OnboardingList";
+import { PendingReviewList } from "@/components/organisms/onboarding/PendingReviewList";
 import { useRBAC } from "@/hooks/use-rbac";
 
 export default function EmployeeOnboardingPage() {
   const router = useRouter();
   const { can } = useRBAC();
+  const canReview = can("employeeOnboarding", "verifyDocuments");
+  const [requestedTab, setTab] = useState("progress");
+  const tab = requestedTab === "review" && !canReview ? "progress" : requestedTab;
 
   return (
     <div>
@@ -25,7 +31,19 @@ export default function EmployeeOnboardingPage() {
           ) : undefined
         }
       />
-      <OnboardingList />
+      {canReview && (
+        <div className="mb-4">
+          <Tabs
+            options={[
+              { label: "In Progress", value: "progress" },
+              { label: "Pending Review", value: "review" },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+        </div>
+      )}
+      {tab === "review" ? <PendingReviewList /> : <OnboardingList />}
     </div>
   );
 }

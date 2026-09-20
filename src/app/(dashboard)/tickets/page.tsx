@@ -187,21 +187,21 @@ export default function TicketsPage() {
             <StatCard label="Resolved" value={String(counts.resolved)} icon={CheckCircle2} />
           </div>
 
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface-card p-4">
-            <FilterDropdown label="All statuses" options={STATUS_OPTIONS} value={status} onChange={setStatus} className="w-40" />
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <FilterDropdown label="All statuses" options={STATUS_OPTIONS} value={status} onChange={setStatus} className="w-full sm:w-40" />
             <FilterDropdown
               label="All priorities"
               options={TICKET_PRIORITIES.map((p) => ({ label: p, value: p }))}
               value={priority}
               onChange={setPriority}
-              className="w-40"
+              className="w-full sm:w-40"
             />
             <FilterDropdown
               label="All categories"
               options={TICKET_CATEGORIES.map((c) => ({ label: c, value: c }))}
               value={category}
               onChange={setCategory}
-              className="w-40"
+              className="w-full sm:w-40"
             />
           </div>
 

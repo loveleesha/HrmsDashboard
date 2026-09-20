@@ -52,6 +52,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Add Employee", href: "/employees/onboarding/new", icon: UserPlus, module: "employeeOnboarding" },
         ],
       },
+      { label: "Projects", href: "/projects", icon: FolderKanban, module: "projects" },
       { label: "Attendance", href: "/attendance", icon: CalendarCheck, module: "attendance" },
       {
         label: "Leave",
@@ -76,11 +77,10 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       {
         label: "My Workspace",
-        href: "/projects",
+        href: "/dsr",
         icon: LayoutGrid,
-        module: "projects",
+        module: "dsr",
         children: [
-          { label: "Projects", href: "/projects", icon: FolderKanban, module: "projects" },
           { label: "DSR", href: "/dsr", icon: ClipboardList, module: "dsr" },
           { label: "Support Tickets", href: "/tickets", icon: LifeBuoy, module: "tickets" },
           { label: "My Leave", href: "/leave", icon: CalendarDays, module: "leave" },

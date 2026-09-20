@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Ban } from "lucide-react";
+import { Ban, ChevronDown } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
 import { Modal } from "@/components/molecules/Modal";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import { QualificationStep } from "@/components/organisms/onboarding/steps/Quali
 import { EmergencyContactsStep } from "@/components/organisms/onboarding/steps/EmergencyContactsStep";
 import { DocumentsStep } from "@/components/organisms/onboarding/steps/DocumentsStep";
 import { ReviewStep } from "@/components/organisms/onboarding/steps/ReviewStep";
-import { ONBOARDING_STEP_KEYS, type OnboardingRecord, type OnboardingStepKey } from "@/types/onboarding";
+import { ONBOARDING_STEP_KEYS, ONBOARDING_STEP_LABELS, type OnboardingRecord, type OnboardingStepKey } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 
 export interface OnboardingWizardProps {
@@ -32,25 +32,46 @@ export interface OnboardingWizardProps {
    * overview screen itself.
    */
   onRecordChange?: (record: OnboardingRecord) => void;
+  /**
+   * "edit" reuses the same per-step forms and save endpoints to update an
+   * already-onboarded employee: every step is unlocked, each step saves on its
+   * own, and it never runs the final submit (step 9 resets the employee's
+   * password and re-emails them). Defaults to "create".
+   */
+  mode?: "create" | "edit";
+  /** Steps to show, in order. Defaults to all of them. */
+  steps?: readonly OnboardingStepKey[];
+  /** Where Cancel / Save & Finish lead. */
+  exitHref?: string;
 }
 
-export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange }: OnboardingWizardProps) {
+export function OnboardingWizard({
+  initialRecord,
+  initialStepKey,
+  onRecordChange,
+  mode = "create",
+  steps,
+  exitHref = "/employees/onboarding",
+}: OnboardingWizardProps) {
+  const stepKeys = steps ?? ONBOARDING_STEP_KEYS;
+  const isEdit = mode === "edit";
   const router = useRouter();
   const { showToast } = useToast();
   const [record, setRecord] = useState<OnboardingRecord>(initialRecord);
   const [stepIndex, setStepIndex] = useState(() => {
-    if (initialStepKey) return ONBOARDING_STEP_KEYS.indexOf(initialStepKey);
-    return Math.min(initialRecord.currentStepIndex, ONBOARDING_STEP_KEYS.length - 1);
+    if (initialStepKey && stepKeys.includes(initialStepKey)) return stepKeys.indexOf(initialStepKey);
+    return Math.min(initialRecord.currentStepIndex, stepKeys.length - 1);
   });
   const [isSaving, setIsSaving] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(false);
   const stepRef = useRef<OnboardingStepHandle>(null);
 
-  const currentStepKey: OnboardingStepKey = ONBOARDING_STEP_KEYS[stepIndex];
+  const currentStepKey: OnboardingStepKey = stepKeys[stepIndex];
   const isFirstStep = stepIndex === 0;
-  const isLastStep = stepIndex === ONBOARDING_STEP_KEYS.length - 1;
+  const isLastStep = stepIndex === stepKeys.length - 1;
   const maxUnlockedIndex =
-    record.status === "draft" ? record.completedSteps.length : ONBOARDING_STEP_KEYS.length - 1;
+    record.status === "draft" && !isEdit ? record.completedSteps.length : stepKeys.length - 1;
 
   function updateField<K extends keyof OnboardingRecord>(key: K, value: OnboardingRecord[K]) {
     setRecord((prev) => ({ ...prev, [key]: value }));
@@ -132,14 +153,25 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
     setStepIndex(nextIndex);
   }
 
+  async function handleEditSave(after: "stay" | "next" | "finish") {
+    const isValid = stepRef.current?.validate() ?? true;
+    if (!isValid) return;
+    const saved = await persist(record, currentStepKey);
+    if (!saved) return;
+    showToast(`${ONBOARDING_STEP_LABELS[currentStepKey]} updated.`);
+    if (after === "next") setStepIndex((prev) => prev + 1);
+    if (after === "finish") router.push(exitHref);
+  }
+
   function handleStepSelect(index: number) {
     if (index > maxUnlockedIndex) return;
     setStepIndex(index);
+    setStepsOpen(false);
   }
 
   function handleCancelConfirm() {
     setCancelOpen(false);
-    router.push("/employees/onboarding");
+    router.push(exitHref);
   }
 
   function renderStep() {
@@ -208,21 +240,55 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
   }
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
-      <aside className="shrink-0 rounded-xl border border-border bg-surface-card p-3 lg:w-72">
-        <OnboardingStepper
-          currentStepIndex={stepIndex}
-          completedSteps={record.completedSteps}
-          onStepSelect={handleStepSelect}
-          canNavigateToStep={(index) => index <= maxUnlockedIndex}
-        />
+    <div className="flex flex-col gap-6 xl:flex-row">
+      <aside className="shrink-0 rounded-xl border border-border bg-surface-card p-3 xl:w-72">
+        {/* Below xl (the app sidebar already takes 256px): one compact "Step X of N" header that expands into the full list, so the form isn't pushed a screen down. */}
+        <div className="xl:hidden">
+          <button
+            type="button"
+            onClick={() => setStepsOpen((open) => !open)}
+            aria-expanded={stepsOpen}
+            className="flex w-full items-center justify-between gap-3 text-left"
+          >
+            <span className="min-w-0">
+              <span className="block text-fs-sm text-muted">
+                Step {stepIndex + 1} of {stepKeys.length}
+              </span>
+              <span className="block truncate text-fs-lg font-semibold text-ink">{ONBOARDING_STEP_LABELS[currentStepKey]}</span>
+            </span>
+            <ChevronDown className={`size-5 shrink-0 text-muted-light transition-transform ${stepsOpen ? "rotate-180" : ""}`} />
+          </button>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((stepIndex + 1) / stepKeys.length) * 100}%` }} />
+          </div>
+          {stepsOpen && (
+            <div className="mt-3 border-t border-border pt-3">
+              <OnboardingStepper
+                steps={stepKeys}
+                currentStepIndex={stepIndex}
+                completedSteps={record.completedSteps}
+                onStepSelect={handleStepSelect}
+                canNavigateToStep={(index) => index <= maxUnlockedIndex}
+              />
+            </div>
+          )}
+        </div>
+        <div className="hidden xl:block">
+          <OnboardingStepper
+            steps={stepKeys}
+            currentStepIndex={stepIndex}
+            completedSteps={record.completedSteps}
+            onStepSelect={handleStepSelect}
+            canNavigateToStep={(index) => index <= maxUnlockedIndex}
+          />
+        </div>
       </aside>
 
       <div className="min-w-0 flex-1">
         <div className="rounded-xl border border-border bg-surface-card p-5 sm:p-6">{renderStep()}</div>
 
-        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <Button variant="secondary" onClick={handleBack} disabled={isFirstStep || isSaving}>
               Back
             </Button>
@@ -231,22 +297,37 @@ export function OnboardingWizard({ initialRecord, initialStepKey, onRecordChange
               Cancel
             </Button>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
-            <Button variant="secondary" onClick={handleSaveDraft} isLoading={isSaving}>
-              Save as Draft
-            </Button>
-            <Button onClick={handleContinue} isLoading={isSaving}>
-              {isLastStep ? "Submit Onboarding" : "Continue"}
-            </Button>
-          </div>
+          {isEdit ? (
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+              <Button variant="secondary" onClick={() => handleEditSave("stay")} isLoading={isSaving}>
+                Save
+              </Button>
+              <Button onClick={() => handleEditSave(isLastStep ? "finish" : "next")} isLoading={isSaving}>
+                {isLastStep ? "Save & Finish" : "Save & Continue"}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+              <Button variant="secondary" onClick={handleSaveDraft} isLoading={isSaving}>
+                Save as Draft
+              </Button>
+              <Button onClick={handleContinue} isLoading={isSaving}>
+                {isLastStep ? "Submit Onboarding" : "Continue"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       <Modal
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
-        title="Discard changes?"
-        description="You'll be taken back to the onboarding list. Anything saved as a draft stays put."
+        title={isEdit ? "Leave without saving?" : "Discard changes?"}
+        description={
+          isEdit
+            ? "Steps you've already saved keep their changes."
+            : "You'll be taken back to the onboarding list. Anything saved as a draft stays put."
+        }
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setCancelOpen(false)}>

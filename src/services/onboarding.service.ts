@@ -1,8 +1,9 @@
 import { httpService } from "@/lib/http/http.service";
-import { fileNameFromPath, toAbsoluteAssetUrl } from "@/lib/asset-url";
+import { fileNameFromPath, toAbsoluteAssetUrl, toRelativeAssetPath } from "@/lib/asset-url";
 import { listRoles } from "@/services/role.service";
 import { listEmployeesRemote } from "@/services/employee.service";
 import type { Employee } from "@/types/employee";
+import type { MyProfile } from "@/types/profile";
 import {
   allRequiredDocumentsVerified,
   createEmptyOnboardingRecord,
@@ -10,6 +11,7 @@ import {
   requiredDocuments,
   ONBOARDING_STEP_KEYS,
   DEFAULT_ONBOARDING_ROLE,
+  DEFAULT_DOCUMENT_CHECKLIST,
   type DocumentRequirementConfig,
   type EmergencyContactDraft,
   type EmploymentType,
@@ -134,7 +136,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
         dateOfBirth: record.basicInfo.dateOfBirth,
         gender: record.basicInfo.gender,
         email: record.basicInfo.email,
-        profilePicture: record.basicInfo.profilePictureUrl,
+        profilePicture: toRelativeAssetPath(record.basicInfo.profilePictureUrl),
       };
       if (record.id) payload.userId = record.id;
 
@@ -184,8 +186,8 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
     }
     case "qualification": {
       const qualificationCertificates = record.qualifications
-        .map((q) => q.certificateUrl)
-        .filter((url): url is string => Boolean(url));
+        .map((q) => toRelativeAssetPath(q.certificateUrl))
+        .filter(Boolean);
       await httpService.post("/api/admin/employees/onboard/step/6", {
         userId: record.id,
         qualifications: record.qualifications.map((q) => ({
@@ -216,7 +218,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
       return record;
     }
     case "documents": {
-      const urlFor = (key: DocumentRequirementConfig["key"]) => record.documents.find((doc) => doc.key === key)?.fileUrl ?? "";
+      const urlFor = (key: DocumentRequirementConfig["key"]) => toRelativeAssetPath(record.documents.find((doc) => doc.key === key)?.fileUrl);
       await httpService.post("/api/admin/employees/onboard/step/8", {
         userId: record.id,
         aadhaarCard: urlFor("aadhaarCard"),
@@ -482,6 +484,71 @@ async function listOnboardingRemote(createdBy: string, params: OnboardingListPar
   } catch {
     return [];
   }
+}
+
+/** Compares document titles loosely ("Aadhaar Card" vs "aadhaarcard"). */
+function normalizeTitle(title: string): string {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Builds an editable record for an ALREADY-ONBOARDED employee from their full
+ * profile (Admin > Employees > Get Employee Profile) — GET progress/{userId}
+ * can't be used, since completed records drop out of the progress endpoints.
+ * Status "active" (never "draft") keeps every wizard step unlocked; the edit
+ * screen saves through the same per-step endpoints as onboarding, but never
+ * calls step 9, which would reset the employee's password and re-email them.
+ */
+export function mapProfileToOnboardingRecord(profile: MyProfile): OnboardingRecord {
+  const record = createEmptyOnboardingRecord({ id: profile.id, createdBy: "HR Team" });
+  const [fallbackFirst, ...fallbackRest] = profile.name.split(" ");
+
+  record.status = "active";
+  record.employeeId = profile.employeeId;
+  record.basicInfo = {
+    firstName: profile.firstName ?? fallbackFirst ?? "",
+    lastName: profile.lastName ?? fallbackRest.join(" "),
+    dateOfBirth: profile.dateOfBirth ?? "",
+    gender: profile.gender ?? "",
+    email: profile.email,
+    profilePictureUrl: profile.avatarUrl,
+    profilePictureName: profile.avatarUrl ? fileNameFromPath(profile.avatarUrl) : undefined,
+  };
+  record.contactInfo = {
+    mobile: profile.phone ?? "",
+    alternateMobile: profile.alternateMobile,
+    city: profile.address?.city,
+    state: profile.address?.state,
+    pincode: profile.address?.pincode,
+    address: profile.address?.addressLine,
+  };
+  record.professionalInfo = {
+    department: profile.department,
+    designation: profile.designation,
+    joiningDate: profile.joinedDate ? profile.joinedDate.slice(0, 10) : "",
+    employmentType: (profile.employmentType as EmploymentType) ?? "",
+    workLocation: profile.location,
+    experience: profile.experience,
+    previousCompany: profile.previousCompany,
+    reportingManager: profile.manager,
+  };
+  record.roleAccess = { role: profile.role || DEFAULT_ONBOARDING_ROLE };
+  record.technology = { technologies: profile.skills };
+  record.qualifications = profile.qualifications;
+  record.emergencyContacts = profile.emergencyContacts;
+  record.documents = DEFAULT_DOCUMENT_CHECKLIST.map((checklistItem) => {
+    const existing = profile.documents.find((doc) => normalizeTitle(doc.name) === normalizeTitle(checklistItem.name));
+    const verification = existing?.verificationStatus?.toLowerCase() ?? "";
+    return {
+      key: checklistItem.key,
+      name: checklistItem.name,
+      required: checklistItem.required,
+      fileUrl: existing?.fileUrl,
+      fileName: existing?.fileName,
+      status: verification.includes("verified") ? "VERIFIED" : verification.includes("reject") ? "REJECTED" : "PENDING",
+    };
+  });
+  return record;
 }
 
 export async function discardOnboarding(userId: string): Promise<void> {

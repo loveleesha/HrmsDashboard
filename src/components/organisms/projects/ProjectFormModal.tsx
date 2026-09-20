@@ -7,6 +7,7 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
+import { textError } from "@/lib/validation";
 import type { ApiProject, CreateProjectPayload, ProjectStatus, UpdateProjectPayload } from "@/types/project";
 
 export interface ProjectFormModalProps {
@@ -30,7 +31,7 @@ export function ProjectFormModal({ open, onClose, project, onCreate, onUpdate, i
   const [description, setDescription] = useState("");
   const [lead, setLead] = useState("");
   const [status, setStatus] = useState("active");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [wasOpen, setWasOpen] = useState(open);
 
   if (open !== wasOpen) {
@@ -40,16 +41,24 @@ export function ProjectFormModal({ open, onClose, project, onCreate, onUpdate, i
       setDescription(project?.description ?? "");
       setLead(project?.lead ?? "");
       setStatus(project?.status ?? "active");
-      setError(null);
+      setErrors({});
     }
   }
 
   async function handleSubmit() {
-    if (!name.trim()) {
-      setError("Project name is required.");
+    const nextErrors: Record<string, string> = {};
+    if (!name.trim()) nextErrors.name = "Project name is required.";
+    const nameIssue = textError(name, "Project name", { min: 2, max: 80 });
+    if (nameIssue && !nextErrors.name) nextErrors.name = nameIssue;
+    const descriptionIssue = textError(description, "Description", { max: 500 });
+    if (descriptionIssue) nextErrors.description = descriptionIssue;
+    const leadIssue = textError(lead, "Project lead", { max: 60 });
+    if (leadIssue) nextErrors.lead = leadIssue;
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
-    setError(null);
+    setErrors({});
     if (isEdit && project) {
       await onUpdate(project.id, {
         name: name.trim(),
@@ -80,15 +89,15 @@ export function ProjectFormModal({ open, onClose, project, onCreate, onUpdate, i
       }
     >
       <div className="flex flex-col gap-4">
-        <FormField label="Project Name" htmlFor="projectName" required error={error ?? undefined}>
+        <FormField label="Project Name" htmlFor="projectName" required error={errors.name}>
           <Input id="projectName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. HRMS Revamp" />
         </FormField>
-        <FormField label="Description" htmlFor="projectDescription">
+        <FormField label="Description" htmlFor="projectDescription" error={errors.description}>
           <Textarea id="projectDescription" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </FormField>
         {isEdit && (
           <>
-            <FormField label="Project Lead" htmlFor="projectLead">
+            <FormField label="Project Lead" htmlFor="projectLead" error={errors.lead}>
               <Input id="projectLead" value={lead} onChange={(e) => setLead(e.target.value)} placeholder="e.g. Priya Nair" />
             </FormField>
             <FormField label="Status" htmlFor="projectStatus">

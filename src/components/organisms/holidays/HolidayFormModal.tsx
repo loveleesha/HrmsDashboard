@@ -7,7 +7,9 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
+import { textError } from "@/lib/validation";
 import { HOLIDAY_TYPES, HOLIDAY_TYPE_LABELS, type Holiday, type HolidayPayload } from "@/types/holiday";
+import { DatePicker } from "@/components/molecules/DatePicker";
 
 export interface HolidayFormModalProps {
   open: boolean;
@@ -25,7 +27,7 @@ export function HolidayFormModal({ open, onClose, holiday, onSubmit, isSubmittin
   const [date, setDate] = useState("");
   const [type, setType] = useState<string>("public");
   const [description, setDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [wasOpen, setWasOpen] = useState(open);
 
   // Re-seed the fields from `holiday` on every open (not just once at mount)
@@ -39,20 +41,24 @@ export function HolidayFormModal({ open, onClose, holiday, onSubmit, isSubmittin
       setDate(holiday?.date.slice(0, 10) ?? "");
       setType(holiday?.type ?? "public");
       setDescription(holiday?.description ?? "");
-      setError(null);
+      setErrors({});
     }
   }
 
   async function handleSubmit() {
-    if (!name.trim()) {
-      setError("Holiday name is required.");
+    const nextErrors: Record<string, string> = {};
+    if (!name.trim()) nextErrors.name = "Holiday name is required.";
+    const nameIssue = textError(name, "Holiday name", { min: 2, max: 80 });
+    if (nameIssue && !nextErrors.name) nextErrors.name = nameIssue;
+    if (!date) nextErrors.date = "Date is required.";
+    else if (Number.isNaN(new Date(date).getTime())) nextErrors.date = "Enter a valid date.";
+    const descriptionIssue = textError(description, "Description", { max: 300 });
+    if (descriptionIssue) nextErrors.description = descriptionIssue;
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
-    if (!date) {
-      setError("Date is required.");
-      return;
-    }
-    setError(null);
+    setErrors({});
     await onSubmit({
       name: name.trim(),
       date,
@@ -78,16 +84,16 @@ export function HolidayFormModal({ open, onClose, holiday, onSubmit, isSubmittin
       }
     >
       <div className="flex flex-col gap-4">
-        <FormField label="Holiday Name" htmlFor="holidayName" required error={error && !name.trim() ? error : undefined}>
+        <FormField label="Holiday Name" htmlFor="holidayName" required error={errors.name}>
           <Input id="holidayName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Republic Day" />
         </FormField>
-        <FormField label="Date" htmlFor="holidayDate" required error={error && !date ? error : undefined}>
-          <Input id="holidayDate" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <FormField label="Date" htmlFor="holidayDate" required error={errors.date}>
+          <DatePicker id="holidayDate" value={date} onChange={setDate} invalid={Boolean(errors.date)} />
         </FormField>
         <FormField label="Type" htmlFor="holidayType">
           <FilterDropdown label="Type" options={TYPE_OPTIONS} value={type} onChange={setType} />
         </FormField>
-        <FormField label="Description" htmlFor="holidayDescription">
+        <FormField label="Description" htmlFor="holidayDescription" error={errors.description}>
           <Textarea id="holidayDescription" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </FormField>
       </div>

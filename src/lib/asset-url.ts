@@ -11,3 +11,12 @@ export function toAbsoluteAssetUrl(pathOrUrl: string): string {
 export function fileNameFromPath(pathOrUrl: string): string {
   return pathOrUrl.split("/").pop() || pathOrUrl;
 }
+
+/** The inverse of toAbsoluteAssetUrl — the backend stores relative "/uploads/..."
+ * paths, so an already-absolute URL pointing at our own API host is turned
+ * back into that path before being sent (otherwise resaving an existing file
+ * would store a host-qualified URL). Other URLs are passed through untouched. */
+export function toRelativeAssetPath(pathOrUrl: string | undefined): string {
+  if (!pathOrUrl) return "";
+  return pathOrUrl.startsWith(API_BASE_URL) ? pathOrUrl.slice(API_BASE_URL.length) : pathOrUrl;
+}

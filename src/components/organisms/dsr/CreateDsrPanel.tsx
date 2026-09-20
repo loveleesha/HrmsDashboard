@@ -11,52 +11,95 @@ import { Radio } from "@/components/atoms/Radio";
 import { Label } from "@/components/atoms/Label";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
-import { useActiveProjects } from "@/hooks/use-active-projects";
+import { useAssignedProjects } from "@/hooks/use-assigned-projects";
+import { normalizeHours } from "@/services/dsr.service";
+import type { SubmitDsrPayload } from "@/types/dsr";
 import { cn } from "@/lib/cn";
+import { hoursError, isFutureDate, textError, todayKey } from "@/lib/validation";
+import { DurationPicker } from "@/components/molecules/DurationPicker";
 
-export interface CreateDsrValues {
+/** Sentinel for the "Miscellaneous" choice in the project dropdown — never sent to the API. */
+const OTHER = "__other__";
+
+interface FormValues {
+  /** A project id, OTHER, or "" (nothing chosen yet). */
   project: string;
+  otherProject: string;
   date: string;
   estimatedHours: string;
   noWorkDone: boolean;
-  usedAiTools: boolean;
   description: string;
 }
 
-const EMPTY: CreateDsrValues = {
+const EMPTY: FormValues = {
   project: "",
+  otherProject: "",
   date: "",
   estimatedHours: "",
   noWorkDone: false,
-  usedAiTools: false,
   description: "",
 };
 
-export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValues) => void }) {
-  const projects = useActiveProjects();
+export interface CreateDsrPanelProps {
+  /** Resolves true once the DSR was saved (the form then resets). */
+  onSubmit: (payload: SubmitDsrPayload) => Promise<boolean>;
+}
+
+export function CreateDsrPanel({ onSubmit }: CreateDsrPanelProps) {
+  const { projects, isLoading: projectsLoading } = useAssignedProjects();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<CreateDsrValues>(EMPTY);
+  const [values, setValues] = useState<FormValues>(EMPTY);
   const [usedAi, setUsedAi] = useState<"yes" | "no" | "">("");
   const [error, setError] = useState<string | null>(null);
 
-  function update<K extends keyof CreateDsrValues>(key: K, value: CreateDsrValues[K]) {
+  function update<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleAdd() {
-    if (!values.project) return setError("Select a project.");
+  async function handleAdd() {
     if (!values.date) return setError("Select a date.");
-    if (!values.noWorkDone && !/^\d{1,2}:\d{2}$/.test(values.estimatedHours)) {
-      return setError("Enter estimated hours as HH:MM.");
-    }
+    if (isFutureDate(values.date)) return setError("A DSR can't be dated in the future.");
     if (!usedAi) return setError("Let us know if you used AI tools today.");
-    if (!values.description.trim()) return setError("Add a description of your work.");
 
-    onSubmit({ ...values, estimatedHours: values.noWorkDone ? "00:00" : values.estimatedHours, usedAiTools: usedAi === "yes" });
-    setValues(EMPTY);
-    setUsedAi("");
+    let payload: SubmitDsrPayload;
+    if (values.noWorkDone) {
+      payload = { date: values.date, noWorkDone: true, aiToolsUsed: usedAi === "yes" };
+    } else {
+      if (!values.project) return setError("Select one of your projects, or choose Miscellaneous.");
+      const hoursIssue = hoursError(values.estimatedHours);
+      if (hoursIssue) return setError(hoursIssue);
+      if (!values.description.trim()) return setError("Add a description of your work.");
+      const descriptionIssue = textError(values.description, "Description", { min: 5, max: 2000 });
+      if (descriptionIssue) return setError(descriptionIssue);
+      const otherIssue = values.project === OTHER ? textError(values.otherProject, "Miscellaneous label", { max: 80 }) : undefined;
+      if (otherIssue) return setError(otherIssue);
+      payload = {
+        date: values.date,
+        estimatedHours: normalizeHours(values.estimatedHours),
+        noWorkDone: false,
+        aiToolsUsed: usedAi === "yes",
+        description: values.description.trim(),
+        // Omitted entirely (not "") for Miscellaneous: a blank project would fail the backend's id validation.
+        ...(values.project === OTHER
+          ? values.otherProject.trim()
+            ? { otherProject: values.otherProject.trim() }
+            : {}
+          : { project: values.project }),
+      };
+    }
+
     setError(null);
-    setOpen(false);
+    setIsSubmitting(true);
+    try {
+      if (await onSubmit(payload)) {
+        setValues(EMPTY);
+        setUsedAi("");
+        setOpen(false);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -83,19 +126,39 @@ export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValue
         <>
           <div className="grid grid-cols-1 gap-4 border-t border-border p-5 lg:grid-cols-2">
             <div className="flex flex-col gap-4">
-              <FormField label="Project" htmlFor="dsr-project">
-                <FilterDropdown label="Project" options={projects.map((p) => ({ label: p.name, value: p.name }))} value={values.project} onChange={(v) => update("project", v)} />
+              <FormField
+                label="Project"
+                htmlFor="dsr-project"
+                hint={!projectsLoading && projects.length === 0 ? "You aren't assigned to any project yet — choose Miscellaneous." : undefined}
+              >
+                <FilterDropdown
+                  label="Select project"
+                  options={[...projects.map((p) => ({ label: p.name, value: p.id })), { label: "Miscellaneous", value: OTHER }]}
+                  value={values.project}
+                  onChange={(v) => update("project", v)}
+                  className={cn(values.noWorkDone && "pointer-events-none opacity-50")}
+                />
               </FormField>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DatePickerField label="Date" value={values.date} onChange={(e) => update("date", e.target.value)} />
-                <FormField label="Estimated Hour" htmlFor="dsr-hours">
+              {values.project === OTHER && !values.noWorkDone && (
+                <FormField label="Miscellaneous work (optional)" htmlFor="dsr-other-project" hint="What was it? Left blank, it's recorded as Internal Project.">
                   <Input
+                    id="dsr-other-project"
+                    placeholder="e.g. Client onsite support"
+                    value={values.otherProject}
+                    onChange={(e) => update("otherProject", e.target.value)}
+                  />
+                </FormField>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <DatePickerField label="Date" value={values.date} max={todayKey()} onChange={(e) => update("date", e.target.value)} />
+                <FormField label="Estimated Hours" htmlFor="dsr-hours" hint={values.noWorkDone ? undefined : "Type HH:MM or use the clock."}>
+                  <DurationPicker
                     id="dsr-hours"
-                    placeholder="HH:MM"
                     value={values.estimatedHours}
                     disabled={values.noWorkDone}
-                    onChange={(e) => update("estimatedHours", e.target.value)}
+                    onChange={(next) => update("estimatedHours", next)}
                   />
                 </FormField>
               </div>
@@ -122,8 +185,9 @@ export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValue
               </div>
             </div>
 
-            <FormField label="Description" htmlFor="dsr-description">
+            <FormField label="Description" htmlFor="dsr-description" hint={values.noWorkDone ? "Not needed when no work was done." : undefined}>
               <Textarea
+                disabled={values.noWorkDone}
                 id="dsr-description"
                 rows={9}
                 placeholder="Describe the work you did…"
@@ -141,10 +205,10 @@ export function CreateDsrPanel({ onSubmit }: { onSubmit: (values: CreateDsrValue
           )}
 
           <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
-            <Button variant="secondary" onClick={() => setOpen(false)}>
+            <Button variant="secondary" onClick={() => setOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button onClick={handleAdd}>
+            <Button onClick={handleAdd} isLoading={isSubmitting}>
               <Plus className="size-4" />
               Add
             </Button>

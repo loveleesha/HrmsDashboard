@@ -24,7 +24,10 @@ export function ChangePasswordTab() {
   async function handleSubmit() {
     const nextErrors: Record<string, string> = {};
     if (!current) nextErrors.current = "Enter your current password.";
-    if (!next || next.length < 6) nextErrors.next = "New password must be at least 6 characters.";
+    if (next.length < 8) nextErrors.next = "New password must be at least 8 characters.";
+    else if (!/[a-z]/.test(next) || !/[A-Z]/.test(next) || !/[0-9]/.test(next)) {
+      nextErrors.next = "Use a lowercase letter, an uppercase letter, and a number.";
+    } else if (next === current) nextErrors.next = "New password must be different from your current one.";
     if (next !== confirm) nextErrors.confirm = "Passwords do not match.";
 
     if (Object.keys(nextErrors).length > 0) {
@@ -63,7 +66,7 @@ export function ChangePasswordTab() {
         <Lock className="size-4 text-primary" />
         Change Password
       </h3>
-      <p className="mb-4 text-fs-sm text-muted">Use at least 6 characters. You&apos;ll need to sign in again afterward.</p>
+      <p className="mb-4 text-fs-sm text-muted">Use at least 8 characters with upper and lower case letters and a number. You&apos;ll need to sign in again afterward.</p>
 
       <div className="flex flex-col gap-4">
         <FormField label="Current Password" htmlFor="pw-current" error={errors.current} required>

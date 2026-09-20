@@ -1,5 +1,14 @@
 import { httpService } from "@/lib/http/http.service";
-import type { ApiProject, CreateProjectPayload, ProjectStatus, UpdateProjectPayload } from "@/types/project";
+import {
+  ASSIGNMENT_STATUSES,
+  type ApiProject,
+  type AssignmentFilters,
+  type AssignmentStatus,
+  type CreateProjectPayload,
+  type ProjectAssignment,
+  type ProjectStatus,
+  type UpdateProjectPayload,
+} from "@/types/project";
 
 /**
  * Projects service — wired to the real HRMS backend's Admin > Projects API
@@ -50,4 +59,85 @@ export async function updateProject(id: string, payload: UpdateProjectPayload): 
 
 export async function deleteProject(id: string): Promise<void> {
   await httpService.delete<{ message?: string }>(`/api/admin/projects/${id}`);
+}
+
+/* ---- Assignments (User > My Projects, Admin > Project Assignments) ---- */
+
+interface RawAssignmentRef {
+  id?: string;
+  _id?: string;
+  userId?: string;
+  name?: string;
+  employeeId?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface RawAssignment {
+  id?: string;
+  _id?: string;
+  project?: (ApiProjectRaw & RawAssignmentRef) | string | null;
+  projectId?: string;
+  projectName?: string;
+  projectStatus?: string;
+  status?: string;
+  employee?: RawAssignmentRef | string | null;
+  user?: RawAssignmentRef | string | null;
+  createdAt?: string;
+  assignedAt?: string;
+}
+
+function mapAssignment(raw: RawAssignment): ProjectAssignment {
+  const project = typeof raw.project === "object" && raw.project ? raw.project : undefined;
+  const person = (typeof raw.employee === "object" && raw.employee) || (typeof raw.user === "object" && raw.user) || undefined;
+  const status = raw.status as AssignmentStatus;
+  return {
+    id: raw.id ?? raw._id ?? "",
+    projectId: project?.id ?? project?._id ?? raw.projectId ?? (typeof raw.project === "string" ? raw.project : ""),
+    projectName: project?.name ?? raw.projectName ?? "Unnamed project",
+    projectDescription: project?.description,
+    projectStatus: (project?.status ?? raw.projectStatus) === "inactive" ? "inactive" : "active",
+    status: (ASSIGNMENT_STATUSES as readonly string[]).includes(status) ? status : "active",
+    userId: person?.userId ?? person?.id ?? person?._id,
+    employeeName: person ? (person.name ?? ([person.firstName, person.lastName].filter(Boolean).join(" ").trim() || undefined)) : undefined,
+    employeeCode: person?.employeeId,
+    assignedAt: raw.assignedAt ?? raw.createdAt,
+  };
+}
+
+function unwrapAssignments(
+  data: { assignments?: RawAssignment[]; projects?: RawAssignment[] } | RawAssignment[]
+): RawAssignment[] {
+  return Array.isArray(data) ? data : (data.assignments ?? data.projects ?? []);
+}
+
+function cleanParams(params: AssignmentFilters): Record<string, string> | undefined {
+  const entries = Object.entries(params).filter(([, v]) => Boolean(v)) as [string, string][];
+  return entries.length ? Object.fromEntries(entries) : undefined;
+}
+
+/** User > My Projects — the caller's own assignments. `status` filters the
+ * assignment, `projectStatus` the joined project — two independent filters. */
+export async function listMyProjects(filters: Pick<AssignmentFilters, "status" | "projectStatus"> = {}): Promise<ProjectAssignment[]> {
+  const data = await httpService.get<Parameters<typeof unwrapAssignments>[0]>("/api/user/projects", cleanParams(filters));
+  return unwrapAssignments(data).map(mapAssignment);
+}
+
+/** Admin > Project Assignments > List (projects.edit). */
+export async function listAssignments(filters: AssignmentFilters = {}): Promise<ProjectAssignment[]> {
+  const data = await httpService.get<Parameters<typeof unwrapAssignments>[0]>("/api/admin/project-assignments", cleanParams(filters));
+  return unwrapAssignments(data).map(mapAssignment);
+}
+
+/** userId (not the Employee document's _id). 409 ALREADY_ASSIGNED if it already exists. */
+export async function assignProject(params: { userId: string; projectId: string }): Promise<void> {
+  await httpService.post("/api/admin/project-assignments", params);
+}
+
+export async function updateAssignmentStatus(id: string, status: AssignmentStatus): Promise<void> {
+  await httpService.patch(`/api/admin/project-assignments/${id}`, { status });
+}
+
+export async function unassignProject(id: string): Promise<void> {
+  await httpService.delete(`/api/admin/project-assignments/${id}`);
 }

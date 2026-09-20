@@ -9,6 +9,7 @@ import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
 import { calculateLeaveDays } from "@/services/leave.service";
 import { LEAVE_TYPES, type LeaveType } from "@/types/leave";
+import { applyTextRules } from "@/lib/validation";
 
 export interface LeaveRequestFormValues {
   leaveType: LeaveType;
@@ -57,6 +58,8 @@ export function LeaveRequestForm({ open, onClose, onSubmit }: LeaveRequestFormPr
     }
     if (!reason.trim()) nextErrors.reason = "Add a reason for your leave request.";
 
+    applyTextRules(nextErrors, { reason: [reason, "Reason", { min: 5, max: 500 }] });
+
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
@@ -94,12 +97,16 @@ export function LeaveRequestForm({ open, onClose, onSubmit }: LeaveRequestFormPr
           <DatePickerField
             label="Start Date"
             value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={(event) => {
+              setStartDate(event.target.value);
+              if (endDate && event.target.value > endDate) setEndDate(event.target.value);
+            }}
             error={errors.startDate}
           />
           <DatePickerField
             label="End Date"
             value={endDate}
+            min={startDate || undefined}
             onChange={(event) => setEndDate(event.target.value)}
             error={errors.endDate}
           />

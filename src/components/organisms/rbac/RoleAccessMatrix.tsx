@@ -15,6 +15,7 @@ import { MODULE_DEFS, MODULE_GROUPS } from "@/lib/rbac/modules";
 import { ACTION_KEYS, ACTION_LABELS, type ModuleKey, type RolePermissionMap } from "@/types/rbac";
 import type { ApiRole } from "@/types/role";
 import { cn } from "@/lib/cn";
+import { withDefaultPermissions } from "@/lib/rbac/role-label";
 
 function countGrantedModules(permissions: RolePermissionMap) {
   return MODULE_DEFS.filter((mod) => Object.values(permissions[mod.key] ?? {}).some(Boolean)).length;
@@ -65,7 +66,7 @@ export function RoleAccessMatrix() {
 
   function selectRole(role: ApiRole) {
     setSelectedRoleId(role.id);
-    setDraftPermissions(role.permissions);
+    setDraftPermissions(withDefaultPermissions(role.name, role.permissions));
   }
 
   function toggleGroup(group: string) {
@@ -95,7 +96,7 @@ export function RoleAccessMatrix() {
   }
 
   function discardChanges() {
-    if (selectedRole) setDraftPermissions(selectedRole.permissions);
+    if (selectedRole) setDraftPermissions(withDefaultPermissions(selectedRole.name, selectedRole.permissions));
   }
 
   async function handleSave() {
@@ -157,9 +158,9 @@ export function RoleAccessMatrix() {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+    <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
       {/* Role list */}
-      <aside className="flex w-full shrink-0 flex-col rounded-xl border border-border bg-surface-card lg:w-72">
+      <aside className="flex w-full shrink-0 flex-col rounded-xl border border-border bg-surface-card xl:w-72">
         <div className="flex items-center justify-between gap-2 border-b border-border p-3">
           <h2 className="px-1 text-fs-lg font-semibold text-ink">Roles</h2>
           <Button size="sm" variant="ghost" onClick={() => setIsCreateOpen(true)}>
@@ -180,7 +181,7 @@ export function RoleAccessMatrix() {
           </div>
         )}
 
-        <div className="flex max-h-[32rem] flex-col gap-0.5 overflow-y-auto p-2 lg:max-h-[calc(100vh-16rem)]">
+        <div className="flex max-h-[32rem] flex-col gap-0.5 overflow-y-auto p-2 xl:max-h-[calc(100vh-16rem)]">
           {filteredRoles.length === 0 ? (
             <p className="px-3 py-6 text-center text-fs-sm text-muted-light">No roles match &ldquo;{roleSearch}&rdquo;.</p>
           ) : (
@@ -244,7 +245,7 @@ export function RoleAccessMatrix() {
                   granted
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button variant="ghost" size="sm" onClick={discardChanges} disabled={!isDirty}>
                   <RotateCcw className="size-3.5" />
                   Discard

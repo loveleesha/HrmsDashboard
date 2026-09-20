@@ -1,33 +1,39 @@
-import { CalendarDays } from "lucide-react";
-import { Input, type InputProps } from "@/components/atoms/Input";
+import { DatePicker } from "@/components/molecules/DatePicker";
 import { FormField } from "@/components/molecules/FormField";
 
-export interface DatePickerFieldProps extends Omit<InputProps, "type"> {
+export interface DatePickerFieldProps {
   label: string;
+  id?: string;
+  /** YYYY-MM-DD, or "" for none. */
+  value: string;
+  /** Kept event-shaped (`e.target.value`) so existing call sites needn't change. */
+  onChange?: (event: { target: { value: string } }) => void;
+  min?: string;
+  max?: string;
   error?: string;
+  required?: boolean;
+  disabled?: boolean;
+  clearable?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
-export function DatePickerField({
-  label,
-  id,
-  error,
-  className,
-  ...props
-}: DatePickerFieldProps) {
+export function DatePickerField({ label, id, value, onChange, min, max, error, required, disabled, clearable, placeholder, className }: DatePickerFieldProps) {
   const fieldId = id ?? label.toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <FormField label={label} htmlFor={fieldId} error={error}>
-      <div className="relative">
-        <CalendarDays className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-light" />
-        <Input
-          id={fieldId}
-          type="date"
-          className={`pl-9 ${className ?? ""}`}
-          invalid={Boolean(error)}
-          {...props}
-        />
-      </div>
+    <FormField label={label} htmlFor={fieldId} error={error} required={required} className={className}>
+      <DatePicker
+        id={fieldId}
+        value={value}
+        onChange={(next) => onChange?.({ target: { value: next } })}
+        min={min}
+        max={max}
+        invalid={Boolean(error)}
+        disabled={disabled}
+        clearable={clearable}
+        placeholder={placeholder}
+      />
     </FormField>
   );
 }

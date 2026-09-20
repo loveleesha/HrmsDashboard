@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5c0a14"/>
+      <stop offset="0.45" stop-color="#c81f26"/>
+      <stop offset="1" stop-color="#ff7a45"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.2" cy="0.15" r="0.6">
+      <stop offset="0" stop-color="#ffb08a" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#ffb08a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0.85" cy="0.9" r="0.6">
+      <stop offset="0" stop-color="#7650e9" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#7650e9" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.6" fill="#fff" fill-opacity="0.22"/>
+    </pattern>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="40"/></filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <rect width="1600" height="1200" fill="url(#base)"/>
+  <rect width="1600" height="1200" fill="url(#glowA)"/>
+  <rect width="1600" height="1200" fill="url(#glowB)"/>
+  <rect width="1600" height="1200" fill="url(#dots)"/>
+
+  <g filter="url(#soft)">
+    <circle cx="1280" cy="220" r="260" fill="#ffd2a8" fill-opacity="0.35"/>
+    <circle cx="260" cy="1000" r="300" fill="#ff5145" fill-opacity="0.45"/>
+    <circle cx="820" cy="640" r="200" fill="#7650e9" fill-opacity="0.28"/>
+  </g>
+
+  <g fill="none" stroke="url(#wave)" stroke-width="2">
+    <path d="M-50 820 C 250 640, 520 980, 820 780 S 1400 560, 1700 720"/>
+    <path d="M-50 880 C 250 700, 520 1040, 820 840 S 1400 620, 1700 780" stroke-opacity="0.7"/>
+    <path d="M-50 940 C 250 760, 520 1100, 820 900 S 1400 680, 1700 840" stroke-opacity="0.45"/>
+    <path d="M-50 360 C 300 180, 640 520, 980 320 S 1450 200, 1700 300" stroke-opacity="0.5"/>
+  </g>
+
+  <!-- a small "people network": connected nodes -->
+  <g stroke="#fff" stroke-opacity="0.35" stroke-width="1.5">
+    <line x1="1080" y1="300" x2="1250" y2="420"/>
+    <line x1="1250" y1="420" x2="1180" y2="590"/>
+    <line x1="1250" y1="420" x2="1420" y2="360"/>
+    <line x1="1180" y1="590" x2="1370" y2="640"/>
+    <line x1="1420" y1="360" x2="1370" y2="640"/>
+    <line x1="1080" y1="300" x2="1010" y2="470"/>
+    <line x1="1010" y1="470" x2="1180" y2="590"/>
+  </g>
+  <g fill="#fff">
+    <g filter="url(#glow)" fill-opacity="0.7">
+      <circle cx="1080" cy="300" r="12"/><circle cx="1250" cy="420" r="16"/><circle cx="1180" cy="590" r="12"/>
+      <circle cx="1420" cy="360" r="10"/><circle cx="1370" cy="640" r="14"/><circle cx="1010" cy="470" r="9"/>
+    </g>
+    <circle cx="1080" cy="300" r="7"/><circle cx="1250" cy="420" r="10"/><circle cx="1180" cy="590" r="7"/>
+    <circle cx="1420" cy="360" r="6"/><circle cx="1370" cy="640" r="8"/><circle cx="1010" cy="470" r="5"/>
+  </g>
+
+  <g fill="none" stroke="#fff" stroke-opacity="0.16" stroke-width="1.5">
+    <circle cx="240" cy="240" r="120"/><circle cx="240" cy="240" r="190"/><circle cx="240" cy="240" r="270"/>
+  </g>
+</svg>

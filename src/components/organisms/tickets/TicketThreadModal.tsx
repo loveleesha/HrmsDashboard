@@ -63,10 +63,15 @@ export function TicketThreadModal({ scope, ticketId, onClose, onChanged, canRepl
 
   async function handleSend() {
     if (!reply.trim()) return;
+    if (reply.trim().length > 2000) {
+      showToast("Replies can be at most 2000 characters.", "error");
+      return;
+    }
     setIsSending(true);
     try {
       await replyToTicket(scope, ticketId, reply.trim());
       setReply("");
+      showToast("Reply sent.");
       await refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not send your reply.", "error");

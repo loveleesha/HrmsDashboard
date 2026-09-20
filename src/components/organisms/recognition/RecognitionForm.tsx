@@ -10,6 +10,7 @@ import { RecognitionBadgeChip } from "@/components/molecules/RecognitionBadgeChi
 import { RECOGNITION_BADGES } from "@/services/recognition.service";
 import type { Employee } from "@/types/employee";
 import type { BadgeKey } from "@/types/recognition";
+import { applyTextRules } from "@/lib/validation";
 
 export interface RecognitionFormValues {
   employeeId: string;
@@ -57,6 +58,8 @@ export function RecognitionForm({
     if (!employeeId) nextErrors.employeeId = "Select a colleague to recognize.";
     if (!badge) nextErrors.badge = "Select a badge.";
     if (!message.trim()) nextErrors.message = "Write a short message.";
+
+    applyTextRules(nextErrors, { message: [message, "Message", { min: 5, max: 300 }] });
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

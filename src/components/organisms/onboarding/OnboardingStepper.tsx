@@ -5,6 +5,8 @@ import { ONBOARDING_STEP_KEYS, ONBOARDING_STEP_LABELS, type OnboardingStepKey } 
 import { cn } from "@/lib/cn";
 
 export interface OnboardingStepperProps {
+  /** Defaults to every onboarding step; the edit screen passes its own subset. */
+  steps?: readonly OnboardingStepKey[];
   currentStepIndex: number;
   completedSteps: OnboardingStepKey[];
   invalidSteps?: OnboardingStepKey[];
@@ -14,6 +16,7 @@ export interface OnboardingStepperProps {
 }
 
 export function OnboardingStepper({
+  steps = ONBOARDING_STEP_KEYS,
   currentStepIndex,
   completedSteps,
   invalidSteps = [],
@@ -23,7 +26,7 @@ export function OnboardingStepper({
 }: OnboardingStepperProps) {
   return (
     <nav aria-label="Onboarding steps" className={cn("flex flex-col gap-1", className)}>
-      {ONBOARDING_STEP_KEYS.map((key, index) => {
+      {steps.map((key, index) => {
         const isCompleted = completedSteps.includes(key);
         const isCurrent = index === currentStepIndex;
         const isInvalid = invalidSteps.includes(key) && !isCurrent;

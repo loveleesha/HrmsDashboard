@@ -42,6 +42,10 @@ export function AddCompanyDocumentForm({
       setError("Add a title and pick a category.");
       return;
     }
+    if (title.trim().length > 120) {
+      setError("Title must be 120 characters or fewer.");
+      return;
+    }
     onSubmit({ title: title.trim(), category });
     reset();
   }

@@ -9,6 +9,7 @@ import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from "@/types/expense";
+import { applyTextRules, isFutureDate } from "@/lib/validation";
 
 export interface ExpenseFormValues {
   category: ExpenseCategory;
@@ -50,6 +51,10 @@ export function ExpenseForm({ open, onClose, onSubmit }: ExpenseFormProps) {
     const amountNum = Number(amount);
     if (!amountNum || amountNum <= 0) nextErrors.amount = "Enter a valid amount.";
     if (!spentOn) nextErrors.spentOn = "Select the date spent.";
+
+    applyTextRules(nextErrors, { description: [description, "Description", { min: 3, max: 200 }] });
+    if (amountNum > 10_000_000 && !nextErrors.amount) nextErrors.amount = "Amount looks too large — check the value.";
+    if (spentOn && isFutureDate(spentOn)) nextErrors.spentOn = "The date spent can't be in the future.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

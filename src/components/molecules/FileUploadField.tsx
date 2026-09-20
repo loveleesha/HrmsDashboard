@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/cn";
 
 export interface FileUploadValue {
@@ -32,6 +33,19 @@ export interface FileUploadFieldProps {
   className?: string;
 }
 
+/** Does `file` satisfy an <input accept> list like "image/png,image/jpeg" or ".pdf"? */
+function matchesAccept(file: File, accept?: string): boolean {
+  if (!accept) return true;
+  const tokens = accept.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+  const name = file.name.toLowerCase();
+  const type = file.type.toLowerCase();
+  return tokens.some((token) => {
+    if (token.startsWith(".")) return name.endsWith(token);
+    if (token.endsWith("/*")) return type.startsWith(token.slice(0, -1));
+    return type === token;
+  });
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -53,6 +67,7 @@ export function FileUploadField({
   hint,
   className,
 }: FileUploadFieldProps) {
+  const { showToast } = useToast();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -68,6 +83,11 @@ export function FileUploadField({
   async function handleFiles(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
+
+    if (!matchesAccept(file, accept)) {
+      setLocalError(`This file type isn't allowed. Accepted: ${accept?.replaceAll(",", ", ")}.`);
+      return;
+    }
 
     if (file.size > maxSizeMb * 1024 * 1024) {
       setLocalError(`File must be ${maxSizeMb}MB or smaller.`);
@@ -86,6 +106,7 @@ export function FileUploadField({
     try {
       const url = await onUpload(file);
       onChange({ fileName: file.name, previewUrl, url });
+      showToast(`${file.name} uploaded.`);
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Upload failed. Please try again.");
     } finally {

@@ -1,18 +1,38 @@
-export type DsrStatus = "Pending" | "Approved" | "Rejected" | "Pending - Short Leave";
-
-export const DSR_STATUSES: DsrStatus[] = ["Pending", "Pending - Short Leave", "Approved", "Rejected"];
-
 export interface DsrEntry {
   id: string;
-  employeeId: string;
-  employeeName: string;
-  email: string;
-  employmentType: "Permanent" | "Contract" | "Intern";
-  project: string;
   date: string;
+  /** Display label: the project's name, or the free-text "other" label. */
+  project: string;
+  /** True when the entry isn't tied to a listed project. */
+  isOtherProject: boolean;
   estimatedHours: string;
   noWorkDone: boolean;
-  usedAiTools: boolean;
+  aiToolsUsed: boolean;
   description: string;
-  status: DsrStatus;
+  /** Only populated on Admin > DSR (employee is populated there). */
+  employeeName?: string;
+  employeeCode?: string;
+  employeeEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  /** Present only if the backend returns one — the collection has no approve/reject endpoint. */
+  status?: string;
+}
+
+/**
+ * Four cases (see the collection's Submit DSR requests):
+ *  - With project: `project` = the Project's id, otherProject ignored.
+ *  - Other, custom text: `project` omitted entirely (never ""), `otherProject` set.
+ *  - Other, blank: both omitted — the server labels it "Internal Project".
+ *  - No work done: `noWorkDone: true` skips description (and hours) entirely.
+ * `aiToolsUsed` is always required.
+ */
+export interface SubmitDsrPayload {
+  date: string;
+  project?: string;
+  otherProject?: string;
+  estimatedHours?: string;
+  noWorkDone: boolean;
+  aiToolsUsed: boolean;
+  description?: string;
 }

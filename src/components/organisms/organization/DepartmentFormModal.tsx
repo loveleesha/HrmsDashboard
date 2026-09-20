@@ -7,6 +7,7 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
+import { textError } from "@/lib/validation";
 import type { ApiDepartment, CreateDepartmentPayload, UpdateDepartmentPayload } from "@/types/department";
 
 export interface DepartmentFormModalProps {
@@ -38,7 +39,7 @@ export function DepartmentFormModal({
   const [description, setDescription] = useState("");
   const [head, setHead] = useState("");
   const [status, setStatus] = useState("active");
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [wasOpen, setWasOpen] = useState(open);
 
   // Re-seed the fields from `department` on every open (not just once at
@@ -51,16 +52,24 @@ export function DepartmentFormModal({
       setDescription(department?.description ?? "");
       setHead(department?.head ?? "");
       setStatus(department?.status ?? "active");
-      setError(null);
+      setErrors({});
     }
   }
 
   async function handleSubmit() {
-    if (!name.trim()) {
-      setError("Department name is required.");
+    const nextErrors: Record<string, string> = {};
+    if (!name.trim()) nextErrors.name = "Department name is required.";
+    const nameIssue = textError(name, "Department name", { min: 2, max: 60 });
+    if (nameIssue && !nextErrors.name) nextErrors.name = nameIssue;
+    const descriptionIssue = textError(description, "Description", { max: 300 });
+    if (descriptionIssue) nextErrors.description = descriptionIssue;
+    const headIssue = textError(head, "Department head", { max: 60 });
+    if (headIssue) nextErrors.head = headIssue;
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
-    setError(null);
+    setErrors({});
     if (isEdit && department) {
       await onUpdate(department.id, {
         name: name.trim(),
@@ -91,10 +100,10 @@ export function DepartmentFormModal({
       }
     >
       <div className="flex flex-col gap-4">
-        <FormField label="Department Name" htmlFor="deptName" required error={error ?? undefined}>
+        <FormField label="Department Name" htmlFor="deptName" required error={errors.name}>
           <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Engineering" />
         </FormField>
-        <FormField label="Description" htmlFor="deptDescription">
+        <FormField label="Description" htmlFor="deptDescription" error={errors.description}>
           <Textarea
             id="deptDescription"
             rows={3}
@@ -105,7 +114,7 @@ export function DepartmentFormModal({
         </FormField>
         {isEdit && (
           <>
-            <FormField label="Department Head" htmlFor="deptHead">
+            <FormField label="Department Head" htmlFor="deptHead" error={errors.head}>
               <Input id="deptHead" value={head} onChange={(e) => setHead(e.target.value)} placeholder="e.g. Priya Nair" />
             </FormField>
             <FormField label="Status" htmlFor="deptStatus">

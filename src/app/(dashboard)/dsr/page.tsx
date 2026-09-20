@@ -1,114 +1,110 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Filter, RefreshCw, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Eye, Filter, RefreshCw, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { SearchInput } from "@/components/molecules/SearchInput";
+import { Tabs } from "@/components/molecules/Tabs";
 import { Spinner } from "@/components/atoms/Spinner";
+import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { Table } from "@/components/molecules/Table";
 import { DsrFilterBar, EMPTY_DSR_FILTERS, type DsrFilters } from "@/components/organisms/dsr/DsrFilterBar";
-import { CreateDsrPanel, type CreateDsrValues } from "@/components/organisms/dsr/CreateDsrPanel";
-import { useAuth } from "@/hooks/use-auth";
+import { CreateDsrPanel } from "@/components/organisms/dsr/CreateDsrPanel";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
-import { getDsrEntries, newDsrId } from "@/services/dsr.service";
-import { getEmployees } from "@/services/employee.service";
-import type { DsrEntry, DsrStatus } from "@/types/dsr";
-import type { Employee } from "@/types/employee";
+import { listAllDsr, listMyDsr, submitDsr } from "@/services/dsr.service";
+import type { DsrEntry, SubmitDsrPayload } from "@/types/dsr";
 
-const STATUS_TONE: Record<DsrStatus, "success" | "warning" | "danger" | "info"> = {
-  Approved: "success",
-  Pending: "warning",
-  "Pending - Short Leave": "info",
-  Rejected: "danger",
-};
+type Scope = "user" | "admin";
 
 export default function DsrPage() {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const { can } = useRBAC();
 
+  const canAdd = can("dsr", "add");
+  // Admin > DSR is gated on dsr.approve, not dsr.view (which every role has for its own entries).
+  const canSeeAll = can("dsr", "approve");
+
+  const [requestedScope, setScope] = useState<Scope>("user");
+  const scope: Scope = requestedScope === "admin" && canSeeAll ? "admin" : "user";
+  const [prevScope, setPrevScope] = useState(scope);
   const [entries, setEntries] = useState<DsrEntry[] | null>(null);
-  const [employees, setEmployees] = useState<Employee[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [filters, setFilters] = useState<DsrFilters>(EMPTY_DSR_FILTERS);
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
-
-  const canApprove = can("dsr", "approve");
+  if (scope !== prevScope) {
+    setPrevScope(scope);
+    setEntries(null);
+    setLoadError(null);
+  }
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([getDsrEntries(), getEmployees()]).then(([dsrData, employeeData]) => {
-      if (!isMounted) return;
-      setEntries(dsrData);
-      setEmployees(employeeData);
-    });
+    (scope === "admin" ? listAllDsr() : listMyDsr())
+      .then((data) => {
+        if (isMounted) setEntries(data);
+      })
+      .catch((err) => {
+        if (isMounted) setLoadError(err instanceof Error ? err.message : "Could not load worksheets.");
+      });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [scope, reloadKey]);
 
-  function loadData() {
+  function reload() {
     setEntries(null);
-    Promise.all([getDsrEntries(), getEmployees()]).then(([dsrData, employeeData]) => {
-      setEntries(dsrData);
-      setEmployees(employeeData);
-    });
+    setLoadError(null);
+    setReloadKey((k) => k + 1);
   }
 
-  const currentEmployee = employees?.find((e) => e.email === user?.email) ?? employees?.[0] ?? null;
+  async function handleSubmit(payload: SubmitDsrPayload): Promise<boolean> {
+    try {
+      await submitDsr(payload);
+      showToast("DSR submitted.");
+      if (scope === "user") reload();
+      else setScope("user");
+      return true;
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not submit your DSR.", "error");
+      return false;
+    }
+  }
+
+  const projectOptions = useMemo(() => Array.from(new Set((entries ?? []).map((e) => e.project))).sort(), [entries]);
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const isAdminScope = scope === "admin";
+  const detailHref = (entry: DsrEntry) => `/dsr/${entry.id}${isAdminScope ? "?scope=admin" : ""}`;
+  const hasStatus = (entries ?? []).some((e) => e.status);
 
   const visibleEntries = useMemo(() => {
-    if (!entries || !currentEmployee) return [];
-    let list = canApprove ? entries : entries.filter((e) => e.employeeId === currentEmployee.id);
-
-    if (filters.fromDate) list = list.filter((e) => e.date >= filters.fromDate);
-    if (filters.toDate) list = list.filter((e) => e.date <= filters.toDate);
-    if (filters.status) list = list.filter((e) => e.status === filters.status);
+    let list = entries ?? [];
+    if (filters.fromDate) list = list.filter((e) => e.date.slice(0, 10) >= filters.fromDate);
+    if (filters.toDate) list = list.filter((e) => e.date.slice(0, 10) <= filters.toDate);
     if (filters.project) list = list.filter((e) => e.project === filters.project);
-    if (search.trim()) {
-      const query = search.trim().toLowerCase();
+    const query = search.trim().toLowerCase();
+    if (query) {
       list = list.filter(
-        (e) => e.employeeName.toLowerCase().includes(query) || e.project.toLowerCase().includes(query)
+        (e) =>
+          e.project.toLowerCase().includes(query) ||
+          e.description.toLowerCase().includes(query) ||
+          e.employeeName?.toLowerCase().includes(query)
       );
     }
     return list;
-  }, [entries, currentEmployee, canApprove, filters, search]);
-
-  function handleSubmit(values: CreateDsrValues) {
-    if (!currentEmployee) return;
-    const newEntry: DsrEntry = {
-      id: newDsrId(),
-      employeeId: currentEmployee.id,
-      employeeName: currentEmployee.name,
-      email: currentEmployee.email,
-      employmentType: "Permanent",
-      project: values.project,
-      date: values.date,
-      estimatedHours: values.estimatedHours,
-      noWorkDone: values.noWorkDone,
-      usedAiTools: values.usedAiTools,
-      description: values.description,
-      status: "Pending",
-    };
-    setEntries((prev) => [newEntry, ...(prev ?? [])]);
-    showToast("DSR submitted for approval.");
-  }
-
-  function updateStatus(id: string, status: DsrStatus) {
-    setEntries((prev) => (prev ?? []).map((e) => (e.id === id ? { ...e, status } : e)));
-    showToast(status === "Approved" ? "DSR approved." : "DSR rejected.", status === "Approved" ? "success" : "info");
-  }
+  }, [entries, filters, search]);
 
   return (
     <div>
       <PageHeader
         title="DSR"
-        description="Submit and track your daily status reports."
+        description={isAdminScope ? "Every employee's daily status reports." : "Submit and track your daily status reports."}
         actions={
           <>
             <Button variant="secondary" onClick={() => setFilterOpen((prev) => !prev)}>
@@ -120,7 +116,7 @@ export default function DsrPage() {
                 </span>
               )}
             </Button>
-            <Button variant="secondary" onClick={loadData}>
+            <Button variant="secondary" onClick={reload}>
               <RefreshCw className="size-4" />
               Refresh
             </Button>
@@ -128,29 +124,46 @@ export default function DsrPage() {
         }
       />
 
-      {filterOpen && <DsrFilterBar filters={filters} onChange={setFilters} />}
+      {canSeeAll && (
+        <div className="mb-4">
+          <Tabs
+            options={[
+              { label: "My DSR", value: "user" },
+              { label: "All DSR", value: "admin" },
+            ]}
+            value={scope}
+            onChange={(value) => setScope(value as Scope)}
+          />
+        </div>
+      )}
+
+      {filterOpen && <DsrFilterBar filters={filters} onChange={setFilters} projectOptions={projectOptions} />}
 
       <p className="mb-4 rounded-lg bg-warning-bg px-3 py-2 text-fs-sm text-warning">
-        Please Note: You can record any additional hours worked beyond your allocated project hours under the
-        &ldquo;Miscellaneous / Bench&rdquo; project.
+        Please Note: You can log time against the projects you&apos;re assigned to. Anything else goes under
+        &ldquo;Miscellaneous&rdquo; — leave the label blank and it&apos;s logged as &ldquo;Internal Project&rdquo;.
       </p>
 
-      <CreateDsrPanel onSubmit={handleSubmit} />
+      {canAdd && <CreateDsrPanel onSubmit={handleSubmit} />}
 
       <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-fs-xl font-semibold text-ink">All Worksheets</h3>
+          <h3 className="text-fs-xl font-semibold text-ink">{isAdminScope ? "All Worksheets" : "My Worksheets"}</h3>
           <p className="text-fs-sm text-muted">Daily status reports overview</p>
         </div>
         <SearchInput
-          placeholder="Search by employee or project…"
+          placeholder={isAdminScope ? "Search by employee, project or description…" : "Search by project or description…"}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full sm:w-72"
         />
       </div>
 
-      {!entries || !currentEmployee ? (
+      {loadError ? (
+        <p className="rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center text-fs-base text-danger">
+          {loadError}
+        </p>
+      ) : !entries ? (
         <div className="flex items-center justify-center gap-2 py-24 text-muted">
           <Spinner />
           Loading worksheets…
@@ -158,24 +171,49 @@ export default function DsrPage() {
       ) : (
         <Table
           columns={[
-            { key: "name", header: "Emp Name", render: (e: DsrEntry) => <span className="font-medium text-ink">{e.employeeName}</span> },
-            { key: "empid", header: "EmpId", render: (e: DsrEntry) => e.employeeId },
-            { key: "project", header: "Project", render: (e: DsrEntry) => e.project },
+            ...(isAdminScope
+              ? [
+                  {
+                    key: "name",
+                    header: "Employee",
+                    render: (e: DsrEntry) => (
+                      <div>
+                        <p className="font-medium text-ink">{e.employeeName ?? "—"}</p>
+                        {e.employeeCode && <p className="text-fs-sm text-muted">{e.employeeCode}</p>}
+                      </div>
+                    ),
+                  },
+                ]
+              : []),
             {
               key: "date",
               header: "Date",
-              render: (e: DsrEntry) => new Date(e.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+              render: (e: DsrEntry) => (
+                <Link href={detailHref(e)} className="font-medium text-ink hover:text-primary hover:underline">
+                  {new Date(e.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                </Link>
+              ),
+            },
+            {
+              key: "project",
+              header: "Project",
+              render: (e: DsrEntry) => (
+                <span>
+                  {e.project}
+                  {e.isOtherProject && <span className="ml-1.5 text-fs-sm text-muted-light">(misc.)</span>}
+                </span>
+              ),
             },
             {
               key: "hours",
               header: "Logged Hr",
-              render: (e: DsrEntry) => (e.noWorkDone ? <span className="text-muted-light">No work</span> : e.estimatedHours),
+              render: (e: DsrEntry) => (e.noWorkDone ? <span className="text-muted-light">No work</span> : e.estimatedHours || "—"),
             },
             {
               key: "ai",
               header: "AI Tools",
               render: (e: DsrEntry) =>
-                e.usedAiTools ? (
+                e.aiToolsUsed ? (
                   <Badge tone="info">
                     <Sparkles className="size-3" />
                     Yes
@@ -185,28 +223,31 @@ export default function DsrPage() {
                 ),
             },
             {
-              key: "status",
-              header: "Final Approval",
+              key: "description",
+              header: "Description",
+              className: "max-w-[16rem]",
+              render: (e: DsrEntry) => <span className="line-clamp-2 break-words [overflow-wrap:anywhere]">{e.description || "—"}</span>,
+            },
+            ...(hasStatus ? [{ key: "status", header: "Status", render: (e: DsrEntry) => (e.status ? <StatusBadge status={e.status} /> : "—") }] : []),
+            {
+              key: "actions",
+              header: "",
+              headerClassName: "w-24",
+              className: "text-right",
               render: (e: DsrEntry) => (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone={STATUS_TONE[e.status]}>{e.status}</Badge>
-                  {canApprove && e.employeeId !== currentEmployee.id && e.status.startsWith("Pending") && (
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="secondary" onClick={() => updateStatus(e.id, "Approved")}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => updateStatus(e.id, "Rejected")}>
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                </div>
+                <Link
+                  href={detailHref(e)}
+                  className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-border px-3 text-fs-base font-medium text-ink hover:border-border-strong hover:text-primary"
+                >
+                  <Eye className="size-3.5" />
+                  View
+                </Link>
               ),
             },
           ]}
           data={visibleEntries}
           keyField={(e) => e.id}
-          emptyMessage="No DSR worksheets match your filters."
+          emptyMessage={entries.length === 0 ? "No DSR worksheets yet." : "No DSR worksheets match your filters."}
         />
       )}
     </div>

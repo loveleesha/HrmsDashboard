@@ -8,6 +8,7 @@ import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
 import { TICKET_PRIORITIES, TICKET_CATEGORIES, type CreateTicketPayload, type TicketPriority } from "@/types/ticket";
+import { applyTextRules } from "@/lib/validation";
 
 export interface TicketFormProps {
   open: boolean;
@@ -42,6 +43,11 @@ export function TicketForm({ open, onClose, onSubmit, isSubmitting }: TicketForm
     if (!subject.trim()) nextErrors.subject = "Add a short subject.";
     if (!message.trim()) nextErrors.message = "Describe the issue.";
     if (!priority) nextErrors.priority = "Select a priority.";
+
+    applyTextRules(nextErrors, {
+      subject: [subject, "Subject", { min: 5, max: 120 }],
+      message: [message, "Description", { min: 10, max: 2000 }],
+    });
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

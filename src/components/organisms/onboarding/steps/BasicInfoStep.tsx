@@ -12,6 +12,7 @@ import { checkEmailExists } from "@/services/onboarding.service";
 import { uploadOnboardingAsset } from "@/services/onboarding-asset.service";
 import { GENDER_LABELS, GENDERS, type BasicInfo, type Gender } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
+import { DatePicker } from "@/components/molecules/DatePicker";
 
 export interface BasicInfoStepProps {
   value: BasicInfo;
@@ -152,12 +153,11 @@ export const BasicInfoStep = forwardRef<OnboardingStepHandle, BasicInfoStepProps
           error={errors.dateOfBirth}
           hint={!errors.dateOfBirth ? "Must be at least 16 years old." : undefined}
         >
-          <Input
+          <DatePicker
             id="dateOfBirth"
-            type="date"
             max={MAX_DATE_OF_BIRTH}
             value={value.dateOfBirth}
-            onChange={(e) => update("dateOfBirth", e.target.value)}
+            onChange={(next) => update("dateOfBirth", next)}
             invalid={Boolean(errors.dateOfBirth)}
           />
         </FormField>

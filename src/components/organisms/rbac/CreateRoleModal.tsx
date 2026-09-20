@@ -5,6 +5,7 @@ import { Modal } from "@/components/molecules/Modal";
 import { FormField } from "@/components/molecules/FormField";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
+import { textError } from "@/lib/validation";
 
 export interface CreateRoleModalProps {
   open: boolean;
@@ -49,6 +50,15 @@ export function CreateRoleModal({ open, onClose, onCreate, isSubmitting }: Creat
       setError("Role key is required.");
       return;
     }
+    const labelIssue = textError(label, "Role name", { min: 2, max: 40 });
+    if (labelIssue) {
+      setError(labelIssue);
+      return;
+    }
+    if (name.trim().length > 40) {
+      setError("Role key must be 40 characters or fewer.");
+      return;
+    }
     setError(null);
     await onCreate({ name: name.trim(), label: label.trim() });
     setLabel("");
@@ -74,7 +84,7 @@ export function CreateRoleModal({ open, onClose, onCreate, isSubmitting }: Creat
       }
     >
       <div className="flex flex-col gap-4">
-        <FormField label="Display Name" htmlFor="roleLabel" required error={error && !label.trim() ? error : undefined}>
+        <FormField label="Display Name" htmlFor="roleLabel" required error={error && !error.startsWith("Role key") ? error : undefined}>
           <Input
             id="roleLabel"
             value={label}
@@ -87,7 +97,7 @@ export function CreateRoleModal({ open, onClose, onCreate, isSubmitting }: Creat
           htmlFor="roleName"
           required
           hint="Unique identifier used by the backend — lowercase, no spaces."
-          error={error && !name.trim() ? error : undefined}
+          error={error?.startsWith("Role key") ? error : undefined}
         >
           <Input
             id="roleName"

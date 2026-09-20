@@ -15,7 +15,7 @@ export interface ProfileTabNavProps {
 
 export function ProfileTabNav({ tabs, value, onChange }: ProfileTabNavProps) {
   return (
-    <nav className="flex flex-col gap-1 rounded-xl border border-border bg-surface-card p-2">
+    <nav className="flex gap-1 overflow-x-auto rounded-xl border border-border bg-surface-card p-2 lg:flex-col lg:overflow-visible">
       {tabs.map((tab) => {
         const active = tab.value === value;
         return (
@@ -25,7 +25,7 @@ export function ProfileTabNav({ tabs, value, onChange }: ProfileTabNavProps) {
             onClick={() => onChange(tab.value)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-left text-fs-lg transition-colors",
+              "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2.5 text-left text-fs-base transition-colors lg:gap-3 lg:text-fs-lg",
               active ? "bg-primary text-white font-medium" : "text-ink hover:bg-surface"
             )}
           >

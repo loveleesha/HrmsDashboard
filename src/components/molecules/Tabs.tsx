@@ -16,7 +16,7 @@ export function Tabs({ options, value, onChange, className }: TabsProps) {
   return (
     <div
       role="tablist"
-      className={cn("inline-flex items-center gap-1 rounded-lg bg-surface p-1", className)}
+      className={cn("inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-lg bg-surface p-1", className)}
     >
       {options.map((option) => (
         <button
@@ -26,7 +26,7 @@ export function Tabs({ options, value, onChange, className }: TabsProps) {
           aria-selected={value === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            "rounded-md px-3.5 py-1.5 text-fs-base font-medium transition-colors",
+            "shrink-0 whitespace-nowrap rounded-md px-3.5 py-1.5 text-fs-base font-medium transition-colors",
             value === option.value
               ? "bg-surface-card text-ink shadow-sm"
               : "text-muted hover:text-ink"

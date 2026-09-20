@@ -4,7 +4,9 @@ export interface EmployeeDocument {
   id: string;
   name: string;
   category: string;
-  uploadedOn: string;
+  uploadedOn?: string;
   status: DocumentStatus;
-  sizeKb: number;
+  sizeBytes?: number;
+  mimeType?: string;
+  fileUrl?: string;
 }

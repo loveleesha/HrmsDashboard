@@ -33,7 +33,7 @@ function SectionCard({
 }) {
   return (
     <div className="rounded-xl border border-border bg-surface-card p-4" data-step={stepKey}>
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-fs-xl font-semibold text-ink">{title}</h3>
         <Button variant="ghost" size="sm" onClick={onEdit}>
           <Pencil className="size-3.5" />
@@ -47,9 +47,9 @@ function SectionCard({
 
 function Field({ label, value }: { label: string; value?: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-fs-sm text-muted-light">{label}</p>
-      <p className="text-fs-base text-ink">{value?.trim() ? value : "—"}</p>
+      <p className="break-words text-fs-base text-ink [overflow-wrap:anywhere]">{value?.trim() ? value : "—"}</p>
     </div>
   );
 }
@@ -67,7 +67,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
   const stepIndex = (key: (typeof ONBOARDING_STEP_KEYS)[number]) => ONBOARDING_STEP_KEYS.indexOf(key);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="@container flex flex-col gap-5">
       <div>
         <h2 className="text-fs-3xl font-semibold text-ink">Review Employee Information</h2>
         <p className="mt-1 text-fs-base text-muted">
@@ -77,7 +77,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
       </div>
 
       <SectionCard title="Basic Information" stepKey="basicInfo" onEdit={() => onEditStep(stepIndex("basicInfo"))}>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @2xl:grid-cols-4">
           <Field label="Full Name" value={employeeFullName(record.basicInfo)} />
           <Field label="Email" value={record.basicInfo.email} />
           <Field label="Date of Birth" value={record.basicInfo.dateOfBirth} />
@@ -86,7 +86,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
       </SectionCard>
 
       <SectionCard title="Contact Information" stepKey="contactInfo" onEdit={() => onEditStep(stepIndex("contactInfo"))}>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @2xl:grid-cols-4">
           <Field label="Mobile" value={record.contactInfo.mobile} />
           <Field label="City" value={record.contactInfo.city} />
           <Field label="State" value={record.contactInfo.state} />
@@ -99,7 +99,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
         stepKey="professionalInfo"
         onEdit={() => onEditStep(stepIndex("professionalInfo"))}
       >
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 @sm:grid-cols-2 @2xl:grid-cols-4">
           <Field label="Department" value={record.professionalInfo.department} />
           <Field label="Designation" value={record.professionalInfo.designation} />
           <Field label="Joining Date" value={record.professionalInfo.joiningDate} />
@@ -160,7 +160,7 @@ export const ReviewStep = forwardRef<OnboardingStepHandle, ReviewStepProps>(func
       <SectionCard title="Documents" stepKey="documents" onEdit={() => onEditStep(stepIndex("documents"))}>
         <ul className="flex flex-col gap-1.5">
           {record.documents.map((doc) => (
-            <li key={doc.key} className="flex items-center justify-between text-fs-base text-ink">
+            <li key={doc.key} className="flex items-center justify-between gap-3 text-fs-base text-ink">
               <span>
                 {doc.name} {doc.required && <span className="text-fs-sm text-muted-light">(Required)</span>}
               </span>

@@ -8,6 +8,7 @@ import { professionalInfoSchema } from "@/schemas/onboarding.schema";
 import { useDepartments } from "@/hooks/use-departments";
 import { EMPLOYMENT_TYPES, type EmploymentType, type ProfessionalInfo } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
+import { DatePicker } from "@/components/molecules/DatePicker";
 
 export interface ProfessionalInfoStepProps {
   value: ProfessionalInfo;
@@ -68,11 +69,10 @@ export const ProfessionalInfoStep = forwardRef<OnboardingStepHandle, Professiona
             />
           </FormField>
           <FormField label="Joining Date" htmlFor="joiningDate" required error={errors.joiningDate}>
-            <Input
+            <DatePicker
               id="joiningDate"
-              type="date"
               value={value.joiningDate}
-              onChange={(e) => update("joiningDate", e.target.value)}
+              onChange={(next) => update("joiningDate", next)}
               invalid={Boolean(errors.joiningDate)}
             />
           </FormField>

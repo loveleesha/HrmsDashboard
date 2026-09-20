@@ -7,6 +7,7 @@ import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { ASSET_CATEGORIES } from "@/types/asset";
+import { applyTextRules } from "@/lib/validation";
 
 export interface AddAssetFormValues {
   assetName: string;
@@ -50,6 +51,13 @@ export function AddAssetForm({ open, onClose, onSubmit }: AddAssetFormProps) {
     if (!category) nextErrors.category = "Select a category.";
     if (!brand.trim()) nextErrors.brand = "Brand is required.";
     if (!serialNo.trim()) nextErrors.serialNo = "Serial number is required.";
+
+    applyTextRules(nextErrors, {
+      assetName: [assetName, "Asset name", { min: 2, max: 80 }],
+      brand: [brand, "Brand", { max: 50 }],
+      serialNo: [serialNo, "Serial number", { max: 50 }],
+      model: [model, "Model", { max: 50 }],
+    });
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

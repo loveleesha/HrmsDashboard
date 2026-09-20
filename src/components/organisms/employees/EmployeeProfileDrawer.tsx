@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, Phone, Building2, MapPin, CalendarDays, BadgeCheck, Power } from "lucide-react";
+import { Mail, Phone, Building2, MapPin, CalendarDays, BadgeCheck, Power, Pencil } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Drawer } from "@/components/molecules/Drawer";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { ConfirmModal } from "@/components/molecules/ConfirmModal";
+import { EmployeeProfileDetails } from "@/components/organisms/employees/EmployeeProfileDetails";
 import { EMPLOYMENT_STATUS_LABELS, type Employee } from "@/types/employee";
 
 export interface EmployeeProfileDrawerProps {
@@ -15,9 +17,11 @@ export interface EmployeeProfileDrawerProps {
   onClose: () => void;
   onUpdateStatus: (employee: Employee, nextStatus: "active" | "inactive") => Promise<void>;
   canUpdateStatus: boolean;
+  canEdit?: boolean;
 }
 
-export function EmployeeProfileDrawer({ employee, onClose, onUpdateStatus, canUpdateStatus }: EmployeeProfileDrawerProps) {
+export function EmployeeProfileDrawer({ employee, onClose, onUpdateStatus, canUpdateStatus, canEdit }: EmployeeProfileDrawerProps) {
+  const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -97,6 +101,15 @@ export function EmployeeProfileDrawer({ employee, onClose, onUpdateStatus, canUp
               </div>
             </div>
           )}
+
+          {canEdit && (
+            <Button size="sm" onClick={() => router.push(`/employees/${employee.id}/edit`)}>
+              <Pencil className="size-3.5" />
+              Edit Details &amp; Documents
+            </Button>
+          )}
+
+          <EmployeeProfileDetails key={employee.id} userId={employee.id} />
 
           {canUpdateStatus && (employee.status === "active" || employee.status === "inactive") && (
             <Button

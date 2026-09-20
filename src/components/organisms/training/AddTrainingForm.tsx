@@ -9,6 +9,7 @@ import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { useRoles } from "@/hooks/use-roles";
 import type { TrainingMode } from "@/types/training";
+import { applyTextRules, isPastDate } from "@/lib/validation";
 
 export interface AddTrainingFormValues {
   topic: string;
@@ -54,6 +55,12 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
     if (!trainer.trim()) nextErrors.trainer = "Trainer name is required.";
     if (!mode) nextErrors.mode = "Select a delivery mode.";
     if (!date) nextErrors.date = "Select a date.";
+
+    applyTextRules(nextErrors, {
+      topic: [topic, "Topic", { min: 3, max: 100 }],
+      trainer: [trainer, "Trainer name", { min: 2, max: 60 }],
+    });
+    if (date && isPastDate(date)) nextErrors.date = "The training date can't be in the past.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

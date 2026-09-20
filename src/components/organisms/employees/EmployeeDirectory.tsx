@@ -152,6 +152,7 @@ export function EmployeeDirectory() {
         onClose={() => setSelectedEmployee(null)}
         onUpdateStatus={handleUpdateStatus}
         canUpdateStatus={can("employees", "toggleStatus")}
+        canEdit={can("employees", "edit")}
       />
     </div>
   );

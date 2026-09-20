@@ -8,6 +8,7 @@ import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
 import { ASSET_CATEGORIES } from "@/types/asset";
 import type { AssetRequestPriority } from "@/types/asset";
+import { applyTextRules } from "@/lib/validation";
 
 export interface RequestAssetFormValues {
   category: string;
@@ -48,6 +49,8 @@ export function RequestAssetForm({ open, onClose, onSubmit }: RequestAssetFormPr
     if (!reason.trim()) nextErrors.reason = "Explain why you need this asset.";
     if (!priority) nextErrors.priority = "Select a priority.";
     if (!allocationType) nextErrors.allocationType = "Select allocation type.";
+
+    applyTextRules(nextErrors, { reason: [reason, "Reason", { min: 5, max: 500 }] });
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

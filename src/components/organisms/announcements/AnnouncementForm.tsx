@@ -8,6 +8,7 @@ import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
 import type { AnnouncementPriority } from "@/types/announcement";
+import { applyTextRules } from "@/lib/validation";
 
 export interface AnnouncementFormValues {
   title: string;
@@ -44,6 +45,11 @@ export function AnnouncementForm({ open, onClose, onSubmit }: AnnouncementFormPr
     if (!title.trim()) nextErrors.title = "Add a title.";
     if (!body.trim()) nextErrors.body = "Add the announcement body.";
     if (!priority) nextErrors.priority = "Select a priority.";
+
+    applyTextRules(nextErrors, {
+      title: [title, "Title", { max: 120 }],
+      body: [body, "Announcement", { max: 2000 }],
+    });
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

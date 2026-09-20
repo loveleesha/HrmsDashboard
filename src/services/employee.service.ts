@@ -45,7 +45,7 @@ interface RawEmployee {
   workLocation?: string;
   employmentType?: string;
   status?: string;
-  role?: string;
+  role?: { name?: string; label?: string } | string | null;
   skills?: string[];
   joiningDate?: string;
   joinedDate?: string;
@@ -78,7 +78,7 @@ function mapRawEmployee(raw: RawEmployee): Employee {
     location: raw.location ?? raw.workLocation,
     employmentType: raw.employmentType,
     status: isKnownStatus(status) ? status : "active",
-    role: raw.role,
+    role: typeof raw.role === "object" && raw.role ? (raw.role.name ?? raw.role.label) : (raw.role ?? undefined),
     skills: raw.skills ?? [],
     joinedDate: raw.joiningDate ?? raw.joinedDate,
     manager: raw.reportsTo ?? raw.manager,

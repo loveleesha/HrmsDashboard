@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User as UserIcon, Camera, GraduationCap, CalendarClock, Lock, Star, FileText, Repeat, UserX } from "lucide-react";
+import { User as UserIcon, Camera, GraduationCap, CalendarClock, Lock, Star, FileText, Repeat, UserX, FolderKanban } from "lucide-react";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { Spinner } from "@/components/atoms/Spinner";
 import { ProfileBanner } from "@/components/organisms/profile/ProfileBanner";
@@ -13,6 +13,7 @@ import { ShiftTab } from "@/components/organisms/profile/tabs/ShiftTab";
 import { ChangePasswordTab } from "@/components/organisms/profile/tabs/ChangePasswordTab";
 import { AppraisalTab } from "@/components/organisms/profile/tabs/AppraisalTab";
 import { MyDocumentsTab } from "@/components/organisms/documents/MyDocumentsTab";
+import { MyProjectsTab } from "@/components/organisms/projects/MyProjectsTab";
 import { DepartmentChangeTab } from "@/components/organisms/profile/tabs/DepartmentChangeTab";
 import { useAuth } from "@/hooks/use-auth";
 import { getMyProfile, ProfileNotFoundError } from "@/services/profile.service";
@@ -26,6 +27,7 @@ const TABS: ProfileTabDef[] = [
   { value: "password", label: "Change Password", icon: Lock },
   { value: "appraisal", label: "Appraisal", icon: Star },
   { value: "documents", label: "Documents", icon: FileText },
+  { value: "projects", label: "My Projects", icon: FolderKanban },
   { value: "department", label: "Department Change", icon: Repeat },
 ];
 
@@ -96,6 +98,7 @@ export default function ProfilePage() {
             {tab === "password" && <ChangePasswordTab />}
             {tab === "appraisal" && <AppraisalTab />}
             {tab === "documents" && <MyDocumentsTab />}
+            {tab === "projects" && <MyProjectsTab />}
             {tab === "department" && <DepartmentChangeTab employee={profile} />}
           </div>
         </div>

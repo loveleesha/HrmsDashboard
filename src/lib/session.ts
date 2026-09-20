@@ -11,7 +11,7 @@ export const SESSION_COOKIE = "hrms_session";
 /** Unauthenticated pages — shared by proxy.ts (server-side route gating) and
  * the HTTP interceptor (client-side redirect-to-login on a 401), so the two
  * never drift out of sync. */
-export const AUTH_ROUTES = ["/login", "/admin/login", "/forgot-password", "/otp", "/reset-password"];
+export const AUTH_ROUTES = ["/login", "/admin/login", "/forgot-password", "/reset-password"];
 
 const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 

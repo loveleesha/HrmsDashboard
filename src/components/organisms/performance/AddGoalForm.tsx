@@ -7,6 +7,7 @@ import { DatePickerField } from "@/components/molecules/DatePickerField";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
 import { Button } from "@/components/atoms/Button";
+import { applyTextRules, isPastDate } from "@/lib/validation";
 
 export interface AddGoalValues {
   title: string;
@@ -45,6 +46,12 @@ export function AddGoalForm({
     if (!title.trim()) nextErrors.title = "Give your goal a title.";
     if (!description.trim()) nextErrors.description = "Describe what success looks like.";
     if (!dueDate) nextErrors.dueDate = "Set a target date.";
+
+    applyTextRules(nextErrors, {
+      title: [title, "Title", { min: 3, max: 100 }],
+      description: [description, "Description", { max: 500 }],
+    });
+    if (dueDate && isPastDate(dueDate)) nextErrors.dueDate = "The target date can't be in the past.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

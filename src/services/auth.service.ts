@@ -8,12 +8,6 @@ import { setSessionCookie, clearSessionCookie } from "@/lib/session";
  * mock data; this is the first one wired to a live API.
  */
 
-/**
- * Demo/simulation accounts used by an unrelated mock feature (Settings ->
- * Role & Access -> Assign Roles). Not read by the real login flow below.
- */
-export const MOCK_USERS: User[] = [];
-
 interface ApiUser {
   id?: string;
   _id?: string;
@@ -96,25 +90,31 @@ export function logout() {
   clearSessionCookie();
 }
 
-export type RegisterRole = "employee" | "hr" | "admin" | "super-admin";
-
+/**
+ * Self-registration (User > Auth > Register). {{role}} must NOT be an
+ * admin-tier role (super_admin/hr_admin) — the backend rejects those with 403;
+ * admin-tier accounts go through registerAdmin below. No screen calls these
+ * today: accounts here are created by admins (Onboarding / Admin Users).
+ */
 export async function register(params: {
   name: string;
   email: string;
   password: string;
-  role: RegisterRole;
+  role: string;
 }): Promise<{ user: User; message: string }> {
-  const data = await httpService.post<RegisterResponse>("/api/auth/register", params);
+  const data = await httpService.post<RegisterResponse>("/api/user/register", params);
   return { user: mapApiUser(data.user), message: data.message ?? "Registration successful." };
 }
 
-export async function verifyOtp(
-  email: string,
-  otp: string
-): Promise<{ user: User; token: string; message: string }> {
-  const data = await httpService.post<AuthResponse>("/api/auth/verify-otp", { email, otp });
-  setSessionCookie(data.token);
-  return { user: mapApiUser(data.user), token: data.token, message: data.message ?? "Account verified." };
+/** Admin > Auth > Register — role must be super_admin or hr_admin. */
+export async function registerAdmin(params: {
+  name: string;
+  email: string;
+  password: string;
+  role: "super_admin" | "hr_admin";
+}): Promise<{ user: User; message: string }> {
+  const data = await httpService.post<RegisterResponse>("/api/admin/register", params);
+  return { user: mapApiUser(data.user), message: data.message ?? "Admin registered." };
 }
 
 /** Always 200 with a generic message, whether or not the email exists (no

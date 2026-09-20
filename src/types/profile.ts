@@ -1,5 +1,5 @@
 import type { Employee } from "./employee";
-import type { DocumentRequirementConfig, EmergencyContactDraft, Gender, QualificationEntryDraft } from "./onboarding";
+import type { EmergencyContactDraft, Gender, QualificationEntryDraft } from "./onboarding";
 
 export interface ProfileAddress {
   addressLine?: string;
@@ -8,11 +8,18 @@ export interface ProfileAddress {
   pincode?: string;
 }
 
+/** One uploaded document as the profile endpoint returns it (title, category, file, verification). */
 export interface ProfileDocument {
-  key: DocumentRequirementConfig["key"];
+  id: string;
   name: string;
+  category?: string;
   fileUrl?: string;
   fileName?: string;
+  /** e.g. "Pending Review" | "Verified" | "Rejected" */
+  verificationStatus?: string;
+  sizeBytes?: number;
+  mimeType?: string;
+  uploadedOn?: string;
 }
 
 /**
@@ -23,6 +30,8 @@ export interface ProfileDocument {
  * existing Employee-typed tab keeps working unchanged.
  */
 export interface MyProfile extends Employee {
+  firstName?: string;
+  lastName?: string;
   dateOfBirth?: string;
   gender?: Gender | "";
   alternateMobile?: string;

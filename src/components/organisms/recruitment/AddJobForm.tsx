@@ -8,6 +8,7 @@ import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { DEPARTMENTS } from "@/types/employee";
 import { JOB_TYPES, type JobType } from "@/types/recruitment";
+import { applyTextRules } from "@/lib/validation";
 
 export interface AddJobFormValues {
   title: string;
@@ -57,6 +58,14 @@ export function AddJobForm({ open, onClose, onSubmit }: AddJobFormProps) {
     if (!experience.trim()) nextErrors.experience = "Add an experience range, e.g. 2-4 years.";
     const openingsNum = Number(openings);
     if (!openingsNum || openingsNum < 1) nextErrors.openings = "Must have at least 1 opening.";
+
+    applyTextRules(nextErrors, {
+      title: [title, "Job title", { min: 2, max: 100 }],
+      location: [location, "Location", { max: 80 }],
+      experience: [experience, "Experience", { max: 30 }],
+    });
+    if (openingsNum > 999 && !nextErrors.openings) nextErrors.openings = "Openings can't be more than 999.";
+    if (!Number.isInteger(openingsNum) && !nextErrors.openings) nextErrors.openings = "Openings must be a whole number.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);

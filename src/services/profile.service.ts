@@ -1,7 +1,7 @@
 import { httpService } from "@/lib/http/http.service";
 import { ApiError } from "@/lib/http/interceptor";
 import { toAbsoluteAssetUrl, fileNameFromPath } from "@/lib/asset-url";
-import { DEFAULT_DOCUMENT_CHECKLIST, type Gender, type QualificationType } from "@/types/onboarding";
+import type { Gender, QualificationType } from "@/types/onboarding";
 import { EMPLOYMENT_STATUSES, type EmploymentStatus } from "@/types/employee";
 import type { MyProfile } from "@/types/profile";
 
@@ -15,77 +15,83 @@ import type { MyProfile } from "@/types/profile";
  */
 
 interface RawQualification {
+  _id?: string;
   type?: string;
   institution?: string;
   boardOrDegree?: string;
-  specialization?: string;
-  startYear?: number | string;
-  endYear?: number | string;
-  percentageOrGrade?: string;
+  specialization?: string | null;
+  startYear?: number | string | null;
+  endYear?: number | string | null;
+  percentageOrGrade?: string | null;
+  certificateUrl?: string | null;
 }
 
 interface RawEmergencyContact {
+  _id?: string;
   name?: string;
   relationship?: string;
   mobile?: string;
-  email?: string;
-  address?: string;
+  email?: string | null;
+  address?: string | null;
   isPrimary?: boolean;
 }
 
-/** The full Role document, resolved from roleId (id, name, label, permissions, isSystem, ...). */
+/** The full Role document, resolved from roleId. */
 interface RawRole {
   id?: string;
-  _id?: string;
   name?: string;
   label?: string;
+  userType?: string;
 }
 
+interface RawDocument {
+  _id?: string;
+  title?: string;
+  category?: string;
+  fileUrl?: string | null;
+  fileSize?: number;
+  mimeType?: string;
+  verificationStatus?: string;
+  createdAt?: string;
+}
+
+/** The real GET /api/user/profile body: `{ success, profile: { ... } }`, grouped by section. */
 interface RawProfile {
   userId?: string;
-  id?: string;
-  _id?: string;
   employeeId?: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string;
-  email?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  profilePicture?: string;
-  avatarUrl?: string;
-  mobile?: string;
-  phone?: string;
-  alternateMobile?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
-  addressLine?: string;
-  department?: string;
-  designation?: string;
-  joiningDate?: string;
-  joinedDate?: string;
-  employmentType?: string;
-  workLocation?: string;
-  location?: string;
-  experience?: string;
-  previousCompany?: string;
-  reportsTo?: string;
-  manager?: string;
-  role?: RawRole | string | null;
-  userType?: string;
-  status?: string;
-  skills?: string[];
-  technologies?: string[];
-  technicalSkills?: string[];
-  qualifications?: RawQualification[];
-  qualificationCertificates?: string[];
-  emergencyContacts?: RawEmergencyContact[];
-  aadhaarCard?: string;
-  panCard?: string;
-  educationalCertificate?: string;
-  experienceCertificate?: string;
-  addressProof?: string;
+  basicDetail?: {
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email?: string;
+    dateOfBirth?: string | null;
+    gender?: string | null;
+    profilePicture?: string | null;
+  };
+  contactDetail?: {
+    phone?: string | null;
+    alternateMobile?: string | null;
+    email?: string;
+    address?: { city?: string; state?: string; pincode?: string; addressLine?: string } | null;
+  };
+  professionalDetail?: {
+    designation?: string | null;
+    department?: string | null;
+    joiningDate?: string | null;
+    employmentType?: string | null;
+    workLocation?: string | null;
+    experience?: string | null;
+    previousCompany?: string | null;
+    seniority?: string | null;
+    status?: string | null;
+    reportsTo?: string | null;
+  };
+  role?: RawRole | null;
+  technicalSkill?: { skills?: string[] } | null;
+  qualification?: RawQualification[] | null;
+  emergencyContacts?: RawEmergencyContact[] | null;
+  documents?: RawDocument[] | null;
+  onboardingStatus?: string;
 }
 
 function isKnownStatus(value: string | undefined): value is EmploymentStatus {
@@ -93,61 +99,57 @@ function isKnownStatus(value: string | undefined): value is EmploymentStatus {
 }
 
 function mapProfile(raw: RawProfile): MyProfile {
-  const id = raw.userId ?? raw.id ?? raw._id ?? "";
-  const name = raw.name ?? [raw.firstName, raw.lastName].filter(Boolean).join(" ").trim();
-  const status = raw.status?.toLowerCase();
-  const certificates = raw.qualificationCertificates ?? [];
-  const role = typeof raw.role === "object" && raw.role ? raw.role : undefined;
-  const roleName = role ? (role.name ?? role.label) : (raw.role as string | undefined);
-
-  const documentEntries = DEFAULT_DOCUMENT_CHECKLIST.map((doc) => {
-    const value = raw[doc.key];
-    return value
-      ? { key: doc.key, name: doc.name, fileUrl: toAbsoluteAssetUrl(value), fileName: fileNameFromPath(value) }
-      : { key: doc.key, name: doc.name };
-  });
+  const basic = raw.basicDetail ?? {};
+  const contact = raw.contactDetail ?? {};
+  const pro = raw.professionalDetail ?? {};
+  const role = raw.role ?? undefined;
+  const status = pro.status?.toLowerCase();
+  const address = contact.address;
 
   return {
-    id,
+    id: raw.userId ?? "",
     employeeId: raw.employeeId,
-    name: name || "—",
-    email: raw.email ?? "",
-    phone: raw.mobile ?? raw.phone,
-    avatarUrl: raw.profilePicture ? toAbsoluteAssetUrl(raw.profilePicture) : raw.avatarUrl,
-    designation: raw.designation ?? "",
-    department: raw.department ?? "",
-    location: raw.location ?? raw.workLocation,
-    employmentType: raw.employmentType,
+    firstName: basic.firstName,
+    lastName: basic.lastName,
+    name: basic.name || [basic.firstName, basic.lastName].filter(Boolean).join(" ").trim() || "—",
+    email: basic.email ?? contact.email ?? "",
+    phone: contact.phone ?? undefined,
+    avatarUrl: basic.profilePicture ? toAbsoluteAssetUrl(basic.profilePicture) : undefined,
+    designation: pro.designation ?? "",
+    department: pro.department ?? "",
+    location: pro.workLocation ?? undefined,
+    employmentType: pro.employmentType ?? undefined,
     status: isKnownStatus(status) ? status : "active",
-    role: roleName ?? undefined,
+    role: role?.name,
     roleLabel: role?.label,
-    userType: raw.userType,
-    skills: raw.skills ?? raw.technologies ?? raw.technicalSkills ?? [],
-    joinedDate: raw.joiningDate ?? raw.joinedDate,
-    manager: raw.reportsTo ?? raw.manager,
-    dateOfBirth: raw.dateOfBirth ? raw.dateOfBirth.slice(0, 10) : undefined,
-    gender: (raw.gender as Gender) || undefined,
-    alternateMobile: raw.alternateMobile,
+    userType: role?.userType,
+    skills: raw.technicalSkill?.skills ?? [],
+    joinedDate: pro.joiningDate ?? undefined,
+    manager: pro.reportsTo ?? undefined,
+    onboardingStatus: raw.onboardingStatus,
+    dateOfBirth: basic.dateOfBirth ? basic.dateOfBirth.slice(0, 10) : undefined,
+    gender: (basic.gender as Gender) || undefined,
+    alternateMobile: contact.alternateMobile ?? undefined,
     address:
-      raw.addressLine || raw.city || raw.state || raw.pincode
-        ? { addressLine: raw.addressLine, city: raw.city, state: raw.state, pincode: raw.pincode }
+      address && (address.addressLine || address.city || address.state || address.pincode)
+        ? { addressLine: address.addressLine, city: address.city, state: address.state, pincode: address.pincode }
         : undefined,
-    previousCompany: raw.previousCompany,
-    experience: raw.experience,
-    qualifications: (raw.qualifications ?? []).map((q, index) => ({
-      id: `qual-${index}`,
+    previousCompany: pro.previousCompany ?? undefined,
+    experience: pro.experience ?? undefined,
+    qualifications: (raw.qualification ?? []).map((q, index) => ({
+      id: q._id ?? `qual-${index}`,
       type: (q.type as QualificationType) ?? "",
       institution: q.institution ?? "",
       boardOrDegree: q.boardOrDegree ?? "",
-      specialization: q.specialization ?? undefined,
+      specialization: q.specialization || undefined,
       startYear: q.startYear != null ? String(q.startYear) : "",
       endYear: q.endYear != null ? String(q.endYear) : "",
-      percentageOrGrade: q.percentageOrGrade ?? undefined,
-      certificateUrl: certificates[index] ? toAbsoluteAssetUrl(certificates[index]) : undefined,
-      certificateFileName: certificates[index] ? fileNameFromPath(certificates[index]) : undefined,
+      percentageOrGrade: q.percentageOrGrade || undefined,
+      certificateUrl: q.certificateUrl ? toAbsoluteAssetUrl(q.certificateUrl) : undefined,
+      certificateFileName: q.certificateUrl ? fileNameFromPath(q.certificateUrl) : undefined,
     })),
     emergencyContacts: (raw.emergencyContacts ?? []).map((c, index) => ({
-      id: `ec-${index}`,
+      id: c._id ?? `ec-${index}`,
       name: c.name ?? "",
       relationship: c.relationship ?? "",
       mobile: c.mobile ?? "",
@@ -155,21 +157,41 @@ function mapProfile(raw: RawProfile): MyProfile {
       address: c.address || undefined,
       isPrimary: Boolean(c.isPrimary),
     })),
-    documents: documentEntries,
+    documents: (raw.documents ?? []).map((d, index) => ({
+      id: d._id ?? `doc-${index}`,
+      name: d.title ?? "Document",
+      category: d.category,
+      fileUrl: d.fileUrl ? toAbsoluteAssetUrl(d.fileUrl) : undefined,
+      fileName: d.fileUrl ? fileNameFromPath(d.fileUrl) : undefined,
+      verificationStatus: d.verificationStatus,
+      sizeBytes: d.fileSize,
+      mimeType: d.mimeType,
+      uploadedOn: d.createdAt,
+    })),
   };
 }
 
 export class ProfileNotFoundError extends Error {}
 
+type ProfileResponse = { profile?: RawProfile } & RawProfile;
+
+function unwrapProfile(data: ProfileResponse): RawProfile {
+  return data.profile ?? data;
+}
+
 export async function getMyProfile(): Promise<MyProfile> {
   try {
-    const data = await httpService.get<{ data?: RawProfile; profile?: RawProfile } | RawProfile>("/api/user/profile");
-    const raw = "data" in data && data.data ? data.data : "profile" in data && data.profile ? data.profile : (data as RawProfile);
-    return mapProfile(raw);
+    return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>("/api/user/profile")));
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       throw new ProfileNotFoundError(err.message);
     }
     throw err;
   }
+}
+
+/** Admin > Employees > Get Employee Profile (employees.view) — same shape as
+ * Get My Profile, looked up by userId. */
+export async function getEmployeeProfile(userId: string): Promise<MyProfile> {
+  return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(`/api/admin/employees/${userId}/profile`)));
 }
