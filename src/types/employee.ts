@@ -23,8 +23,15 @@ export const EMPLOYMENT_STATUS_LABELS: Record<EmploymentStatus, string> = {
 };
 
 export interface Employee {
-  /** The account's userId — what every admin employee endpoint keys by. */
+  /** The account's userId — what every admin employee endpoint keys by
+   * (Employees, Project Assignments, onboarding, status toggle, ...). */
   id: string;
+  /** The underlying Employee document's own _id — distinct from userId, and
+   * the id Admin > Assets > Assign Asset to Employee's `employeeId` field
+   * actually wants per the Postman collection's own note on that request.
+   * Undefined if the list endpoint didn't expose it (assignment then simply
+   * fails server-side rather than silently assigning the wrong record). */
+  employeeRecordId?: string;
   employeeId?: string;
   name: string;
   email: string;

@@ -21,6 +21,7 @@ export interface CandidatePipelineProps {
   candidates: Candidate[];
   canEdit: boolean;
   canApprove: boolean;
+  canReject: boolean;
   onSelectCandidate: (candidate: Candidate) => void;
   onAdvanceStage: (candidateId: string, stage: PipelineStage) => void;
   onReject: (candidateId: string) => void;
@@ -30,6 +31,7 @@ export function CandidatePipeline({
   candidates,
   canEdit,
   canApprove,
+  canReject,
   onSelectCandidate,
   onAdvanceStage,
   onReject,
@@ -52,8 +54,8 @@ export function CandidatePipeline({
               <div className="flex flex-col gap-2">
                 {stageCandidates.map((candidate) => {
                   const target = nextStage(candidate.stage);
-                  const canAdvance = target && (target === "Offer" || target === "Hired" ? canApprove : canEdit);
-                  const canRejectCandidate = canEdit && candidate.stage !== "Rejected" && candidate.stage !== "Hired";
+                  const canAdvance = target && canEdit && (target === "Hired" ? canApprove : true);
+                  const canRejectCandidate = canEdit && canReject && candidate.stage !== "Rejected" && candidate.stage !== "Hired";
 
                   return (
                     <div
@@ -67,9 +69,9 @@ export function CandidatePipeline({
                           <p className="truncate text-fs-sm text-muted">{candidate.jobTitle}</p>
                         </div>
                       </button>
-                      <RatingStars rating={candidate.rating} />
+                      <RatingStars rating={candidate.rating ?? 0} />
                       <div className="flex flex-wrap gap-1">
-                        {candidate.skills.slice(0, 2).map((skill) => (
+                        {(candidate.skills ?? []).slice(0, 2).map((skill) => (
                           <Badge key={skill} tone="neutral">
                             {skill}
                           </Badge>

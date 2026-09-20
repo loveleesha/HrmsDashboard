@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 
 /**
  * Onboarding Assets — the "HRMS API" collection's file-upload endpoint used
@@ -22,6 +23,6 @@ export async function uploadOnboardingAsset(file: File, type: OnboardingAssetTyp
   formData.append("type", type);
   formData.append("file", file);
 
-  const data = await httpService.post<{ url: string }>("/api/admin/employees/onboard/assets", formData);
+  const data = await httpService.post<{ url: string }>(API_ENDPOINTS.admin.onboardingAssets, formData);
   return data.url;
 }

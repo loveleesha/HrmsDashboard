@@ -1,13 +1,22 @@
-import { Mail, Phone, MapPin, Building2, CalendarDays, BadgeCheck, Cake, VenusAndMars, ShieldCheck, FileText, Download } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, MapPin, Building2, CalendarDays, BadgeCheck, Cake, VenusAndMars, ShieldCheck, FileText, Download, Pencil } from "lucide-react";
 import { Badge } from "@/components/atoms/Badge";
+import { Button } from "@/components/atoms/Button";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
+import { EditBasicInfoDrawer } from "@/components/organisms/profile/EditBasicInfoDrawer";
 import { useRoles } from "@/hooks/use-roles";
 import { EMPLOYMENT_STATUS_LABELS } from "@/types/employee";
 import { GENDER_LABELS, type Gender } from "@/types/onboarding";
 import type { MyProfile } from "@/types/profile";
 
-export function BasicInfoTab({ employee }: { employee: MyProfile }) {
+export interface BasicInfoTabProps {
+  employee: MyProfile;
+  onProfileUpdated?: (profile: MyProfile) => void;
+}
+
+export function BasicInfoTab({ employee, onProfileUpdated }: BasicInfoTabProps) {
   const { getRoleLabel } = useRoles();
+  const [editOpen, setEditOpen] = useState(false);
   const address = employee.address;
   const addressLine = [address?.addressLine, address?.city, address?.state, address?.pincode]
     .filter(Boolean)
@@ -16,7 +25,13 @@ export function BasicInfoTab({ employee }: { employee: MyProfile }) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="rounded-xl border border-border bg-surface-card p-5">
-        <h3 className="mb-3 text-fs-xl font-semibold text-ink">Contact Details</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-fs-xl font-semibold text-ink">Contact Details</h3>
+          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="size-3.5" />
+            Edit
+          </Button>
+        </div>
         <div className="flex flex-col gap-3 text-fs-base">
           <div className="flex items-center gap-2 text-muted">
             <Mail className="size-4 shrink-0" />
@@ -152,6 +167,13 @@ export function BasicInfoTab({ employee }: { employee: MyProfile }) {
           </div>
         )}
       </div>
+
+      <EditBasicInfoDrawer
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        profile={employee}
+        onSaved={(updated) => onProfileUpdated?.(updated)}
+      />
     </div>
   );
 }

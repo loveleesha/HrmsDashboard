@@ -34,11 +34,15 @@ export interface Candidate {
   jobTitle: string;
   stage: PipelineStage;
   appliedOn: string;
-  experience: string;
-  skills: string[];
-  rating: number;
-  source: string;
+  resumeUrl?: string;
   notes?: string;
+  /** Not part of the real HRMS API (Add/Update Candidate only take
+   * name/email/phone/jobId/resumeUrl/notes) — kept optional so the UI
+   * degrades gracefully rather than fabricating placeholder values. */
+  experience?: string;
+  skills?: string[];
+  rating?: number;
+  source?: string;
 }
 
 export type InterviewMode = "Onsite" | "Video" | "Phone";
@@ -52,7 +56,17 @@ export interface Interview {
   interviewer: string;
   date: string;
   time: string;
-  mode: InterviewMode;
   status: InterviewStatus;
-  round: string;
+  notes?: string;
+  /** Not part of the real HRMS API (Schedule Interview only takes
+   * candidateId/scheduledAt/interviewer) — kept optional/defensive. */
+  mode?: InterviewMode;
+  round?: string;
+}
+
+export interface RecruitmentStats {
+  openPositions: number;
+  totalCandidates: number;
+  interviewsThisWeek: number;
+  offersExtended: number;
 }

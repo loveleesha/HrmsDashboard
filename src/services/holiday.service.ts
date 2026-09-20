@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { Holiday, HolidayPayload, HolidayType } from "@/types/holiday";
 
 /**
@@ -30,7 +31,7 @@ function mapHoliday(raw: HolidayRaw): Holiday {
 
 export async function listHolidays(year?: string): Promise<Holiday[]> {
   const data = await httpService.get<{ holidays?: HolidayRaw[] } | HolidayRaw[]>(
-    "/api/admin/holidays",
+    API_ENDPOINTS.admin.holidays,
     year ? { year } : undefined
   );
   const holidays = Array.isArray(data) ? data : (data.holidays ?? []);
@@ -38,17 +39,20 @@ export async function listHolidays(year?: string): Promise<Holiday[]> {
 }
 
 export async function createHoliday(payload: HolidayPayload): Promise<Holiday> {
-  const data = await httpService.post<{ holiday?: HolidayRaw } | HolidayRaw>("/api/admin/holidays", payload);
+  const data = await httpService.post<{ holiday?: HolidayRaw } | HolidayRaw>(API_ENDPOINTS.admin.holidays, payload);
   const holiday = "holiday" in data && data.holiday ? data.holiday : (data as HolidayRaw);
   return mapHoliday(holiday);
 }
 
 export async function updateHoliday(id: string, payload: Partial<HolidayPayload>): Promise<Holiday> {
-  const data = await httpService.patch<{ holiday?: HolidayRaw } | HolidayRaw>(`/api/admin/holidays/${id}`, payload);
+  const data = await httpService.patch<{ holiday?: HolidayRaw } | HolidayRaw>(
+    API_ENDPOINTS.admin.holidayById(id),
+    payload
+  );
   const holiday = "holiday" in data && data.holiday ? data.holiday : (data as HolidayRaw);
   return mapHoliday(holiday);
 }
 
 export async function deleteHoliday(id: string): Promise<void> {
-  await httpService.delete<{ message?: string }>(`/api/admin/holidays/${id}`);
+  await httpService.delete<{ message?: string }>(API_ENDPOINTS.admin.holidayById(id));
 }

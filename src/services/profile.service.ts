@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import { ApiError } from "@/lib/http/interceptor";
 import { toAbsoluteAssetUrl, fileNameFromPath } from "@/lib/asset-url";
 import type { Gender, QualificationType } from "@/types/onboarding";
@@ -181,7 +182,7 @@ function unwrapProfile(data: ProfileResponse): RawProfile {
 
 export async function getMyProfile(): Promise<MyProfile> {
   try {
-    return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>("/api/user/profile")));
+    return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(API_ENDPOINTS.user.profile)));
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       throw new ProfileNotFoundError(err.message);
@@ -193,5 +194,51 @@ export async function getMyProfile(): Promise<MyProfile> {
 /** Admin > Employees > Get Employee Profile (employees.view) — same shape as
  * Get My Profile, looked up by userId. */
 export async function getEmployeeProfile(userId: string): Promise<MyProfile> {
-  return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(`/api/admin/employees/${userId}/profile`)));
+  return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(API_ENDPOINTS.admin.employeeProfile(userId))));
+}
+
+export interface UpdateBasicDetailPayload {
+  name?: string;
+  phone?: string;
+  alternateMobile?: string;
+  address?: { city?: string; state?: string; pincode?: string; addressLine?: string };
+  skills?: string[];
+  emergencyContacts?: { name: string; relationship: string; mobile: string; email?: string; isPrimary: boolean }[];
+}
+
+/** PATCH /api/user/profile, type: "basic_detail" — name/contact/skills/
+ * emergencyContacts (full array replace, at most 3, exactly one isPrimary).
+ * profileImage is set separately via uploadMyProfilePicture below. */
+export async function updateMyProfile(payload: UpdateBasicDetailPayload): Promise<MyProfile> {
+  const data = await httpService.patch<ProfileResponse>(API_ENDPOINTS.user.profile, { type: "basic_detail", ...payload });
+  return mapProfile(unwrapProfile(data));
+}
+
+/** PATCH /api/user/profile, type: "qualification" — appends one qualification;
+ * there's no separate list/edit/delete-by-id endpoint. */
+export async function addQualification(qualification: {
+  type: string;
+  institution: string;
+  boardOrDegree: string;
+  specialization?: string;
+  startYear: number;
+  endYear: number;
+  percentageOrGrade?: string;
+}): Promise<MyProfile> {
+  const data = await httpService.patch<ProfileResponse>(API_ENDPOINTS.user.profile, { type: "qualification", qualification });
+  return mapProfile(unwrapProfile(data));
+}
+
+/** multipart/form-data, field "file" (jpeg/png/webp). Replaces any existing
+ * picture — there's no separate remove-picture endpoint. */
+export async function uploadMyProfilePicture(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const data = await httpService.post<{ url?: string; profileImage?: string; profile?: { basicDetail?: { profilePicture?: string } } }>(
+    API_ENDPOINTS.user.profilePicture,
+    formData
+  );
+  const url = data.url ?? data.profileImage ?? data.profile?.basicDetail?.profilePicture;
+  if (!url) throw new Error("Server did not return the uploaded picture's URL.");
+  return url;
 }

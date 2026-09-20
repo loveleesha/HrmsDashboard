@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { DsrEntry, SubmitDsrPayload } from "@/types/dsr";
 
 /**
@@ -70,13 +71,13 @@ function byDateDesc(a: DsrEntry, b: DsrEntry) {
 }
 
 export async function listMyDsr(month?: string): Promise<DsrEntry[]> {
-  const data = await httpService.get<Parameters<typeof unwrap>[0]>("/api/user/dsr", month ? { month } : undefined);
+  const data = await httpService.get<Parameters<typeof unwrap>[0]>(API_ENDPOINTS.user.dsr, month ? { month } : undefined);
   return unwrap(data).map(mapDsr).sort(byDateDesc);
 }
 
 export async function listAllDsr(params: { employeeId?: string; month?: string } = {}): Promise<DsrEntry[]> {
   const query = Object.fromEntries(Object.entries(params).filter(([, v]) => Boolean(v)));
-  const data = await httpService.get<Parameters<typeof unwrap>[0]>("/api/admin/dsr", query);
+  const data = await httpService.get<Parameters<typeof unwrap>[0]>(API_ENDPOINTS.admin.dsr, query);
   return unwrap(data).map(mapDsr).sort(byDateDesc);
 }
 
@@ -92,7 +93,7 @@ export async function getDsrEntry(id: string, scope: "user" | "admin"): Promise<
 }
 
 export async function submitDsr(payload: SubmitDsrPayload): Promise<void> {
-  await httpService.post("/api/user/dsr", payload);
+  await httpService.post(API_ENDPOINTS.user.dsr, payload);
 }
 
 /** "2:5" → "02:05" — the backend takes HH:MM. */

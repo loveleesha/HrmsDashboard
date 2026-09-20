@@ -1,5 +1,4 @@
-import { CalendarX2, X } from "lucide-react";
-import { Button } from "@/components/atoms/Button";
+import { CalendarX2 } from "lucide-react";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import type { LeaveRequest } from "@/types/leave";
 
@@ -12,10 +11,9 @@ function formatDateRange(start: string, end: string) {
 
 export interface MyLeaveRequestsListProps {
   requests: LeaveRequest[];
-  onCancel: (id: string) => void;
 }
 
-export function MyLeaveRequestsList({ requests, onCancel }: MyLeaveRequestsListProps) {
+export function MyLeaveRequestsList({ requests }: MyLeaveRequestsListProps) {
   if (requests.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center">
@@ -33,10 +31,7 @@ export function MyLeaveRequestsList({ requests, onCancel }: MyLeaveRequestsListP
   return (
     <div className="flex flex-col gap-3">
       {requests.map((request) => (
-        <div
-          key={request.id}
-          className="flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4 sm:flex-row sm:items-center sm:justify-between"
-        >
+        <div key={request.id} className="flex flex-col gap-3 rounded-xl border border-border bg-surface-card p-4">
           <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className="text-fs-lg font-semibold text-ink">{request.leaveType}</span>
@@ -56,17 +51,6 @@ export function MyLeaveRequestsList({ requests, onCancel }: MyLeaveRequestsListP
               <p className="mt-1 text-fs-sm text-muted-light">Approved by {request.approverName}</p>
             )}
           </div>
-          {request.status === "Pending" && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="shrink-0"
-              onClick={() => onCancel(request.id)}
-            >
-              <X className="size-3.5" />
-              Cancel
-            </Button>
-          )}
         </div>
       ))}
     </div>

@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { ApiDepartment, CreateDepartmentPayload, DepartmentStatus, UpdateDepartmentPayload } from "@/types/department";
 
 /**
@@ -29,7 +30,7 @@ function mapDepartment(raw: ApiDepartmentRaw): ApiDepartment {
 
 export async function listDepartments(status?: DepartmentStatus): Promise<ApiDepartment[]> {
   const data = await httpService.get<{ departments?: ApiDepartmentRaw[] } | ApiDepartmentRaw[]>(
-    "/api/admin/departments",
+    API_ENDPOINTS.admin.departments,
     status ? { status } : undefined
   );
   const departments = Array.isArray(data) ? data : (data.departments ?? []);
@@ -38,7 +39,7 @@ export async function listDepartments(status?: DepartmentStatus): Promise<ApiDep
 
 export async function createDepartment(payload: CreateDepartmentPayload): Promise<ApiDepartment> {
   const data = await httpService.post<{ department?: ApiDepartmentRaw } | ApiDepartmentRaw>(
-    "/api/admin/departments",
+    API_ENDPOINTS.admin.departments,
     payload
   );
   const department = "department" in data && data.department ? data.department : (data as ApiDepartmentRaw);
@@ -47,7 +48,7 @@ export async function createDepartment(payload: CreateDepartmentPayload): Promis
 
 export async function updateDepartment(id: string, payload: UpdateDepartmentPayload): Promise<ApiDepartment> {
   const data = await httpService.patch<{ department?: ApiDepartmentRaw } | ApiDepartmentRaw>(
-    `/api/admin/departments/${id}`,
+    API_ENDPOINTS.admin.departmentById(id),
     payload
   );
   const department = "department" in data && data.department ? data.department : (data as ApiDepartmentRaw);
@@ -55,5 +56,5 @@ export async function updateDepartment(id: string, payload: UpdateDepartmentPayl
 }
 
 export async function deleteDepartment(id: string): Promise<void> {
-  await httpService.delete<{ message?: string }>(`/api/admin/departments/${id}`);
+  await httpService.delete<{ message?: string }>(API_ENDPOINTS.admin.departmentById(id));
 }

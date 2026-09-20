@@ -1,4 +1,4 @@
-import { Mail, Phone, Briefcase, CalendarDays, ArrowRight, X } from "lucide-react";
+import { Mail, Phone, Briefcase, CalendarDays, ArrowRight, X, CalendarPlus } from "lucide-react";
 import { Drawer } from "@/components/molecules/Drawer";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Badge } from "@/components/atoms/Badge";
@@ -13,9 +13,12 @@ export interface CandidateProfileDrawerProps {
   interviews: Interview[];
   canEdit: boolean;
   canApprove: boolean;
+  canReject: boolean;
+  canScheduleInterview: boolean;
   onClose: () => void;
   onAdvanceStage: (candidateId: string, stage: PipelineStage) => void;
   onReject: (candidateId: string) => void;
+  onScheduleInterview: () => void;
 }
 
 export function CandidateProfileDrawer({
@@ -23,13 +26,16 @@ export function CandidateProfileDrawer({
   interviews,
   canEdit,
   canApprove,
+  canReject,
+  canScheduleInterview,
   onClose,
   onAdvanceStage,
   onReject,
+  onScheduleInterview,
 }: CandidateProfileDrawerProps) {
   const target = candidate ? nextStage(candidate.stage) : null;
-  const canAdvance = candidate && target && (target === "Offer" || target === "Hired" ? canApprove : canEdit);
-  const canRejectCandidate = candidate && canEdit && candidate.stage !== "Rejected" && candidate.stage !== "Hired";
+  const canAdvance = candidate && target && canEdit && (target === "Hired" ? canApprove : true);
+  const canRejectCandidate = candidate && canEdit && canReject && candidate.stage !== "Rejected" && candidate.stage !== "Hired";
   const candidateInterviews = candidate ? interviews.filter((i) => i.candidateId === candidate.id) : [];
 
   return (
@@ -44,9 +50,9 @@ export function CandidateProfileDrawer({
             </div>
             <div className="flex items-center gap-2">
               <StatusBadge status={candidate.stage} />
-              <Badge tone="neutral">{candidate.source}</Badge>
+              {candidate.source && <Badge tone="neutral">{candidate.source}</Badge>}
             </div>
-            <RatingStars rating={candidate.rating} />
+            <RatingStars rating={candidate.rating ?? 0} />
           </div>
 
           <div className="grid grid-cols-1 gap-2 rounded-lg border border-border p-3 text-fs-base sm:grid-cols-2">
@@ -58,33 +64,45 @@ export function CandidateProfileDrawer({
               <Phone className="size-4 shrink-0" />
               {candidate.phone}
             </div>
-            <div className="flex items-center gap-2 text-muted">
-              <Briefcase className="size-4 shrink-0" />
-              {candidate.experience} experience
-            </div>
+            {candidate.experience && (
+              <div className="flex items-center gap-2 text-muted">
+                <Briefcase className="size-4 shrink-0" />
+                {candidate.experience} experience
+              </div>
+            )}
             <div className="flex items-center gap-2 text-muted">
               <CalendarDays className="size-4 shrink-0" />
-              Applied {new Date(candidate.appliedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+              Applied {candidate.appliedOn ? new Date(candidate.appliedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}
             </div>
           </div>
 
-          <div>
-            <p className="mb-2 text-fs-base font-semibold text-ink">Skills</p>
-            <div className="flex flex-wrap gap-1.5">
-              {candidate.skills.map((skill) => (
-                <Badge key={skill} tone="neutral">
-                  {skill}
-                </Badge>
-              ))}
+          {candidate.skills && candidate.skills.length > 0 && (
+            <div>
+              <p className="mb-2 text-fs-base font-semibold text-ink">Skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {candidate.skills.map((skill) => (
+                  <Badge key={skill} tone="neutral">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {candidate.notes && (
-            <div className="rounded-lg bg-danger-bg p-3 text-fs-base text-danger">{candidate.notes}</div>
+            <div className="rounded-lg bg-surface p-3 text-fs-base text-ink">{candidate.notes}</div>
           )}
 
           <div>
-            <p className="mb-2 text-fs-base font-semibold text-ink">Interviews</p>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-fs-base font-semibold text-ink">Interviews</p>
+              {canScheduleInterview && (
+                <Button variant="ghost" size="sm" onClick={onScheduleInterview}>
+                  <CalendarPlus className="size-3.5" />
+                  Schedule
+                </Button>
+              )}
+            </div>
             {candidateInterviews.length === 0 ? (
               <p className="text-fs-base text-muted">No interviews scheduled yet.</p>
             ) : (
@@ -92,10 +110,10 @@ export function CandidateProfileDrawer({
                 {candidateInterviews.map((interview) => (
                   <div key={interview.id} className="flex items-center justify-between rounded-lg border border-border p-2.5 text-fs-base">
                     <div>
-                      <p className="font-medium text-ink">{interview.round}</p>
+                      <p className="font-medium text-ink">{interview.interviewer}</p>
                       <p className="text-fs-sm text-muted">
                         {new Date(interview.date).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })} ·{" "}
-                        {interview.time} · {interview.mode}
+                        {interview.time}
                       </p>
                     </div>
                     <StatusBadge status={interview.status} />

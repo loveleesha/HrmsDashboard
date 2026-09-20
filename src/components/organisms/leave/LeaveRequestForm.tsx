@@ -23,9 +23,10 @@ export interface LeaveRequestFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: LeaveRequestFormValues) => void;
+  isSubmitting?: boolean;
 }
 
-export function LeaveRequestForm({ open, onClose, onSubmit }: LeaveRequestFormProps) {
+export function LeaveRequestForm({ open, onClose, onSubmit, isSubmitting }: LeaveRequestFormProps) {
   const [leaveType, setLeaveType] = useState<LeaveType | "">("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -66,7 +67,6 @@ export function LeaveRequestForm({ open, onClose, onSubmit }: LeaveRequestFormPr
     }
 
     onSubmit({ leaveType: leaveType as LeaveType, startDate, endDate, days, reason: reason.trim() });
-    resetForm();
   }
 
   return (
@@ -76,10 +76,12 @@ export function LeaveRequestForm({ open, onClose, onSubmit }: LeaveRequestFormPr
       title="Apply for Leave"
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit Request</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            Submit Request
+          </Button>
         </div>
       }
     >

@@ -13,6 +13,7 @@ import { EmployeeProfileDrawer } from "@/components/organisms/employees/Employee
 import { useRBAC } from "@/hooks/use-rbac";
 import { useToast } from "@/hooks/use-toast";
 import { getEmployees, updateEmployeeStatus } from "@/services/employee.service";
+import { getMyTeammateUserIds } from "@/services/project.service";
 import type { Employee } from "@/types/employee";
 
 const DEFAULT_FILTERS: EmployeeFiltersState = {
@@ -25,21 +26,36 @@ const DEFAULT_FILTERS: EmployeeFiltersState = {
 };
 
 export function EmployeeDirectory() {
-  const { can } = useRBAC();
+  const { can, viewAsRole } = useRBAC();
   const { showToast } = useToast();
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [filters, setFilters] = useState<EmployeeFiltersState>(DEFAULT_FILTERS);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
+  // "Employees" is relabeled "My Team" for a manager (see nav-items.ts) — it
+  // should actually be their team, not the whole company: scoped to
+  // teammates sharing a project assignment with them. Falls back to the
+  // unscoped directory if that can't be determined (e.g. the manager role
+  // doesn't have projects.edit, which listing a project's other assignees needs).
+  const scopeToMyTeam = viewAsRole === "manager";
+
   useEffect(() => {
     let isMounted = true;
-    getEmployees().then((result) => {
-      if (isMounted) setEmployees(result);
-    });
+
+    async function load() {
+      const [result, teammateIds] = await Promise.all([
+        getEmployees(),
+        scopeToMyTeam ? getMyTeammateUserIds().catch(() => null) : Promise.resolve(null),
+      ]);
+      if (!isMounted) return;
+      setEmployees(teammateIds ? result.filter((e) => teammateIds.has(e.id)) : result);
+    }
+
+    load();
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [scopeToMyTeam]);
 
   const locationOptions = useMemo(() => {
     const distinct = new Set((employees ?? []).map((e) => e.location).filter((l): l is string => Boolean(l)));
@@ -130,7 +146,9 @@ export function EmployeeDirectory() {
           <h2 className="text-fs-4xl font-semibold text-ink">No employees found</h2>
           <p className="max-w-md text-fs-lg text-muted">
             {employees.length === 0
-              ? "Onboarded employees will show up here."
+              ? scopeToMyTeam
+                ? "No teammates found on your projects yet."
+                : "Onboarded employees will show up here."
               : "Try searching with a different name, role or department."}
           </p>
           {hasActiveFilters && (

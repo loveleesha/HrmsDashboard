@@ -91,8 +91,13 @@ export default function ProfilePage() {
           <ProfileTabNav tabs={TABS} value={tab} onChange={setTab} />
 
           <div>
-            {tab === "basic" && <BasicInfoTab employee={profile} />}
-            {tab === "picture" && <ProfilePictureTab employee={profile} />}
+            {tab === "basic" && <BasicInfoTab employee={profile} onProfileUpdated={setProfile} />}
+            {tab === "picture" && (
+              <ProfilePictureTab
+                employee={profile}
+                onUploaded={(avatarUrl) => setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev))}
+              />
+            )}
             {tab === "qualification" && <QualificationTab initialQualifications={profile.qualifications} />}
             {tab === "shift" && <ShiftTab />}
             {tab === "password" && <ChangePasswordTab />}

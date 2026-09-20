@@ -21,9 +21,10 @@ export interface RequestAssetFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: RequestAssetFormValues) => void;
+  isSubmitting?: boolean;
 }
 
-export function RequestAssetForm({ open, onClose, onSubmit }: RequestAssetFormProps) {
+export function RequestAssetForm({ open, onClose, onSubmit, isSubmitting }: RequestAssetFormProps) {
   const [category, setCategory] = useState("");
   const [reason, setReason] = useState("");
   const [priority, setPriority] = useState<AssetRequestPriority | "">("");
@@ -63,7 +64,6 @@ export function RequestAssetForm({ open, onClose, onSubmit }: RequestAssetFormPr
       priority: priority as AssetRequestPriority,
       allocationType: allocationType as "New" | "Replacement",
     });
-    reset();
   }
 
   return (
@@ -73,10 +73,12 @@ export function RequestAssetForm({ open, onClose, onSubmit }: RequestAssetFormPr
       title="Request an Asset"
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit Request</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            Submit Request
+          </Button>
         </div>
       }
     >

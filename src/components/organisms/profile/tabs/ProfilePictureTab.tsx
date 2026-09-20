@@ -1,48 +1,65 @@
 "use client";
 
-import { useRef } from "react";
-import { Upload, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { useToast } from "@/hooks/use-toast";
+import { toAbsoluteAssetUrl } from "@/lib/asset-url";
+import { uploadMyProfilePicture } from "@/services/profile.service";
 import type { MyProfile } from "@/types/profile";
 
-/**
- * There's no "update my profile picture" endpoint in the collection — only
- * the onboarding wizard's step 1 sets it, and Onboarding Assets uploads are
- * scoped to admins onboarding a new hire, not the account's own profile.
- * Upload/Remove here are placeholders (no request is made) until such an
- * endpoint exists; the current real picture from GET /api/user/profile is
- * still shown so this isn't misleadingly blank.
- */
-export function ProfilePictureTab({ employee }: { employee: MyProfile }) {
+/** User > Profile > Upload My Profile Picture — multipart/form-data, field
+ * "file" (jpeg/png/webp). Replaces any existing picture; there's no separate
+ * remove-picture endpoint, so only "Upload New Photo" is offered here. */
+export interface ProfilePictureTabProps {
+  employee: MyProfile;
+  onUploaded?: (avatarUrl: string) => void;
+}
+
+export function ProfilePictureTab({ employee, onUploaded }: ProfilePictureTabProps) {
   const { showToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrl, setAvatarUrl] = useState(employee.avatarUrl);
+  const [isUploading, setIsUploading] = useState(false);
+
+  async function handleFile(file: File | undefined) {
+    if (!file) return;
+    setIsUploading(true);
+    try {
+      const url = await uploadMyProfilePicture(file);
+      const absoluteUrl = toAbsoluteAssetUrl(url);
+      setAvatarUrl(absoluteUrl);
+      onUploaded?.(absoluteUrl);
+      showToast("Profile photo updated.");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not upload this photo.", "error");
+    } finally {
+      setIsUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
 
   return (
     <div className="rounded-xl border border-border bg-surface-card p-6">
       <h3 className="mb-4 text-fs-xl font-semibold text-ink">Profile Picture</h3>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-        <Avatar name={employee.name} imageUrl={employee.avatarUrl} size="lg" className="size-24 text-fs-6xl" />
+        <Avatar name={employee.name} imageUrl={avatarUrl} size="lg" className="size-24 text-fs-6xl" />
         <div className="flex flex-1 flex-col gap-3">
           <p className="text-fs-base text-muted">
-            Upload a clear, front-facing photo. JPG or PNG, up to 5 MB. Square images work best.
+            Upload a clear, front-facing photo. JPG, PNG, or WEBP. Square images work best.
           </p>
           <div className="flex gap-2">
             <input
               ref={inputRef}
               type="file"
-              accept="image/png,image/jpeg"
+              accept="image/png,image/jpeg,image/webp"
               className="hidden"
-              onChange={() => showToast("Photo uploaded. It will appear once verified by HR.")}
+              onChange={(e) => handleFile(e.target.files?.[0])}
             />
-            <Button onClick={() => inputRef.current?.click()}>
+            <Button onClick={() => inputRef.current?.click()} isLoading={isUploading}>
               <Upload className="size-4" />
               Upload New Photo
-            </Button>
-            <Button variant="secondary" onClick={() => showToast("Profile photo removed.", "info")}>
-              <Trash2 className="size-4" />
-              Remove
             </Button>
           </div>
         </div>

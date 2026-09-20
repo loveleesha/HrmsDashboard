@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { CreateTicketPayload, Ticket, TicketFilters, TicketMessage, TicketPriority, TicketStatus } from "@/types/ticket";
 
 /**
@@ -102,8 +103,8 @@ function unwrapTicket(data: { ticket?: RawTicket } | RawTicket): RawTicket {
   return "ticket" in data && data.ticket ? data.ticket : (data as RawTicket);
 }
 
-function unwrapTickets(data: { tickets?: RawTicket[] } | RawTicket[]): RawTicket[] {
-  return Array.isArray(data) ? data : (data.tickets ?? []);
+function unwrapTickets(data: { ticket?: RawTicket[]; tickets?: RawTicket[] } | RawTicket[]): RawTicket[] {
+  return Array.isArray(data) ? data : (data.tickets ?? (Array.isArray(data.ticket) ? data.ticket : []));
 }
 
 function cleanFilters(filters: TicketFilters): Record<string, string> | undefined {
@@ -114,8 +115,16 @@ function cleanFilters(filters: TicketFilters): Record<string, string> | undefine
 export type TicketScope = "user" | "admin";
 
 const BASE: Record<TicketScope, string> = {
-  user: "/api/user/tickets",
-  admin: "/api/admin/tickets",
+  user: API_ENDPOINTS.user.tickets,
+  admin: API_ENDPOINTS.admin.tickets,
+};
+const TICKET_BY_ID: Record<TicketScope, (id: string) => string> = {
+  user: API_ENDPOINTS.user.ticketById,
+  admin: API_ENDPOINTS.admin.ticketById,
+};
+const TICKET_MESSAGES: Record<TicketScope, (id: string) => string> = {
+  user: API_ENDPOINTS.user.ticketMessages,
+  admin: API_ENDPOINTS.admin.ticketMessages,
 };
 
 export async function listTickets(scope: TicketScope, filters: TicketFilters = {}): Promise<Ticket[]> {
@@ -124,7 +133,7 @@ export async function listTickets(scope: TicketScope, filters: TicketFilters = {
 }
 
 export async function getTicket(scope: TicketScope, id: string): Promise<Ticket> {
-  const data = await httpService.get<{ ticket?: RawTicket } | RawTicket>(`${BASE[scope]}/${id}`);
+  const data = await httpService.get<{ ticket?: RawTicket } | RawTicket>(TICKET_BY_ID[scope](id));
   return mapTicket(unwrapTicket(data));
 }
 
@@ -134,13 +143,13 @@ export async function createTicket(payload: CreateTicketPayload): Promise<Ticket
 }
 
 export async function replyToTicket(scope: TicketScope, id: string, message: string): Promise<void> {
-  await httpService.post(`${BASE[scope]}/${id}/messages`, { message });
+  await httpService.post(TICKET_MESSAGES[scope](id), { message });
 }
 
 export async function updateTicketStatus(id: string, status: TicketStatus): Promise<void> {
-  await httpService.patch(`${BASE.admin}/${id}/status`, { status });
+  await httpService.patch(API_ENDPOINTS.admin.ticketStatus(id), { status });
 }
 
 export async function deleteTicket(id: string): Promise<void> {
-  await httpService.delete(`${BASE.admin}/${id}`);
+  await httpService.delete(API_ENDPOINTS.admin.ticketById(id));
 }

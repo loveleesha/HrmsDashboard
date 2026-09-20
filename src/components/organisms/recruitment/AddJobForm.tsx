@@ -23,9 +23,10 @@ export interface AddJobFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: AddJobFormValues) => void;
+  isSubmitting?: boolean;
 }
 
-export function AddJobForm({ open, onClose, onSubmit }: AddJobFormProps) {
+export function AddJobForm({ open, onClose, onSubmit, isSubmitting }: AddJobFormProps) {
   const [title, setTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [location, setLocation] = useState("");
@@ -33,20 +34,19 @@ export function AddJobForm({ open, onClose, onSubmit }: AddJobFormProps) {
   const [openings, setOpenings] = useState("1");
   const [experience, setExperience] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [wasOpen, setWasOpen] = useState(open);
 
-  function reset() {
-    setTitle("");
-    setDepartment("");
-    setLocation("");
-    setType("");
-    setOpenings("1");
-    setExperience("");
-    setErrors({});
-  }
-
-  function handleClose() {
-    reset();
-    onClose();
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setTitle("");
+      setDepartment("");
+      setLocation("");
+      setType("");
+      setOpenings("1");
+      setExperience("");
+      setErrors({});
+    }
   }
 
   function handleSubmit() {
@@ -80,20 +80,21 @@ export function AddJobForm({ open, onClose, onSubmit }: AddJobFormProps) {
       openings: openingsNum,
       experience: experience.trim(),
     });
-    reset();
   }
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
+      onClose={onClose}
       title="Post a New Job"
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Post Job</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            Post Job
+          </Button>
         </div>
       }
     >

@@ -13,8 +13,12 @@ export const LEAVE_TYPE_ANNUAL_QUOTA: Record<LeaveType, number> = {
 
 export interface LeaveBalance {
   type: LeaveType;
+  /** Annual cap for this type — 0 for Unpaid Leave, which has none. */
   total: number;
+  /** Approved days this calendar year. */
   used: number;
+  /** Days reserved by still-pending requests this calendar year. */
+  pending: number;
   remaining: number;
 }
 

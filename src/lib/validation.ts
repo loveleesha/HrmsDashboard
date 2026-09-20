@@ -29,6 +29,12 @@ export function applyTextRules(
   }
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
 /** Today as YYYY-MM-DD in the user's local time (toISOString would use UTC and be off by a day near midnight). */
 export function todayKey(): string {
   const now = new Date();

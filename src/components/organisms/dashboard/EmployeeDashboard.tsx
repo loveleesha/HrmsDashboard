@@ -11,9 +11,10 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { NewJoineesWidget } from "@/components/organisms/dashboard/NewJoineesWidget";
 import { EventsWidget } from "@/components/organisms/dashboard/EventsWidget";
 import { useAuth } from "@/hooks/use-auth";
+import { useRBAC } from "@/hooks/use-rbac";
 import { getEmployees } from "@/services/employee.service";
 import { getAttendanceMonth } from "@/services/attendance.service";
-import { getJobs } from "@/services/recruitment.service";
+import { listJobs } from "@/services/recruitment.service";
 import { getRecognitions, buildSummary } from "@/services/recognition.service";
 import { getAnnouncements } from "@/services/announcement.service";
 import { getDashboardData } from "@/services/dashboard.service";
@@ -42,6 +43,8 @@ const TODAY_LABEL = TODAY.toLocaleDateString("en-IN", {
 
 export function EmployeeDashboard() {
   const { user } = useAuth();
+  const { can } = useRBAC();
+  const canViewJobs = can("recruitment", "view");
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [todayAttendance, setTodayAttendance] = useState<AttendanceDay | null>(null);
   const [jobs, setJobs] = useState<JobPosting[] | null>(null);
@@ -62,7 +65,11 @@ export function EmployeeDashboard() {
         setTodayAttendance(days[days.length - 1] ?? null);
       }
     });
-    getJobs().then((data) => isMounted && setJobs(data.filter((j) => j.status === "Open")));
+    if (canViewJobs) {
+      listJobs({ status: "Open" })
+        .then((data) => isMounted && setJobs(data))
+        .catch(() => isMounted && setJobs([]));
+    }
     getRecognitions().then((data) => isMounted && setRecognitionSummary(buildSummary(data, user?.employeeId)));
     getAnnouncements().then((data) => isMounted && setAnnouncements(data.slice(0, 3)));
     getDashboardData().then((data) => {
@@ -74,7 +81,7 @@ export function EmployeeDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, canViewJobs]);
 
   const openJob = useMemo(() => jobs?.[0] ?? null, [jobs]);
 
@@ -146,11 +153,15 @@ export function EmployeeDashboard() {
               <Briefcase className="size-4 text-primary" />
               Latest Job Openings
             </h3>
-            <Link href="/recruitment" className="text-fs-sm text-primary hover:underline">
-              View All
-            </Link>
+            {canViewJobs && (
+              <Link href="/recruitment" className="text-fs-sm text-primary hover:underline">
+                View All
+              </Link>
+            )}
           </div>
-          {openJob ? (
+          {!canViewJobs ? (
+            <p className="text-fs-base text-muted">You don&apos;t have access to recruitment.</p>
+          ) : openJob ? (
             <div className="flex flex-col gap-2">
               <p className="text-fs-lg font-semibold text-ink">{openJob.title}</p>
               <p className="text-fs-sm text-muted">

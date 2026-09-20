@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { ApiRole, CreateRolePayload, UpdateRolePayload } from "@/types/role";
 
 /**
@@ -30,29 +31,32 @@ function mapRole(raw: ApiRoleRaw): ApiRole {
 }
 
 export async function listRoles(): Promise<ApiRole[]> {
-  const data = await httpService.get<{ roles?: ApiRoleRaw[] } | ApiRoleRaw[]>("/api/admin/roles");
+  const data = await httpService.get<{ roles?: ApiRoleRaw[] } | ApiRoleRaw[]>(API_ENDPOINTS.admin.roles);
   const roles = Array.isArray(data) ? data : (data.roles ?? []);
   return roles.map(mapRole);
 }
 
 export async function getRole(roleId: string): Promise<ApiRole> {
-  const data = await httpService.get<{ role?: ApiRoleRaw } | ApiRoleRaw>(`/api/admin/roles/${roleId}`);
+  const data = await httpService.get<{ role?: ApiRoleRaw } | ApiRoleRaw>(API_ENDPOINTS.admin.roleById(roleId));
   const role = "role" in data && data.role ? data.role : (data as ApiRoleRaw);
   return mapRole(role);
 }
 
 export async function createRole(payload: CreateRolePayload): Promise<ApiRole> {
-  const data = await httpService.post<{ role?: ApiRoleRaw } | ApiRoleRaw>("/api/admin/roles", payload);
+  const data = await httpService.post<{ role?: ApiRoleRaw } | ApiRoleRaw>(API_ENDPOINTS.admin.roles, payload);
   const role = "role" in data && data.role ? data.role : (data as ApiRoleRaw);
   return mapRole(role);
 }
 
 export async function updateRole(roleId: string, payload: UpdateRolePayload): Promise<ApiRole> {
-  const data = await httpService.patch<{ role?: ApiRoleRaw } | ApiRoleRaw>(`/api/admin/roles/${roleId}`, payload);
+  const data = await httpService.patch<{ role?: ApiRoleRaw } | ApiRoleRaw>(
+    API_ENDPOINTS.admin.roleById(roleId),
+    payload
+  );
   const role = "role" in data && data.role ? data.role : (data as ApiRoleRaw);
   return mapRole(role);
 }
 
 export async function deleteRole(roleId: string): Promise<void> {
-  await httpService.delete<{ message?: string }>(`/api/admin/roles/${roleId}`);
+  await httpService.delete<{ message?: string }>(API_ENDPOINTS.admin.roleById(roleId));
 }

@@ -22,6 +22,7 @@ import {
   LifeBuoy,
   LayoutGrid,
   PartyPopper,
+  Network,
 } from "lucide-react";
 import type { NavSection } from "@/types/nav";
 
@@ -52,7 +53,16 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Add Employee", href: "/employees/onboarding/new", icon: UserPlus, module: "employeeOnboarding" },
         ],
       },
-      { label: "Projects", href: "/projects", icon: FolderKanban, module: "projects" },
+      {
+        label: "Projects",
+        href: "/projects",
+        icon: FolderKanban,
+        module: "projects",
+        children: [
+          { label: "Overview", href: "/projects", icon: FolderKanban, module: "projects" },
+          { label: "Team Hierarchy", href: "/projects/hierarchy", icon: Network, module: "projects" },
+        ],
+      },
       { label: "Attendance", href: "/attendance", icon: CalendarCheck, module: "attendance" },
       {
         label: "Leave",

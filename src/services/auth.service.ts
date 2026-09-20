@@ -1,6 +1,7 @@
 import { ROLES, type Role, type User } from "@/types/user";
 import { httpService } from "@/lib/http/http.service";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 
 /**
  * Auth service — wired to the real HRMS backend (see the "Hrms Dashboard"
@@ -72,8 +73,8 @@ function mapApiUser(apiUser: ApiUser): User {
 export type AuthAudience = "user" | "admin";
 
 const LOGIN_ENDPOINT: Record<AuthAudience, string> = {
-  user: "/api/user/login",
-  admin: "/api/admin/login",
+  user: API_ENDPOINTS.user.login,
+  admin: API_ENDPOINTS.admin.login,
 };
 
 export async function login(
@@ -102,7 +103,7 @@ export async function register(params: {
   password: string;
   role: string;
 }): Promise<{ user: User; message: string }> {
-  const data = await httpService.post<RegisterResponse>("/api/user/register", params);
+  const data = await httpService.post<RegisterResponse>(API_ENDPOINTS.user.register, params);
   return { user: mapApiUser(data.user), message: data.message ?? "Registration successful." };
 }
 
@@ -113,7 +114,7 @@ export async function registerAdmin(params: {
   password: string;
   role: "super_admin" | "hr_admin";
 }): Promise<{ user: User; message: string }> {
-  const data = await httpService.post<RegisterResponse>("/api/admin/register", params);
+  const data = await httpService.post<RegisterResponse>(API_ENDPOINTS.admin.register, params);
   return { user: mapApiUser(data.user), message: data.message ?? "Admin registered." };
 }
 
@@ -121,7 +122,7 @@ export async function registerAdmin(params: {
  * enumeration). Shared by both audiences — mounted under /api/user for both,
  * per the collection's note on Change Password below. */
 export async function forgotPassword(email: string): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/user/forgot-password", { email });
+  const data = await httpService.post<MessageResponse>(API_ENDPOINTS.user.forgotPassword, { email });
   return { message: data?.message ?? "If an account with that email exists, a password reset link has been sent." };
 }
 
@@ -134,7 +135,7 @@ export async function resetPassword(params: {
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/user/reset-password", params);
+  const data = await httpService.post<MessageResponse>(API_ENDPOINTS.user.resetPassword, params);
   return { message: data?.message ?? "Password reset successfully." };
 }
 
@@ -149,6 +150,6 @@ export async function changePassword(params: {
   newPassword: string;
   confirmPassword: string;
 }): Promise<{ message: string }> {
-  const data = await httpService.post<MessageResponse>("/api/user/change-password", params);
+  const data = await httpService.post<MessageResponse>(API_ENDPOINTS.user.changePassword, params);
   return { message: data?.message ?? "Password updated successfully." };
 }

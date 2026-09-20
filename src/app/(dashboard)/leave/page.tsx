@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { Button } from "@/components/atoms/Button";
@@ -12,135 +12,93 @@ import { UpcomingTeamLeave } from "@/components/organisms/leave/UpcomingTeamLeav
 import { MyLeaveRequestsList } from "@/components/organisms/leave/MyLeaveRequestsList";
 import { LeaveApprovalsList } from "@/components/organisms/leave/LeaveApprovalsList";
 import { LeaveRequestForm, type LeaveRequestFormValues } from "@/components/organisms/leave/LeaveRequestForm";
-import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
-import { getEmployees } from "@/services/employee.service";
 import {
-  getLeaveRequests,
-  getLeaveBalances,
+  applyForLeave,
+  approveLeave,
+  getMyLeaveBalance,
+  getMyLeaveRequests,
   getUpcomingTeamLeave,
-  newLeaveRequestId,
+  listTeamLeave,
+  rejectLeave,
 } from "@/services/leave.service";
-import type { LeaveRequest } from "@/types/leave";
-import type { Employee } from "@/types/employee";
+import type { LeaveBalance, LeaveRequest } from "@/types/leave";
 
 const TODAY = new Date();
 
 export default function LeavePage() {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const { can } = useRBAC();
 
-  const [employees, setEmployees] = useState<Employee[] | null>(null);
-  const [requests, setRequests] = useState<LeaveRequest[] | null>(null);
-  const [tab, setTab] = useState("mine");
-  const [formOpen, setFormOpen] = useState(false);
-
   const canApprove = can("leave", "approve");
-  const canReject = can("leave", "reject");
   const canApply = can("leave", "add");
 
-  useEffect(() => {
-    let isMounted = true;
-    Promise.all([getEmployees(), getLeaveRequests()]).then(([employeeData, requestData]) => {
-      if (!isMounted) return;
-      setEmployees(employeeData);
-      setRequests(requestData);
+  const [balances, setBalances] = useState<LeaveBalance[] | null>(null);
+  const [myRequests, setMyRequests] = useState<LeaveRequest[] | null>(null);
+  const [teamRequests, setTeamRequests] = useState<LeaveRequest[] | null>(null);
+  const [tab, setTab] = useState("mine");
+  const [formOpen, setFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const load = useCallback(() => {
+    Promise.all([getMyLeaveBalance(), getMyLeaveRequests()]).then(([balanceData, requestData]) => {
+      setBalances(balanceData);
+      setMyRequests(requestData);
     });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (canApprove) {
+      listTeamLeave().then(setTeamRequests);
+    }
+  }, [canApprove]);
 
-  const currentEmployee = employees?.find((employee) => employee.email === user?.email) ?? employees?.[0] ?? null;
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  const myRequests = useMemo(
-    () => (requests && currentEmployee ? requests.filter((r) => r.employeeId === currentEmployee.id) : []),
-    [requests, currentEmployee]
-  );
+  const pendingApprovals = (teamRequests ?? []).filter((r) => r.status === "Pending");
+  const upcomingTeamLeave = canApprove ? getUpcomingTeamLeave(teamRequests ?? [], new Date(TODAY)) : [];
 
-  const balances = useMemo(
-    () => (currentEmployee && requests ? getLeaveBalances(currentEmployee.id, requests) : []),
-    [currentEmployee, requests]
-  );
-
-  const upcomingTeamLeave = useMemo(
-    () => (requests ? getUpcomingTeamLeave(requests, new Date(TODAY)) : []),
-    [requests]
-  );
-
-  const pendingApprovals = useMemo(
-    () =>
-      requests && currentEmployee
-        ? requests.filter((r) => r.status === "Pending" && r.employeeId !== currentEmployee.id)
-        : [],
-    [requests, currentEmployee]
-  );
-
-  function handleApply(values: LeaveRequestFormValues) {
-    if (!currentEmployee) return;
-    const newRequest: LeaveRequest = {
-      id: newLeaveRequestId(),
-      employeeId: currentEmployee.id,
-      employeeName: currentEmployee.name,
-      designation: currentEmployee.designation,
-      department: currentEmployee.department,
-      leaveType: values.leaveType,
-      startDate: values.startDate,
-      endDate: values.endDate,
-      days: values.days,
-      reason: values.reason,
-      status: "Pending",
-      appliedOn: TODAY.toISOString().slice(0, 10),
-    };
-    setRequests((prev) => [newRequest, ...(prev ?? [])]);
-    setFormOpen(false);
-    showToast("Leave request submitted for approval.");
+  async function handleApply(values: LeaveRequestFormValues) {
+    setIsSubmitting(true);
+    try {
+      await applyForLeave({ type: values.leaveType, startDate: values.startDate, endDate: values.endDate, reason: values.reason });
+      showToast("Leave request submitted for approval.");
+      setFormOpen(false);
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not submit this leave request.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function handleCancel(id: string) {
-    setRequests((prev) => (prev ?? []).map((r) => (r.id === id ? { ...r, status: "Cancelled" } : r)));
-    showToast("Leave request cancelled.", "info");
+  async function handleApprove(id: string) {
+    try {
+      await approveLeave(id);
+      showToast("Leave request approved.");
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not approve this request.", "error");
+    }
   }
 
-  function handleApprove(id: string) {
-    const request = requests?.find((r) => r.id === id);
-    setRequests((prev) =>
-      (prev ?? []).map((r) =>
-        r.id === id
-          ? { ...r, status: "Approved", approverName: user?.name, approvedOn: TODAY.toISOString().slice(0, 10) }
-          : r
-      )
-    );
-    showToast(`Approved ${request?.employeeName ?? "employee"}'s leave request.`);
-  }
-
-  function handleReject(id: string, comment: string) {
-    const request = requests?.find((r) => r.id === id);
-    setRequests((prev) =>
-      (prev ?? []).map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              status: "Rejected",
-              approverName: user?.name,
-              approvedOn: TODAY.toISOString().slice(0, 10),
-              comment,
-            }
-          : r
-      )
-    );
-    showToast(`Rejected ${request?.employeeName ?? "employee"}'s leave request.`, "info");
+  async function handleReject(id: string, comment: string) {
+    try {
+      await rejectLeave(id, comment);
+      showToast("Leave request rejected.", "info");
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not reject this request.", "error");
+    }
   }
 
   const tabOptions = [
     { label: "My Leave", value: "mine" },
-    ...((canApprove || canReject)
-      ? [{ label: `Team Approvals${pendingApprovals.length ? ` (${pendingApprovals.length})` : ""}`, value: "approvals" }]
-      : []),
+    ...(canApprove ? [{ label: `Team Approvals${pendingApprovals.length ? ` (${pendingApprovals.length})` : ""}`, value: "approvals" }] : []),
   ];
   const activeTab = tabOptions.some((option) => option.value === tab) ? tab : tabOptions[0].value;
+
+  const isLoading = balances === null || myRequests === null || (canApprove && teamRequests === null);
 
   return (
     <div>
@@ -157,7 +115,7 @@ export default function LeavePage() {
         }
       />
 
-      {!employees || !requests ? (
+      {isLoading ? (
         <div className="flex items-center justify-center gap-2 py-24 text-muted">
           <Spinner />
           Loading leave data…
@@ -170,33 +128,33 @@ export default function LeavePage() {
             </div>
           )}
 
-          {tab === "mine" && (
+          {activeTab === "mine" && (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr]">
               <div className="flex flex-col gap-4">
-                <LeaveBalanceCards balances={balances} />
+                <LeaveBalanceCards balances={balances ?? []} />
                 <div>
                   <h3 className="mb-3 text-fs-xl font-semibold text-ink">My Requests</h3>
-                  <MyLeaveRequestsList requests={myRequests} onCancel={handleCancel} />
+                  <MyLeaveRequestsList requests={myRequests ?? []} />
                 </div>
               </div>
               <div className="flex flex-col gap-4">
-                <LeaveTypeChart balances={balances} />
-                <UpcomingTeamLeave requests={upcomingTeamLeave} />
+                <LeaveTypeChart balances={balances ?? []} />
+                {canApprove && <UpcomingTeamLeave requests={upcomingTeamLeave} />}
               </div>
             </div>
           )}
 
-          {tab === "approvals" && (canApprove || canReject) && (
+          {activeTab === "approvals" && canApprove && (
             <LeaveApprovalsList
               requests={pendingApprovals}
               canApprove={canApprove}
-              canReject={canReject}
+              canReject={canApprove}
               onApprove={handleApprove}
               onReject={handleReject}
             />
           )}
 
-          <LeaveRequestForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleApply} />
+          <LeaveRequestForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleApply} isSubmitting={isSubmitting} />
         </>
       )}
     </div>

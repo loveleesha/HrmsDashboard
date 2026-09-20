@@ -22,26 +22,31 @@ export interface ExpenseFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: ExpenseFormValues) => void;
+  isSubmitting?: boolean;
+  /** Present → editing an existing expense instead of logging a new one. */
+  initialValues?: ExpenseFormValues;
 }
 
-export function ExpenseForm({ open, onClose, onSubmit }: ExpenseFormProps) {
+export function ExpenseForm({ open, onClose, onSubmit, isSubmitting, initialValues }: ExpenseFormProps) {
+  const isEdit = Boolean(initialValues);
   const [category, setCategory] = useState<ExpenseCategory | "">("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [spentOn, setSpentOn] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [wasOpen, setWasOpen] = useState(open);
 
-  function reset() {
-    setCategory("");
-    setDescription("");
-    setAmount("");
-    setSpentOn("");
-    setErrors({});
-  }
-
-  function handleClose() {
-    reset();
-    onClose();
+  // Re-seed on every open — adjusted during render, not an effect, so it
+  // happens before paint instead of causing an extra render.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setCategory(initialValues?.category ?? "");
+      setDescription(initialValues?.description ?? "");
+      setAmount(initialValues ? String(initialValues.amount) : "");
+      setSpentOn(initialValues?.spentOn ?? "");
+      setErrors({});
+    }
   }
 
   function handleSubmit() {
@@ -62,20 +67,21 @@ export function ExpenseForm({ open, onClose, onSubmit }: ExpenseFormProps) {
     }
 
     onSubmit({ category: category as ExpenseCategory, description: description.trim(), amount: amountNum, spentOn });
-    reset();
   }
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
-      title="Log an Expense"
+      onClose={onClose}
+      title={isEdit ? "Edit Expense" : "Log an Expense"}
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit for Approval</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            {isEdit ? "Save Changes" : "Submit for Approval"}
+          </Button>
         </div>
       }
     >

@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import { fileNameFromPath, toAbsoluteAssetUrl, toRelativeAssetPath } from "@/lib/asset-url";
 import { listRoles } from "@/services/role.service";
 import { listEmployeesRemote } from "@/services/employee.service";
@@ -140,13 +141,13 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
       };
       if (record.id) payload.userId = record.id;
 
-      const data = await httpService.post<OnboardStepResponse>("/api/admin/employees/onboard/step/1", payload);
+      const data = await httpService.post<OnboardStepResponse>(API_ENDPOINTS.admin.onboardingStep(1), payload);
       const userId = record.id || data.userId;
       if (!userId) throw new Error("Server did not return a user id for this onboarding record.");
       return { ...record, id: userId };
     }
     case "contactInfo": {
-      await httpService.post("/api/admin/employees/onboard/step/2", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(2), {
         userId: record.id,
         mobile: record.contactInfo.mobile,
         alternateMobile: record.contactInfo.alternateMobile ?? "",
@@ -158,7 +159,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
       return record;
     }
     case "professionalInfo": {
-      await httpService.post("/api/admin/employees/onboard/step/3", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(3), {
         userId: record.id,
         department: record.professionalInfo.department,
         designation: record.professionalInfo.designation,
@@ -174,11 +175,11 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
     }
     case "roleAccess": {
       const roleId = await resolveRoleId(record.roleAccess.role);
-      await httpService.post("/api/admin/employees/onboard/step/4", { userId: record.id, roleId });
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(4), { userId: record.id, roleId });
       return record;
     }
     case "technology": {
-      await httpService.post("/api/admin/employees/onboard/step/5", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(5), {
         userId: record.id,
         skills: record.technology.technologies,
       });
@@ -188,7 +189,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
       const qualificationCertificates = record.qualifications
         .map((q) => toRelativeAssetPath(q.certificateUrl))
         .filter(Boolean);
-      await httpService.post("/api/admin/employees/onboard/step/6", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(6), {
         userId: record.id,
         qualifications: record.qualifications.map((q) => ({
           type: q.type,
@@ -204,7 +205,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
       return record;
     }
     case "emergencyContacts": {
-      await httpService.post("/api/admin/employees/onboard/step/7", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(7), {
         userId: record.id,
         emergencyContacts: record.emergencyContacts.map((contact) => ({
           name: contact.name,
@@ -219,7 +220,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
     }
     case "documents": {
       const urlFor = (key: DocumentRequirementConfig["key"]) => toRelativeAssetPath(record.documents.find((doc) => doc.key === key)?.fileUrl);
-      await httpService.post("/api/admin/employees/onboard/step/8", {
+      await httpService.post(API_ENDPOINTS.admin.onboardingStep(8), {
         userId: record.id,
         aadhaarCard: urlFor("aadhaarCard"),
         panCard: urlFor("panCard"),
@@ -237,7 +238,7 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
 }
 
 async function completeOnboardingRemote(record: OnboardingRecord): Promise<OnboardingRecord> {
-  await httpService.post("/api/admin/employees/onboard/step/9", { userId: record.id });
+  await httpService.post(API_ENDPOINTS.admin.onboardingStep(9), { userId: record.id });
   return { ...record, status: "pending_verification", submittedAt: new Date().toISOString() };
 }
 
@@ -414,7 +415,7 @@ function mapProgressToRecord(response: OnboardProgressResponse, createdBy: strin
 
 async function getOnboardingRemoteById(userId: string, createdBy: string): Promise<OnboardingRecord | undefined> {
   try {
-    const data = await httpService.get<OnboardProgressResponse>(`/api/admin/employees/onboard/progress/${userId}`);
+    const data = await httpService.get<OnboardProgressResponse>(API_ENDPOINTS.admin.onboardingProgress(userId));
     return mapProgressToRecord(data, createdBy);
   } catch {
     return undefined;
@@ -552,7 +553,7 @@ export function mapProfileToOnboardingRecord(profile: MyProfile): OnboardingReco
 }
 
 export async function discardOnboarding(userId: string): Promise<void> {
-  await httpService.delete(`/api/admin/employees/onboard/progress/${userId}`);
+  await httpService.delete(API_ENDPOINTS.admin.onboardingProgress(userId));
 }
 
 /* ------------------------------------------------------------------------ *

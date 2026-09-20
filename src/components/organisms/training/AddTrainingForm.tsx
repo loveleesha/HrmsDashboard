@@ -9,7 +9,7 @@ import { Input } from "@/components/atoms/Input";
 import { Button } from "@/components/atoms/Button";
 import { useRoles } from "@/hooks/use-roles";
 import type { TrainingMode } from "@/types/training";
-import { applyTextRules, isPastDate } from "@/lib/validation";
+import { applyTextRules } from "@/lib/validation";
 
 export interface AddTrainingFormValues {
   topic: string;
@@ -23,9 +23,13 @@ export interface AddTrainingFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: AddTrainingFormValues) => void;
+  isSubmitting?: boolean;
+  /** Present → editing an existing program instead of creating one. */
+  initialValues?: AddTrainingFormValues;
 }
 
-export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProps) {
+export function AddTrainingForm({ open, onClose, onSubmit, isSubmitting, initialValues }: AddTrainingFormProps) {
+  const isEdit = Boolean(initialValues);
   const { roles } = useRoles();
   const [topic, setTopic] = useState("");
   const [targetRole, setTargetRole] = useState("");
@@ -33,19 +37,20 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
   const [mode, setMode] = useState<TrainingMode | "">("");
   const [date, setDate] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [wasOpen, setWasOpen] = useState(open);
 
-  function reset() {
-    setTopic("");
-    setTargetRole("");
-    setTrainer("");
-    setMode("");
-    setDate("");
-    setErrors({});
-  }
-
-  function handleClose() {
-    reset();
-    onClose();
+  // Re-seed on every open — adjusted during render, not an effect, so it
+  // happens before paint instead of causing an extra render.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setTopic(initialValues?.topic ?? "");
+      setTargetRole(initialValues?.targetRole ?? "");
+      setTrainer(initialValues?.trainer ?? "");
+      setMode(initialValues?.mode ?? "");
+      setDate(initialValues?.date ?? "");
+      setErrors({});
+    }
   }
 
   function handleSubmit() {
@@ -60,7 +65,6 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
       topic: [topic, "Topic", { min: 3, max: 100 }],
       trainer: [trainer, "Trainer name", { min: 2, max: 60 }],
     });
-    if (date && isPastDate(date)) nextErrors.date = "The training date can't be in the past.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -68,20 +72,21 @@ export function AddTrainingForm({ open, onClose, onSubmit }: AddTrainingFormProp
     }
 
     onSubmit({ topic: topic.trim(), targetRole, trainer: trainer.trim(), mode: mode as TrainingMode, date });
-    reset();
   }
 
   return (
     <Modal
       open={open}
-      onClose={handleClose}
-      title="Add Training Program"
+      onClose={onClose}
+      title={isEdit ? "Edit Training Program" : "Add Training Program"}
       footer={
         <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={handleClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Add Program</Button>
+          <Button onClick={handleSubmit} isLoading={isSubmitting}>
+            {isEdit ? "Save Changes" : "Add Program"}
+          </Button>
         </div>
       }
     >

@@ -1,4 +1,5 @@
 import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import { toAbsoluteAssetUrl } from "@/lib/asset-url";
 import { EMPLOYMENT_STATUSES, type Employee, type EmploymentStatus } from "@/types/employee";
 
@@ -17,7 +18,7 @@ export interface EmployeeListParams {
   status?: EmploymentStatus | "";
   employmentType?: string;
   location?: string;
-  onboardingStatus?: "pending" | "in_progress" | "completed" | "all" | "";
+  onboardingStatus?: "pending" | "in_progress" | "completed" | "all" | "pending";
   sortBy?: "name_asc" | "name_desc" | "department_asc" | "department_desc" | "";
   page?: number;
   limit?: number;
@@ -68,6 +69,9 @@ function mapRawEmployee(raw: RawEmployee): Employee {
 
   return {
     id,
+    // The Employee document's own _id, distinct from the User's id/userId
+    // above — see Employee.employeeRecordId's doc comment.
+    employeeRecordId: raw._id,
     employeeId: raw.employeeId,
     name: name || "Unnamed Employee",
     email: raw.email ?? "",
@@ -101,7 +105,7 @@ export async function listEmployeesRemote(params: EmployeeListParams = {}): Prom
 
   const data = await httpService.get<
     { employees?: RawEmployee[]; data?: RawEmployee[]; total?: number } | RawEmployee[]
-  >("/api/admin/employees", query);
+  >(API_ENDPOINTS.admin.employees, query);
 
   const rawList = Array.isArray(data) ? data : (data.employees ?? data.data ?? []);
   const total = Array.isArray(data) ? rawList.length : (data.total ?? rawList.length);
@@ -120,5 +124,5 @@ export async function getEmployees(): Promise<Employee[]> {
 /** Only active/inactive are accepted here — on-leave and terminated are
  * separate workflows per the collection, not part of this toggle. */
 export async function updateEmployeeStatus(userId: string, status: "active" | "inactive"): Promise<void> {
-  await httpService.patch(`/api/admin/employees/${userId}/status`, { status });
+  await httpService.patch(API_ENDPOINTS.admin.employeeStatus(userId), { status });
 }

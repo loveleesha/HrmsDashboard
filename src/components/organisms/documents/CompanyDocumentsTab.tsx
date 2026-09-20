@@ -1,24 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Download } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Plus, Trash2, Download, Pencil } from "lucide-react";
 import { Table } from "@/components/molecules/Table";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { Spinner } from "@/components/atoms/Spinner";
+import { ConfirmModal } from "@/components/molecules/ConfirmModal";
 import { AddCompanyDocumentForm, type AddCompanyDocumentValues } from "@/components/organisms/documents/AddCompanyDocumentForm";
-import { useAuth } from "@/hooks/use-auth";
+import { EditDocumentModal, type EditDocumentValues } from "@/components/organisms/documents/EditDocumentModal";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
-import { getCompanyDocuments, newCompanyDocumentId } from "@/services/company-document.service";
+import {
+  deleteCompanyDocument,
+  downloadCompanyDocument,
+  getCompanyDocuments,
+  publishCompanyDocument,
+  updateCompanyDocument,
+} from "@/services/company-document.service";
 import type { CompanyDocument } from "@/types/company-document";
 
 export function CompanyDocumentsTab() {
-  const { user } = useAuth();
   const { showToast } = useToast();
   const { can } = useRBAC();
   const [documents, setDocuments] = useState<CompanyDocument[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<CompanyDocument | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CompanyDocument | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Publishing/removing a *company-wide* document is a management action, distinct
   // from the personal "add" every self-service role has for their own documents —
@@ -27,33 +37,67 @@ export function CompanyDocumentsTab() {
   const canManage = can("documents", "edit");
   const canDelete = can("documents", "delete");
 
-  useEffect(() => {
-    let isMounted = true;
-    getCompanyDocuments().then((data) => {
-      if (isMounted) setDocuments(data);
-    });
-    return () => {
-      isMounted = false;
-    };
+  const load = useCallback(() => {
+    getCompanyDocuments().then(setDocuments);
   }, []);
 
-  function handleAdd(values: AddCompanyDocumentValues) {
-    const newDoc: CompanyDocument = {
-      id: newCompanyDocumentId(),
-      title: values.title,
-      category: values.category,
-      uploadedBy: user?.name ?? "HR",
-      uploadedOn: new Date().toISOString().slice(0, 10),
-      sizeKb: Math.floor(80 + Math.random() * 400),
-    };
-    setDocuments((prev) => [newDoc, ...(prev ?? [])]);
-    setFormOpen(false);
-    showToast("Document published for the company.");
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleAdd(values: AddCompanyDocumentValues) {
+    setIsSubmitting(true);
+    try {
+      await publishCompanyDocument(values);
+      showToast("Document published for the company.");
+      setFormOpen(false);
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not publish this document.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  function handleDelete(id: string) {
-    setDocuments((prev) => (prev ?? []).filter((d) => d.id !== id));
-    showToast("Document removed.", "info");
+  async function handleEdit(values: EditDocumentValues) {
+    if (!editTarget) return;
+    setIsSubmitting(true);
+    try {
+      await updateCompanyDocument(editTarget.id, values);
+      showToast("Document updated.");
+      setEditTarget(null);
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not update this document.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setIsSubmitting(true);
+    try {
+      await deleteCompanyDocument(deleteTarget.id);
+      showToast("Document removed.", "info");
+      setDeleteTarget(null);
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not remove this document.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDownload(doc: CompanyDocument) {
+    setDownloadingId(doc.id);
+    try {
+      await downloadCompanyDocument(doc.id, doc.title);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not download this document.", "error");
+    } finally {
+      setDownloadingId(null);
+    }
   }
 
   if (!documents) {
@@ -88,24 +132,36 @@ export function CompanyDocumentsTab() {
           {
             key: "uploadedOn",
             header: "Uploaded On",
-            render: (d: CompanyDocument) => new Date(d.uploadedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+            render: (d: CompanyDocument) =>
+              d.uploadedOn ? new Date(d.uploadedOn).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—",
           },
-          { key: "size", header: "Size", render: (d: CompanyDocument) => `${d.sizeKb} KB` },
+          { key: "size", header: "Size", render: (d: CompanyDocument) => (d.sizeKb ? `${d.sizeKb} KB` : "—") },
           {
             key: "actions",
             header: "",
             render: (d: CompanyDocument) => (
               <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="sm" aria-label="Download">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label="Download"
+                  onClick={() => handleDownload(d)}
+                  isLoading={downloadingId === d.id}
+                >
                   <Download className="size-4" />
                 </Button>
+                {canManage && (
+                  <Button variant="ghost" size="sm" aria-label="Edit document" onClick={() => setEditTarget(d)}>
+                    <Pencil className="size-4" />
+                  </Button>
+                )}
                 {canDelete && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-danger hover:bg-danger-bg"
                     aria-label="Delete document"
-                    onClick={() => handleDelete(d.id)}
+                    onClick={() => setDeleteTarget(d)}
                   >
                     <Trash2 className="size-4" />
                   </Button>
@@ -119,7 +175,24 @@ export function CompanyDocumentsTab() {
         emptyMessage="No company documents published yet."
       />
 
-      <AddCompanyDocumentForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleAdd} />
+      <AddCompanyDocumentForm open={formOpen} onClose={() => setFormOpen(false)} onSubmit={handleAdd} isSubmitting={isSubmitting} />
+      <EditDocumentModal
+        open={Boolean(editTarget)}
+        onClose={() => setEditTarget(null)}
+        document={editTarget}
+        onSubmit={handleEdit}
+        isSubmitting={isSubmitting}
+      />
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Remove this document?"
+        description={deleteTarget?.title}
+        body="This can't be undone."
+        confirmLabel="Remove"
+        isConfirming={isSubmitting}
+      />
     </div>
   );
 }
