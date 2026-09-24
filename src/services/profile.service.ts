@@ -56,6 +56,26 @@ interface RawDocument {
   createdAt?: string;
 }
 
+/** The real GET /api/user/profile body for an admin-tier account: flat, no
+ * basicDetail/contactDetail/professionalDetail sections (those only exist
+ * for onboarded employees). Distinguished by the response's top-level
+ * `profileType: "admin"`. */
+interface RawAdminProfile {
+  id?: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  roleId?: string;
+  roleLabel?: string;
+  userType?: string;
+  permissions?: Record<string, Record<string, boolean>>;
+  profileImage?: string | null;
+  mobile?: string | null;
+  lastLoginAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /** The real GET /api/user/profile body: `{ success, profile: { ... } }`, grouped by section. */
 interface RawProfile {
   userId?: string;
@@ -172,17 +192,48 @@ function mapProfile(raw: RawProfile): MyProfile {
   };
 }
 
+function mapAdminProfile(raw: RawAdminProfile): MyProfile {
+  return {
+    id: raw.id ?? "",
+    name: raw.name || "—",
+    email: raw.email ?? "",
+    phone: raw.mobile ?? undefined,
+    avatarUrl: raw.profileImage ? toAbsoluteAssetUrl(raw.profileImage) : undefined,
+    designation: "",
+    department: "",
+    status: "active",
+    role: raw.role,
+    roleLabel: raw.roleLabel,
+    userType: raw.userType,
+    skills: [],
+    qualifications: [],
+    emergencyContacts: [],
+    documents: [],
+  };
+}
+
 export class ProfileNotFoundError extends Error {}
 
-type ProfileResponse = { profile?: RawProfile } & RawProfile;
+type ProfileResponse = { profile?: RawProfile | RawAdminProfile; profileType?: string } & RawProfile;
 
 function unwrapProfile(data: ProfileResponse): RawProfile {
-  return data.profile ?? data;
+  return (data.profile as RawProfile) ?? data;
+}
+
+function isAdminProfile(data: ProfileResponse): data is ProfileResponse & { profileType: "admin" } {
+  return data.profileType === "admin";
+}
+
+function mapProfileResponse(data: ProfileResponse): MyProfile {
+  if (isAdminProfile(data)) {
+    return mapAdminProfile((data.profile ?? data) as RawAdminProfile);
+  }
+  return mapProfile(unwrapProfile(data));
 }
 
 export async function getMyProfile(): Promise<MyProfile> {
   try {
-    return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(API_ENDPOINTS.user.profile)));
+    return mapProfileResponse(await httpService.get<ProfileResponse>(API_ENDPOINTS.user.profile));
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       throw new ProfileNotFoundError(err.message);
@@ -194,7 +245,7 @@ export async function getMyProfile(): Promise<MyProfile> {
 /** Admin > Employees > Get Employee Profile (employees.view) — same shape as
  * Get My Profile, looked up by userId. */
 export async function getEmployeeProfile(userId: string): Promise<MyProfile> {
-  return mapProfile(unwrapProfile(await httpService.get<ProfileResponse>(API_ENDPOINTS.admin.employeeProfile(userId))));
+  return mapProfileResponse(await httpService.get<ProfileResponse>(API_ENDPOINTS.admin.employeeProfile(userId)));
 }
 
 export interface UpdateBasicDetailPayload {

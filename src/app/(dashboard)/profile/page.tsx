@@ -32,13 +32,18 @@ const TABS: ProfileTabDef[] = [
 ];
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
 
   useEffect(() => {
+    // Skip while the session is still rehydrating from localStorage — user
+    // briefly starts out null on every load, and firing here too would send
+    // a duplicate request moments before the real one below.
+    if (isLoading || !user) return;
+
     let isMounted = true;
     getMyProfile()
       .then((data) => {
@@ -55,7 +60,7 @@ export default function ProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [user, isLoading]);
 
   return (
     <div>
