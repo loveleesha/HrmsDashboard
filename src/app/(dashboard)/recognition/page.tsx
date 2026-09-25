@@ -11,6 +11,7 @@ import { RecognitionFeed } from "@/components/organisms/recognition/RecognitionF
 import { RecognitionForm, type RecognitionFormValues } from "@/components/organisms/recognition/RecognitionForm";
 import { RecognitionLeaderboard } from "@/components/organisms/recognition/RecognitionLeaderboard";
 import { useAuth } from "@/hooks/use-auth";
+import { useRBAC } from "@/hooks/use-rbac";
 import { useToast } from "@/hooks/use-toast";
 import { getEmployees } from "@/services/employee.service";
 import { getRecognitions, buildSummary, buildLeaderboard } from "@/services/recognition.service";
@@ -27,7 +28,9 @@ let localId = 1000;
 
 export default function RecognitionPage() {
   const { user } = useAuth();
+  const { can } = useRBAC();
   const { showToast } = useToast();
+  const canGive = can("peerRecognition", "add");
 
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [recognitions, setRecognitions] = useState<Recognition[] | null>(null);
@@ -106,10 +109,12 @@ export default function RecognitionPage() {
         title="Peer Recognition"
         description="Celebrate your colleagues and recognize great work."
         actions={
-          <Button onClick={() => setFormOpen(true)}>
-            <Plus className="size-4" />
-            Give Recognition
-          </Button>
+          canGive ? (
+            <Button onClick={() => setFormOpen(true)}>
+              <Plus className="size-4" />
+              Give Recognition
+            </Button>
+          ) : undefined
         }
       />
 

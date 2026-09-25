@@ -9,14 +9,21 @@ import { ProjectAssignmentsTab } from "@/components/organisms/projects/ProjectAs
 import { useRBAC } from "@/hooks/use-rbac";
 
 export default function ProjectsPage() {
-  const { can } = useRBAC();
+  const { can, isAdminAccount } = useRBAC();
   // Listing every assignment needs projects.edit (admin-tier) — projects.view alone, which every role has, isn't enough.
   const canSeeAssignments = can("projects", "edit");
   const [requestedTab, setTab] = useState("mine");
-  const tab = requestedTab === "assignments" && !canSeeAssignments ? "mine" : requestedTab;
+  // Admin-tier accounts have no Employee record, so "My Projects" (projects
+  // assigned to *me*) never applies — fall back to "All Projects" instead.
+  const tab =
+    requestedTab === "assignments" && !canSeeAssignments
+      ? "mine"
+      : requestedTab === "mine" && isAdminAccount
+        ? "all"
+        : requestedTab;
 
   const options = [
-    { label: "My Projects", value: "mine" },
+    ...(isAdminAccount ? [] : [{ label: "My Projects", value: "mine" }]),
     { label: "All Projects", value: "all" },
     ...(canSeeAssignments ? [{ label: "Assignments", value: "assignments" }] : []),
   ];

@@ -41,6 +41,12 @@ export default function ExpensesPage() {
   const canManage = can("expenses", "edit");
   const canAdd = can("expenses", "add");
   const canDeleteAny = can("expenses", "delete");
+  const canApprove = can("expenses", "approve");
+  const canReject = can("expenses", "reject");
+  // A role can have approve/reject without edit (e.g. the default "manager"
+  // matrix) — they still need the full list and whose claim it is to act on
+  // it, same as someone with edit does.
+  const canSeeAll = canManage || canApprove || canReject;
 
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -50,8 +56,8 @@ export default function ExpensesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const load = useCallback(() => {
-    (canManage ? listAllExpenses() : getMyExpenses()).then(setExpenses);
-  }, [canManage]);
+    (canSeeAll ? listAllExpenses() : getMyExpenses()).then(setExpenses);
+  }, [canSeeAll]);
 
   useEffect(() => {
     load();
@@ -173,7 +179,7 @@ export default function ExpensesPage() {
 
           <Table
             columns={[
-              ...(canManage ? [{ key: "employee", header: "Employee", render: (e: Expense) => e.employeeName }] : []),
+              ...(canSeeAll ? [{ key: "employee", header: "Employee", render: (e: Expense) => e.employeeName }] : []),
               { key: "category", header: "Category", render: (e: Expense) => e.category },
               { key: "description", header: "Description", render: (e: Expense) => e.description },
               { key: "amount", header: "Amount", render: (e: Expense) => <span className="font-medium text-ink">{formatCurrency(e.amount)}</span> },
@@ -189,14 +195,18 @@ export default function ExpensesPage() {
                 render: (e: Expense) => (
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusBadge status={e.status} />
-                    {e.status === "Pending" && canManage && (
+                    {e.status === "Pending" && (canApprove || canReject) && (
                       <div className="flex gap-1">
-                        <Button size="sm" variant="secondary" onClick={() => handleApprove(e)}>
-                          Approve
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setRejectTarget(e)}>
-                          Reject
-                        </Button>
+                        {canApprove && (
+                          <Button size="sm" variant="secondary" onClick={() => handleApprove(e)}>
+                            Approve
+                          </Button>
+                        )}
+                        {canReject && (
+                          <Button size="sm" variant="ghost" onClick={() => setRejectTarget(e)}>
+                            Reject
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>

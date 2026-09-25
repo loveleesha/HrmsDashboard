@@ -22,14 +22,21 @@ type Scope = "user" | "admin";
 
 export default function DsrPage() {
   const { showToast } = useToast();
-  const { can } = useRBAC();
+  const { can, isAdminAccount } = useRBAC();
 
-  const canAdd = can("dsr", "add");
+  // Admin-tier accounts have no Employee record, so there's no "my own" DSR
+  // to submit or view — only "All DSR" applies.
+  const canAdd = can("dsr", "add") && !isAdminAccount;
   // Admin > DSR is gated on dsr.approve, not dsr.view (which every role has for its own entries).
   const canSeeAll = can("dsr", "approve");
 
   const [requestedScope, setScope] = useState<Scope>("user");
-  const scope: Scope = requestedScope === "admin" && canSeeAll ? "admin" : "user";
+  // Force "admin" for admin-tier accounts, but only when they actually have
+  // dsr.approve — an admin-tier role without it has neither a "my own" DSR
+  // (no Employee record) nor access to "all", so fall through to the normal
+  // resolution below rather than forcing a scope listAllDsr() would 403 on.
+  const scope: Scope =
+    isAdminAccount && canSeeAll ? "admin" : requestedScope === "admin" && canSeeAll ? "admin" : "user";
   const [prevScope, setPrevScope] = useState(scope);
   const [entries, setEntries] = useState<DsrEntry[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -124,7 +131,9 @@ export default function DsrPage() {
         }
       />
 
-      {canSeeAll && (
+      {/* Admin-tier accounts have no "My DSR" to switch to — scope is forced
+          to "admin" above, so the toggle would just be a single dead option. */}
+      {canSeeAll && !isAdminAccount && (
         <div className="mb-4">
           <Tabs
             options={[

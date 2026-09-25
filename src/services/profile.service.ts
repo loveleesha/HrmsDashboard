@@ -5,6 +5,7 @@ import { toAbsoluteAssetUrl, fileNameFromPath } from "@/lib/asset-url";
 import type { Gender, QualificationType } from "@/types/onboarding";
 import { EMPLOYMENT_STATUSES, type EmploymentStatus } from "@/types/employee";
 import type { MyProfile } from "@/types/profile";
+import type { RolePermissionMap } from "@/types/rbac";
 
 /**
  * Self-service profile — wired to the real HRMS backend's
@@ -43,6 +44,7 @@ interface RawRole {
   name?: string;
   label?: string;
   userType?: string;
+  permissions?: Record<string, Record<string, boolean>>;
 }
 
 interface RawDocument {
@@ -129,6 +131,7 @@ function mapProfile(raw: RawProfile): MyProfile {
 
   return {
     id: raw.userId ?? "",
+    profileType: "employee",
     employeeId: raw.employeeId,
     firstName: basic.firstName,
     lastName: basic.lastName,
@@ -144,6 +147,7 @@ function mapProfile(raw: RawProfile): MyProfile {
     role: role?.name,
     roleLabel: role?.label,
     userType: role?.userType,
+    permissions: role?.permissions as RolePermissionMap | undefined,
     skills: raw.technicalSkill?.skills ?? [],
     joinedDate: pro.joiningDate ?? undefined,
     manager: pro.reportsTo ?? undefined,
@@ -195,6 +199,7 @@ function mapProfile(raw: RawProfile): MyProfile {
 function mapAdminProfile(raw: RawAdminProfile): MyProfile {
   return {
     id: raw.id ?? "",
+    profileType: "admin",
     name: raw.name || "—",
     email: raw.email ?? "",
     phone: raw.mobile ?? undefined,
@@ -209,6 +214,7 @@ function mapAdminProfile(raw: RawAdminProfile): MyProfile {
     qualifications: [],
     emergencyContacts: [],
     documents: [],
+    permissions: raw.permissions as RolePermissionMap | undefined,
   };
 }
 
@@ -263,6 +269,22 @@ export interface UpdateBasicDetailPayload {
 export async function updateMyProfile(payload: UpdateBasicDetailPayload): Promise<MyProfile> {
   const data = await httpService.patch<ProfileResponse>(API_ENDPOINTS.user.profile, { type: "basic_detail", ...payload });
   return mapProfile(unwrapProfile(data));
+}
+
+/** PATCH /api/admin/profile — admin-tier accounts only (super_admin/hr_admin/
+ * manager/...), confirmed via Postman: multipart/form-data with `name`,
+ * `mobile`, and an optional `file` field (the profile picture — this is also
+ * the endpoint the Profile Picture tab uses for admin accounts, see
+ * ProfilePictureTab). Distinct from updateMyProfile above, which is the
+ * employee-shape "basic_detail" endpoint and doesn't apply here (no address/
+ * skills/emergency contacts on an admin account). */
+export async function updateAdminProfile(payload: { name?: string; mobile?: string; file?: File }): Promise<MyProfile> {
+  const formData = new FormData();
+  if (payload.name !== undefined) formData.append("name", payload.name);
+  if (payload.mobile !== undefined) formData.append("mobile", payload.mobile);
+  if (payload.file) formData.append("file", payload.file);
+  const data = await httpService.patch<ProfileResponse>(API_ENDPOINTS.admin.profile, formData);
+  return mapProfileResponse(data);
 }
 
 /** PATCH /api/user/profile, type: "qualification" — appends one qualification;

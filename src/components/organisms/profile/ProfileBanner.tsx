@@ -1,4 +1,4 @@
-import { Mail, IdCard, Briefcase } from "lucide-react";
+import { Mail, IdCard, Briefcase, Phone } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import type { User } from "@/types/user";
 import type { MyProfile } from "@/types/profile";
@@ -6,13 +6,19 @@ import type { MyProfile } from "@/types/profile";
 /**
  * `profile` (GET /api/user/profile) is the source of truth once loaded; the
  * login-time `user` only fills in until then, or when the account has no
- * employee profile at all.
+ * employee profile at all. An admin-tier profile (profileType: "admin") has
+ * no real Employee record behind it, so it never has an employeeId/
+ * designation to show — falling back to `user.employeeId` there would show
+ * the raw account id instead, so that fallback only applies for an actual
+ * employee profile.
  */
 export function ProfileBanner({ user, profile }: { user: User; profile?: MyProfile | null }) {
+  const isAdmin = profile?.profileType === "admin";
   const name = profile?.name || user.name;
   const email = profile?.email || user.email;
-  const employeeId = profile?.employeeId || user.employeeId;
-  const designation = profile?.designation || user.designation;
+  const phone = profile?.phone;
+  const employeeId = isAdmin ? undefined : profile?.employeeId || user.employeeId;
+  const designation = isAdmin ? undefined : profile?.designation || user.designation;
 
   return (
     <div className="relative mb-6 overflow-hidden rounded-xl bg-gradient-to-r from-primary to-primary-dark p-6 text-white">
@@ -29,10 +35,18 @@ export function ProfileBanner({ user, profile }: { user: User; profile?: MyProfi
               <Mail className="size-4" />
               {email}
             </span>
-            <span className="flex items-center gap-1.5">
-              <IdCard className="size-4" />
-              Employee ID: {employeeId}
-            </span>
+            {phone && (
+              <span className="flex items-center gap-1.5">
+                <Phone className="size-4" />
+                {phone}
+              </span>
+            )}
+            {employeeId && (
+              <span className="flex items-center gap-1.5">
+                <IdCard className="size-4" />
+                Employee ID: {employeeId}
+              </span>
+            )}
             {designation && (
               <span className="flex items-center gap-1.5">
                 <Briefcase className="size-4" />

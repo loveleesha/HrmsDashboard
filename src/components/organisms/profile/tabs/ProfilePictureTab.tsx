@@ -6,12 +6,15 @@ import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { useToast } from "@/hooks/use-toast";
 import { toAbsoluteAssetUrl } from "@/lib/asset-url";
-import { uploadMyProfilePicture } from "@/services/profile.service";
+import { updateAdminProfile, uploadMyProfilePicture } from "@/services/profile.service";
 import type { MyProfile } from "@/types/profile";
 
 /** User > Profile > Upload My Profile Picture — multipart/form-data, field
  * "file" (jpeg/png/webp). Replaces any existing picture; there's no separate
- * remove-picture endpoint, so only "Upload New Photo" is offered here. */
+ * remove-picture endpoint, so only "Upload New Photo" is offered here.
+ * Admin-tier accounts (profileType: "admin") have no Employee record, so
+ * that endpoint doesn't apply — they go through PATCH /api/admin/profile's
+ * own `file` field instead (confirmed via Postman). */
 export interface ProfilePictureTabProps {
   employee: MyProfile;
   onUploaded?: (avatarUrl: string) => void;
@@ -27,10 +30,18 @@ export function ProfilePictureTab({ employee, onUploaded }: ProfilePictureTabPro
     if (!file) return;
     setIsUploading(true);
     try {
-      const url = await uploadMyProfilePicture(file);
-      const absoluteUrl = toAbsoluteAssetUrl(url);
-      setAvatarUrl(absoluteUrl);
-      onUploaded?.(absoluteUrl);
+      let absoluteUrl: string | undefined;
+      if (employee.profileType === "admin") {
+        const updated = await updateAdminProfile({ file });
+        absoluteUrl = updated.avatarUrl;
+      } else {
+        const url = await uploadMyProfilePicture(file);
+        absoluteUrl = toAbsoluteAssetUrl(url);
+      }
+      if (absoluteUrl) {
+        setAvatarUrl(absoluteUrl);
+        onUploaded?.(absoluteUrl);
+      }
       showToast("Profile photo updated.");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not upload this photo.", "error");

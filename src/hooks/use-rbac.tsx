@@ -1,42 +1,81 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Role } from "@/types/user";
-import type { ActionKey, ModuleKey } from "@/types/rbac";
+import type { ActionKey, ModuleKey, RolePermissionMap } from "@/types/rbac";
 import { can as canCheck } from "@/lib/rbac/permissions";
 import { resolveRolePermissions } from "@/lib/rbac/role-label";
 import { useAuth } from "@/hooks/use-auth";
 import { useRoles } from "@/hooks/use-roles";
+import { getMyProfile } from "@/services/profile.service";
 
 interface RBACContextValue {
   /** The signed-in user's role — access is always gated on the real
    * account, there is no simulated "view as" override. */
   viewAsRole: Role;
   can: (moduleKey: ModuleKey, action?: ActionKey) => boolean;
+  /** True for accounts with no real Employee record behind them
+   * (super_admin/hr_admin/manager/...) — see GET /api/user/profile's
+   * `profileType`. Self-service-only surfaces (My Projects, My Documents,
+   * Appraisal, ...) don't apply to these accounts; use this instead of
+   * re-deriving it from `viewAsRole` on every page that needs it. */
+  isAdminAccount: boolean;
 }
 
 const RBACContext = createContext<RBACContextValue | undefined>(undefined);
 
 export function RBACProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { roles } = useRoles();
+  const [ownPermissions, setOwnPermissions] = useState<RolePermissionMap | undefined>(undefined);
+  const [isAdminAccount, setIsAdminAccount] = useState(false);
 
   const viewAsRole = user?.role ?? "employee";
 
-  // Prefer the live, backend-managed role (Settings -> Role & Access) so
-  // admin edits take effect immediately; fall back to the static matrix
-  // when the roles API hasn't returned this role yet (not loaded, the
-  // signed-in role lacks roleAccess.view, or the backend simply has no
-  // entry for it) — otherwise every user would lose all access on any
-  // hiccup fetching /api/admin/roles.
-  const permissions = useMemo(() => resolveRolePermissions(roles, viewAsRole), [roles, viewAsRole]);
+  // GET /api/user/profile returns this exact account's own resolved
+  // permissions for admin-tier roles (super_admin/hr_admin/manager/...) —
+  // guaranteed in sync with Settings -> Role & Access with no name-matching
+  // involved. Fetched once per session; the httpService GET de-dupe means
+  // this shares a single request with the Profile page if that's also
+  // loading around the same time.
+  useEffect(() => {
+    if (!token || !user) return;
+    let isMounted = true;
+    getMyProfile()
+      .then((profile) => {
+        if (!isMounted) return;
+        setOwnPermissions(profile.permissions);
+        setIsAdminAccount(profile.profileType === "admin");
+      })
+      .catch(() => {
+        // No employee profile on this account, or the request failed —
+        // fall back to the roles-list lookup below, same as an
+        // employee-shape profile (which never carries `permissions`).
+        if (isMounted) setOwnPermissions(undefined);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [token, user]);
+
+  // The account's own permissions, when available, are the exact source of
+  // truth for THIS account. The roles-list-by-name lookup remains the
+  // fallback: employee-shape profiles never carry `permissions` at all, and
+  // it also covers the brief window before the fetch above resolves.
+  const permissions = useMemo(
+    () => ownPermissions ?? resolveRolePermissions(roles, viewAsRole),
+    [ownPermissions, roles, viewAsRole]
+  );
 
   const can = useCallback(
     (moduleKey: ModuleKey, action: ActionKey = "view") => canCheck(permissions, moduleKey, action),
     [permissions]
   );
 
-  const value = useMemo<RBACContextValue>(() => ({ viewAsRole, can }), [viewAsRole, can]);
+  const value = useMemo<RBACContextValue>(
+    () => ({ viewAsRole, can, isAdminAccount }),
+    [viewAsRole, can, isAdminAccount]
+  );
 
   return <RBACContext.Provider value={value}>{children}</RBACContext.Provider>;
 }

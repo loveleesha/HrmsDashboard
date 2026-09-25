@@ -4,6 +4,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { EditBasicInfoDrawer } from "@/components/organisms/profile/EditBasicInfoDrawer";
+import { EditAdminProfileDrawer } from "@/components/organisms/profile/EditAdminProfileDrawer";
 import { useRoles } from "@/hooks/use-roles";
 import { EMPLOYMENT_STATUS_LABELS } from "@/types/employee";
 import { GENDER_LABELS, type Gender } from "@/types/onboarding";
@@ -21,6 +22,41 @@ export function BasicInfoTab({ employee, onProfileUpdated }: BasicInfoTabProps) 
   const addressLine = [address?.addressLine, address?.city, address?.state, address?.pincode]
     .filter(Boolean)
     .join(", ");
+
+  // Admin-tier accounts (profileType: "admin") have no Employee record behind
+  // them — no department/designation/skills/documents/emergency contacts to
+  // show. Editing goes through PATCH /api/admin/profile (name + mobile only),
+  // a different endpoint from updateMyProfile's employee-shape "basic_detail".
+  if (employee.profileType === "admin") {
+    return (
+      <div className="rounded-xl border border-border bg-surface-card p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-fs-xl font-semibold text-ink">Contact Details</h3>
+          <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="size-3.5" />
+            Edit
+          </Button>
+        </div>
+        <div className="flex flex-col gap-3 text-fs-base">
+          <div className="flex items-center gap-2 text-muted">
+            <Mail className="size-4 shrink-0" />
+            {employee.email}
+          </div>
+          <div className="flex items-center gap-2 text-muted">
+            <Phone className="size-4 shrink-0" />
+            {employee.phone || "—"}
+          </div>
+        </div>
+
+        <EditAdminProfileDrawer
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          profile={employee}
+          onSaved={(updated) => onProfileUpdated?.(updated)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

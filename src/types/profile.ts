@@ -1,5 +1,6 @@
 import type { Employee } from "./employee";
 import type { EmergencyContactDraft, Gender, QualificationEntryDraft } from "./onboarding";
+import type { RolePermissionMap } from "./rbac";
 
 export interface ProfileAddress {
   addressLine?: string;
@@ -45,4 +46,15 @@ export interface MyProfile extends Employee {
   qualifications: QualificationEntryDraft[];
   emergencyContacts: EmergencyContactDraft[];
   documents: ProfileDocument[];
+  /** "admin" for the flat, no-Employee-record shape (super_admin/hr_admin/
+   * manager/...); undefined/"employee" for the normal onboarded-employee
+   * shape. Drives ProfilePage/BasicInfoTab to skip fields and tabs that only
+   * make sense for an actual employee record (department, qualifications,
+   * shift, documents, ...) — an admin account simply has none of that. */
+  profileType?: "admin" | "employee";
+  /** Admin-tier accounts only — this account's own resolved permission set,
+   * straight from the backend (GET /api/user/profile), no role-name lookup
+   * involved. See useRBAC(): this takes priority over the roles-list match
+   * when present, since it's guaranteed accurate for this exact account. */
+  permissions?: RolePermissionMap;
 }

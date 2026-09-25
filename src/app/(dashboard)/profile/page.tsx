@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { User as UserIcon, Camera, GraduationCap, CalendarClock, Lock, Star, FileText, Repeat, UserX, FolderKanban } from "lucide-react";
 import { PageHeader } from "@/components/molecules/PageHeader";
 import { Spinner } from "@/components/atoms/Spinner";
@@ -31,12 +31,25 @@ const TABS: ProfileTabDef[] = [
   { value: "department", label: "Department Change", icon: Repeat },
 ];
 
+// Admin-tier accounts (profileType: "admin") have no real Employee record
+// behind them — everything except basic contact info, picture, and password
+// is either meaningless (qualifications, shift, department change) or reads
+// from a different self-service surface entirely (appraisal/documents/
+// projects), so keep the admin profile to the tabs that actually apply.
+const ADMIN_TAB_VALUES = new Set(["basic", "picture", "password"]);
+
 export default function ProfilePage() {
   const { user, isLoading } = useAuth();
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [tab, setTab] = useState("basic");
+
+  const isAdminProfile = profile?.profileType === "admin";
+  const visibleTabs = useMemo(
+    () => (isAdminProfile ? TABS.filter((t) => ADMIN_TAB_VALUES.has(t.value)) : TABS),
+    [isAdminProfile]
+  );
 
   useEffect(() => {
     // Skip while the session is still rehydrating from localStorage — user
@@ -61,6 +74,11 @@ export default function ProfilePage() {
       isMounted = false;
     };
   }, [user, isLoading]);
+
+  // Derived, not stored: if the profile resolves as admin after `tab` was
+  // already set to something employee-only, fall back for this render
+  // instead of adjusting state in an effect.
+  const activeTab = visibleTabs.some((t) => t.value === tab) ? tab : "basic";
 
   return (
     <div>
@@ -93,23 +111,23 @@ export default function ProfilePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_1fr]">
-          <ProfileTabNav tabs={TABS} value={tab} onChange={setTab} />
+          <ProfileTabNav tabs={visibleTabs} value={activeTab} onChange={setTab} />
 
           <div>
-            {tab === "basic" && <BasicInfoTab employee={profile} onProfileUpdated={setProfile} />}
-            {tab === "picture" && (
+            {activeTab === "basic" && <BasicInfoTab employee={profile} onProfileUpdated={setProfile} />}
+            {activeTab === "picture" && (
               <ProfilePictureTab
                 employee={profile}
                 onUploaded={(avatarUrl) => setProfile((prev) => (prev ? { ...prev, avatarUrl } : prev))}
               />
             )}
-            {tab === "qualification" && <QualificationTab initialQualifications={profile.qualifications} />}
-            {tab === "shift" && <ShiftTab />}
-            {tab === "password" && <ChangePasswordTab />}
-            {tab === "appraisal" && <AppraisalTab />}
-            {tab === "documents" && <MyDocumentsTab />}
-            {tab === "projects" && <MyProjectsTab />}
-            {tab === "department" && <DepartmentChangeTab employee={profile} />}
+            {activeTab === "password" && <ChangePasswordTab />}
+            {!isAdminProfile && activeTab === "qualification" && <QualificationTab initialQualifications={profile.qualifications} />}
+            {!isAdminProfile && activeTab === "shift" && <ShiftTab />}
+            {!isAdminProfile && activeTab === "appraisal" && <AppraisalTab />}
+            {!isAdminProfile && activeTab === "documents" && <MyDocumentsTab />}
+            {!isAdminProfile && activeTab === "projects" && <MyProjectsTab />}
+            {!isAdminProfile && activeTab === "department" && <DepartmentChangeTab employee={profile} />}
           </div>
         </div>
       )}
