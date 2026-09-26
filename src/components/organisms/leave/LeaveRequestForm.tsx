@@ -24,23 +24,36 @@ export interface LeaveRequestFormProps {
   onClose: () => void;
   onSubmit: (values: LeaveRequestFormValues) => void;
   isSubmitting?: boolean;
+  /** Pre-fills the form and switches it into edit mode (title/button label
+   * change accordingly) — used to edit an existing still-pending request
+   * instead of applying for a new one. */
+  initialValues?: LeaveRequestFormValues;
 }
 
-export function LeaveRequestForm({ open, onClose, onSubmit, isSubmitting }: LeaveRequestFormProps) {
-  const [leaveType, setLeaveType] = useState<LeaveType | "">("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [reason, setReason] = useState("");
+export function LeaveRequestForm({ open, onClose, onSubmit, isSubmitting, initialValues }: LeaveRequestFormProps) {
+  const isEdit = Boolean(initialValues);
+  const [leaveType, setLeaveType] = useState<LeaveType | "">(initialValues?.leaveType ?? "");
+  const [startDate, setStartDate] = useState(initialValues?.startDate ?? "");
+  const [endDate, setEndDate] = useState(initialValues?.endDate ?? "");
+  const [reason, setReason] = useState(initialValues?.reason ?? "");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [wasOpen, setWasOpen] = useState(open);
 
   const days = useMemo(() => calculateLeaveDays(startDate, endDate), [startDate, endDate]);
 
   function resetForm() {
-    setLeaveType("");
-    setStartDate("");
-    setEndDate("");
-    setReason("");
+    setLeaveType(initialValues?.leaveType ?? "");
+    setStartDate(initialValues?.startDate ?? "");
+    setEndDate(initialValues?.endDate ?? "");
+    setReason(initialValues?.reason ?? "");
     setErrors({});
+  }
+
+  // Re-seed from the latest initialValues every time the modal opens —
+  // adjusted during render, not an effect, so it happens before paint.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) resetForm();
   }
 
   function handleClose() {
@@ -73,14 +86,14 @@ export function LeaveRequestForm({ open, onClose, onSubmit, isSubmitting }: Leav
     <Modal
       open={open}
       onClose={handleClose}
-      title="Apply for Leave"
+      title={isEdit ? "Edit Leave Request" : "Apply for Leave"}
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} isLoading={isSubmitting}>
-            Submit Request
+            {isEdit ? "Save Changes" : "Submit Request"}
           </Button>
         </div>
       }

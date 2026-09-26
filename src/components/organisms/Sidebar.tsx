@@ -10,7 +10,7 @@ import { useRBAC } from "@/hooks/use-rbac";
 import { cn } from "@/lib/cn";
 import type { NavItem } from "@/types/nav";
 import type { Role } from "@/types/user";
-import type { ModuleKey } from "@/types/rbac";
+import type { ActionKey, ModuleKey } from "@/types/rbac";
 
 const ALL_NAV_HREFS: string[] = NAV_SECTIONS.flatMap((section) =>
   section.items.flatMap((item) => [item.href, ...(item.children?.map((child) => child.href) ?? [])])
@@ -83,13 +83,13 @@ function SidebarItem({
   collapsed: boolean;
   activeHref: string | null;
   viewAsRole: Role;
-  can: (module: ModuleKey, action?: "view") => boolean;
+  can: (module: ModuleKey, action?: ActionKey) => boolean;
   onNavigate: () => void;
   openGroups: Set<string>;
   toggleGroup: (href: string) => void;
 }) {
   const label = item.roleLabels?.[viewAsRole] ?? item.label;
-  const visibleChildren = item.children?.filter((child) => can(child.module, "view"));
+  const visibleChildren = item.children?.filter((child) => can(child.module, child.action ?? "view"));
 
   if (!visibleChildren || visibleChildren.length === 0) {
     return (
@@ -185,7 +185,9 @@ export function Sidebar() {
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items.filter((item) =>
-      item.children ? item.children.some((child) => can(child.module, "view")) : can(item.module, "view")
+      item.children
+        ? item.children.some((child) => can(child.module, child.action ?? "view"))
+        : can(item.module, item.action ?? "view")
     ),
   })).filter((section) => section.items.length > 0);
 

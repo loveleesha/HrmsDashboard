@@ -12,7 +12,7 @@ import { isAdminTierRole } from "@/types/user";
  * it onto every request. Callers never pass a token or set the Authorization
  * header themselves.
  */
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://backend-neon-phi-91.vercel.app";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,

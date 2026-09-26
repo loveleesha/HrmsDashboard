@@ -115,6 +115,7 @@ export const API_ENDPOINTS = {
 
     // Leave (Team Approvals)
     leave: "/api/admin/leave",
+    leaveById: (id: string) => `/api/admin/leave/${id}`,
     leaveStatus: (id: string) => `/api/admin/leave/${id}/status`,
 
     // Expenses

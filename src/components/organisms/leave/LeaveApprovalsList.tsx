@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X, CalendarCheck2 } from "lucide-react";
+import { Check, X, CalendarCheck2, Pencil, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { Textarea } from "@/components/atoms/Textarea";
@@ -21,9 +21,25 @@ export interface LeaveApprovalsListProps {
   canReject: boolean;
   onApprove: (id: string) => void;
   onReject: (id: string, comment: string) => void;
+  /** Distinct from approve/reject — leave.edit/leave.delete, admin-wide
+   * correction/removal of any employee's request. */
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onEdit?: (request: LeaveRequest) => void;
+  onDelete?: (request: LeaveRequest) => void;
 }
 
-export function LeaveApprovalsList({ requests, canApprove, canReject, onApprove, onReject }: LeaveApprovalsListProps) {
+export function LeaveApprovalsList({
+  requests,
+  canApprove,
+  canReject,
+  onApprove,
+  onReject,
+  canEdit,
+  canDelete,
+  onEdit,
+  onDelete,
+}: LeaveApprovalsListProps) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [comment, setComment] = useState("");
 
@@ -65,7 +81,7 @@ export function LeaveApprovalsList({ requests, canApprove, canReject, onApprove,
                 </div>
               </div>
 
-              {(canApprove || canReject) && (
+              {(canApprove || canReject || canEdit || canDelete) && (
                 <div className="flex shrink-0 gap-2">
                   {canApprove && (
                     <Button size="sm" onClick={() => onApprove(request.id)}>
@@ -84,6 +100,18 @@ export function LeaveApprovalsList({ requests, canApprove, canReject, onApprove,
                     >
                       <X className="size-3.5" />
                       Reject
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Button variant="ghost" size="sm" onClick={() => onEdit?.(request)}>
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button variant="ghost" size="sm" onClick={() => onDelete?.(request)}>
+                      <Trash2 className="size-3.5" />
+                      Delete
                     </Button>
                   )}
                 </div>

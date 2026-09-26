@@ -147,6 +147,22 @@ export async function applyForLeave(payload: { type: LeaveType; startDate: strin
   await httpService.post(API_ENDPOINTS.user.leave, payload);
 }
 
+/** PATCH /api/user/leave/:id — edit the caller's own request. Requires leave.add
+ * (same bar as applying) and only works while the request is still "pending" —
+ * the backend 400s (LEAVE_NOT_EDITABLE) once an approver has acted on it. */
+export async function updateMyLeaveRequest(
+  id: string,
+  payload: Partial<{ type: LeaveType; startDate: string; endDate: string; reason: string }>
+): Promise<void> {
+  await httpService.patch(API_ENDPOINTS.user.leaveById(id), payload);
+}
+
+/** DELETE /api/user/leave/:id — withdraw the caller's own still-pending request.
+ * Requires leave.add (see updateMyLeaveRequest). */
+export async function deleteMyLeaveRequest(id: string): Promise<void> {
+  await httpService.delete(API_ENDPOINTS.user.leaveById(id));
+}
+
 /* ---------------------- Admin > Leave (Team Approvals) ------------------ */
 
 export async function listTeamLeave(filters: { status?: LeaveStatus; employeeId?: string } = {}): Promise<LeaveRequest[]> {
@@ -163,6 +179,21 @@ export async function approveLeave(id: string): Promise<void> {
 
 export async function rejectLeave(id: string, rejectionReason: string): Promise<void> {
   await httpService.patch(API_ENDPOINTS.admin.leaveStatus(id), { status: "rejected", rejectionReason });
+}
+
+/** PATCH /api/admin/leave/:id — edit any employee's request, regardless of
+ * status. Requires leave.edit — distinct from approve/reject. */
+export async function updateTeamLeaveRequest(
+  id: string,
+  payload: Partial<{ type: LeaveType; startDate: string; endDate: string; reason: string }>
+): Promise<void> {
+  await httpService.patch(API_ENDPOINTS.admin.leaveById(id), payload);
+}
+
+/** DELETE /api/admin/leave/:id — any employee's request, regardless of status.
+ * Requires leave.delete. */
+export async function deleteTeamLeaveRequest(id: string): Promise<void> {
+  await httpService.delete(API_ENDPOINTS.admin.leaveById(id));
 }
 
 /* ------------------------------ Utilities -------------------------------- */

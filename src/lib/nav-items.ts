@@ -50,7 +50,13 @@ export const NAV_SECTIONS: NavSection[] = [
         children: [
           { label: "Directory", href: "/employees", icon: Users, module: "employees" },
           { label: "Onboarding", href: "/employees/onboarding", icon: UserPlus, module: "employeeOnboarding" },
-          { label: "Add Employee", href: "/employees/onboarding/new", icon: UserPlus, module: "employeeOnboarding" },
+          {
+            label: "Add Employee",
+            href: "/employees/onboarding/new",
+            icon: UserPlus,
+            module: "employeeOnboarding",
+            action: "add",
+          },
         ],
       },
       {

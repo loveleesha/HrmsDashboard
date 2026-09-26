@@ -24,6 +24,25 @@ interface RBACContextValue {
 
 const RBACContext = createContext<RBACContextValue | undefined>(undefined);
 
+/**
+ * Some roles (confirmed via a real backend response for "manager") never
+ * define a distinct `employeeOnboarding` entry at all — only `employees` —
+ * even though the onboarding flow (Add Employee, verify documents, activate)
+ * is gated on `employeeOnboarding` throughout the app. Without this, a role
+ * with `employees.add: true` but no `employeeOnboarding` key at all would
+ * silently lose access to onboarding entirely, since a missing module
+ * resolves every action to false.
+ *
+ * When `employeeOnboarding` is present (even as `{}`), it's authoritative —
+ * a role can deliberately configure the two differently (see the static
+ * admin-tier defaults in permissions.ts). Only a fully absent key falls back
+ * to treating `employees` as covering onboarding too.
+ */
+function withOnboardingFallback(permissions: RolePermissionMap): RolePermissionMap {
+  if (permissions.employeeOnboarding !== undefined) return permissions;
+  return { ...permissions, employeeOnboarding: permissions.employees };
+}
+
 export function RBACProvider({ children }: { children: ReactNode }) {
   const { user, token } = useAuth();
   const { roles } = useRoles();
@@ -63,7 +82,7 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   // fallback: employee-shape profiles never carry `permissions` at all, and
   // it also covers the brief window before the fetch above resolves.
   const permissions = useMemo(
-    () => ownPermissions ?? resolveRolePermissions(roles, viewAsRole),
+    () => withOnboardingFallback(ownPermissions ?? resolveRolePermissions(roles, viewAsRole)),
     [ownPermissions, roles, viewAsRole]
   );
 
