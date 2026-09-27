@@ -1,4 +1,4 @@
-import { Heart, Inbox } from "lucide-react";
+import { Heart, Inbox, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { RecognitionBadgeChip } from "@/components/molecules/RecognitionBadgeChip";
 import { getBadgeDef } from "@/services/recognition.service";
@@ -8,9 +8,11 @@ import { cn } from "@/lib/cn";
 export interface RecognitionFeedProps {
   recognitions: Recognition[];
   onToggleLike: (id: string) => void;
+  canDelete?: boolean;
+  onDelete?: (id: string) => void;
 }
 
-export function RecognitionFeed({ recognitions, onToggleLike }: RecognitionFeedProps) {
+export function RecognitionFeed({ recognitions, onToggleLike, canDelete, onDelete }: RecognitionFeedProps) {
   if (recognitions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-card px-6 py-16 text-center">
@@ -40,6 +42,16 @@ export function RecognitionFeed({ recognitions, onToggleLike }: RecognitionFeedP
                 </p>
                 <p className="text-fs-sm text-muted-light">{recognition.timestamp}</p>
               </div>
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={() => onDelete?.(recognition.id)}
+                  className="shrink-0 text-muted-light transition-colors hover:text-danger"
+                  aria-label="Delete recognition"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              )}
             </div>
 
             <div className="mb-3">

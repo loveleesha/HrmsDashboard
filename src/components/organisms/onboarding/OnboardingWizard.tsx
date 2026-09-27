@@ -195,6 +195,7 @@ export function OnboardingWizard({
             ref={stepRef}
             value={record.professionalInfo}
             onChange={(value) => updateField("professionalInfo", value)}
+            excludeUserId={record.id || undefined}
           />
         );
       case "roleAccess":

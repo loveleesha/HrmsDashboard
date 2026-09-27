@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRBAC } from "@/hooks/use-rbac";
 import { useToast } from "@/hooks/use-toast";
 import { getEmployees } from "@/services/employee.service";
-import { getRecognitions, buildSummary, buildLeaderboard } from "@/services/recognition.service";
+import { getRecognitions, addRecognition, toggleRecognitionLike, deleteRecognition, buildSummary, buildLeaderboard } from "@/services/recognition.service";
 import type { Employee } from "@/types/employee";
 import type { Recognition } from "@/types/recognition";
 
@@ -24,13 +24,12 @@ const TAB_OPTIONS = [
   { label: "Given", value: "given" },
 ];
 
-let localId = 1000;
-
 export default function RecognitionPage() {
   const { user } = useAuth();
   const { can } = useRBAC();
   const { showToast } = useToast();
   const canGive = can("peerRecognition", "add");
+  const canDelete = can("peerRecognition", "delete");
 
   const [employees, setEmployees] = useState<Employee[] | null>(null);
   const [recognitions, setRecognitions] = useState<Recognition[] | null>(null);
@@ -78,29 +77,50 @@ export default function RecognitionPage() {
           : recognition
       )
     );
+    toggleRecognitionLike(id)
+      .then((updated) => {
+        setRecognitions((prev) => (prev ?? []).map((recognition) => (recognition.id === id ? updated : recognition)));
+      })
+      .catch(() => {
+        // Roll back the optimistic toggle above on failure.
+        setRecognitions((prev) =>
+          (prev ?? []).map((recognition) =>
+            recognition.id === id
+              ? {
+                  ...recognition,
+                  likedByMe: !recognition.likedByMe,
+                  likes: recognition.likedByMe ? recognition.likes - 1 : recognition.likes + 1,
+                }
+              : recognition
+          )
+        );
+        showToast("Couldn't update your like. Please try again.");
+      });
+  }
+
+  function handleDelete(id: string) {
+    const previous = recognitions ?? [];
+    setRecognitions((prev) => (prev ?? []).filter((recognition) => recognition.id !== id));
+    deleteRecognition(id)
+      .then(() => showToast("Recognition deleted."))
+      .catch(() => {
+        setRecognitions(previous);
+        showToast("Couldn't delete this recognition. Please try again.");
+      });
   }
 
   function handleSubmit(values: RecognitionFormValues) {
-    if (!employees || !currentEmployee) return;
+    if (!employees) return;
     const target = employees.find((employee) => employee.id === values.employeeId);
     if (!target) return;
 
-    const newRecognition: Recognition = {
-      id: `rec-local-${++localId}`,
-      fromId: currentEmployee.id,
-      fromName: currentEmployee.name,
-      toId: target.id,
-      toName: target.name,
-      badge: values.badge,
-      message: values.message,
-      likes: 0,
-      createdAt: new Date().toISOString(),
-      timestamp: "Just now",
-    };
-
-    setRecognitions((prev) => [newRecognition, ...(prev ?? [])]);
-    setFormOpen(false);
-    showToast(`Recognition sent to ${target.name}.`);
+    addRecognition({ toUserId: values.employeeId, badge: values.badge, message: values.message })
+      .then((created) => {
+        setRecognitions((prev) => [created, ...(prev ?? [])]);
+        setFormOpen(false);
+        showToast(`Recognition sent to ${target.name}.`);
+      })
+      .catch(() => showToast("Couldn't send this recognition. Please try again."));
   }
 
   return (
@@ -132,7 +152,12 @@ export default function RecognitionPage() {
               <div className="mb-4">
                 <Tabs options={TAB_OPTIONS} value={tab} onChange={setTab} />
               </div>
-              <RecognitionFeed recognitions={filteredRecognitions} onToggleLike={handleToggleLike} />
+              <RecognitionFeed
+                recognitions={filteredRecognitions}
+                onToggleLike={handleToggleLike}
+                canDelete={canDelete}
+                onDelete={handleDelete}
+              />
             </div>
 
             <div className="flex flex-col gap-4">

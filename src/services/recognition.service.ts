@@ -11,13 +11,11 @@ import {
   Zap,
   Target,
 } from "lucide-react";
+import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
 import type { BadgeKey, Recognition, RecognitionBadgeDef, RecognitionSummary } from "@/types/recognition";
 
-/**
- * Mock peer recognition service. Replace the body of getRecognitions /
- * addRecognition with real API calls once the Node.js backend exists —
- * callers only depend on these functions' signatures.
- */
+/** Peer recognition service — wired to the real backend (routes/User/recognitionRoutes.js). */
 
 export const RECOGNITION_BADGES: RecognitionBadgeDef[] = [
   {
@@ -92,17 +90,52 @@ export function getBadgeDef(key: BadgeKey): RecognitionBadgeDef {
   return RECOGNITION_BADGES.find((badge) => badge.key === key) ?? RECOGNITION_BADGES[0];
 }
 
-const MOCK_RECOGNITIONS: Recognition[] = [];
+interface RawRecognition {
+  id: string;
+  fromId: string;
+  fromName: string;
+  toId: string;
+  toName: string;
+  badge: BadgeKey;
+  message: string;
+  likes: number;
+  likedByMe: boolean;
+  createdAt: string;
+}
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function mapRawRecognition(raw: RawRecognition): Recognition {
+  return {
+    id: raw.id,
+    fromId: raw.fromId,
+    fromName: raw.fromName,
+    toId: raw.toId,
+    toName: raw.toName,
+    badge: raw.badge,
+    message: raw.message,
+    likes: raw.likes,
+    likedByMe: raw.likedByMe,
+    createdAt: raw.createdAt,
+    timestamp: raw.createdAt,
+  };
 }
 
 export async function getRecognitions(): Promise<Recognition[]> {
-  await delay(250);
-  return [...MOCK_RECOGNITIONS].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const data = await httpService.get<{ recognitions: RawRecognition[] }>(API_ENDPOINTS.user.recognition);
+  return data.recognitions.map(mapRawRecognition);
+}
+
+export async function addRecognition(params: { toUserId: string; badge: BadgeKey; message: string }): Promise<Recognition> {
+  const data = await httpService.post<{ recognition: RawRecognition }>(API_ENDPOINTS.user.recognition, params);
+  return mapRawRecognition(data.recognition);
+}
+
+export async function toggleRecognitionLike(id: string): Promise<Recognition> {
+  const data = await httpService.post<{ recognition: RawRecognition }>(API_ENDPOINTS.user.recognitionLike(id));
+  return mapRawRecognition(data.recognition);
+}
+
+export async function deleteRecognition(id: string): Promise<void> {
+  await httpService.delete(API_ENDPOINTS.user.recognitionById(id));
 }
 
 export function buildSummary(recognitions: Recognition[], employeeId: string | undefined): RecognitionSummary {

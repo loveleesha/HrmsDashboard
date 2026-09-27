@@ -1,11 +1,12 @@
 "use client";
 
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { FilterDropdown } from "@/components/molecules/FilterDropdown";
 import { Input } from "@/components/atoms/Input";
 import { professionalInfoSchema } from "@/schemas/onboarding.schema";
 import { useDepartments } from "@/hooks/use-departments";
+import { getEmployees } from "@/services/employee.service";
 import { EMPLOYMENT_TYPES, type EmploymentType, type ProfessionalInfo } from "@/types/onboarding";
 import type { OnboardingStepHandle } from "@/components/organisms/onboarding/step-types";
 import { DatePicker } from "@/components/molecules/DatePicker";
@@ -13,12 +14,38 @@ import { DatePicker } from "@/components/molecules/DatePicker";
 export interface ProfessionalInfoStepProps {
   value: ProfessionalInfo;
   onChange: (value: ProfessionalInfo) => void;
+  /** Excludes this employee (by their account/userId) from their own
+   * "Reporting Manager" options — only meaningful in edit mode, where the
+   * record being edited is itself a real employee who could otherwise
+   * appear as a candidate manager for themselves. */
+  excludeUserId?: string;
 }
 
 export const ProfessionalInfoStep = forwardRef<OnboardingStepHandle, ProfessionalInfoStepProps>(
-  function ProfessionalInfoStep({ value, onChange }, ref) {
+  function ProfessionalInfoStep({ value, onChange, excludeUserId }, ref) {
     const [errors, setErrors] = useState<Partial<Record<keyof ProfessionalInfo, string>>>({});
     const { departments } = useDepartments();
+    // Reporting Manager options are restricted to employees whose account role
+    // is "manager" — the same role this app's Project & Team Hierarchy treats
+    // as a manager (see types/hierarchy.ts's MANAGER_ROLE), so every selection
+    // here is guaranteed to resolve to a real manager node in that tree.
+    const [managers, setManagers] = useState<{ id: string; name: string }[]>([]);
+
+    useEffect(() => {
+      let isMounted = true;
+      getEmployees().then((employees) => {
+        if (!isMounted) return;
+        setManagers(
+          employees
+            .filter((employee) => employee.role === "manager" && employee.id !== excludeUserId)
+            .map((employee) => ({ id: employee.employeeRecordId ?? "", name: employee.name }))
+            .filter((option) => option.id)
+        );
+      });
+      return () => {
+        isMounted = false;
+      };
+    }, [excludeUserId]);
 
     useImperativeHandle(ref, () => ({
       validate: () => {
@@ -85,11 +112,12 @@ export const ProfessionalInfoStep = forwardRef<OnboardingStepHandle, Professiona
             />
           </FormField>
           <FormField label="Reporting Manager" htmlFor="reportingManager" error={errors.reportingManager}>
-            <Input
-              id="reportingManager"
+            <FilterDropdown
+              label="Select Manager"
+              ariaLabel="Reporting Manager"
+              options={managers.map((manager) => ({ label: manager.name, value: manager.id }))}
               value={value.reportingManager ?? ""}
-              onChange={(e) => update("reportingManager", e.target.value)}
-              placeholder="e.g. Karan Malhotra"
+              onChange={(v) => update("reportingManager", v)}
             />
           </FormField>
           <FormField label="Work Location" htmlFor="workLocation" error={errors.workLocation}>

@@ -52,6 +52,15 @@ export const API_ENDPOINTS = {
 
     // Documents
     documents: "/api/admin/documents", // shared read-only surface, see admin.documents
+
+    // Peer Recognition
+    recognition: "/api/user/recognition",
+    recognitionLike: (id: string) => `/api/user/recognition/${id}/like`,
+    recognitionById: (id: string) => `/api/user/recognition/${id}`,
+
+    // Payroll (self-service)
+    myPayslips: "/api/user/payroll/payslips",
+    mySalary: "/api/user/payroll/salary",
   },
 
   admin: {
@@ -148,5 +157,15 @@ export const API_ENDPOINTS = {
     recruitmentInterviews: "/api/admin/recruitment/interviews",
     recruitmentInterviewById: (id: string) => `/api/admin/recruitment/interviews/${id}`,
     recruitmentInterviewStatus: (id: string) => `/api/admin/recruitment/interviews/${id}/status`,
+
+    // Payroll
+    salaryStructures: "/api/admin/payroll/salary-structures",
+    salaryStructureByEmployee: (employeeId: string) => `/api/admin/payroll/salary-structures/${employeeId}`,
+    payrollProcess: "/api/admin/payroll/process",
+    payrollPayslips: "/api/admin/payroll/payslips",
+
+    // Reports
+    reports: "/api/admin/reports",
+    reportExport: (id: string) => `/api/admin/reports/${id}/export`,
   },
 } as const;

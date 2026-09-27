@@ -11,7 +11,7 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { StatusBadge } from "@/components/molecules/StatusBadge";
 import { useToast } from "@/hooks/use-toast";
 import { useRBAC } from "@/hooks/use-rbac";
-import { getMySalaryComponents, getMyPayslips, getCompanyPayroll } from "@/services/payroll.service";
+import { getMySalaryComponents, getMyPayslips, getCompanyPayroll, processCompanyPayroll } from "@/services/payroll.service";
 import type { SalaryComponent, Payslip, EmployeePayrollRow } from "@/types/payroll";
 
 function formatCurrency(amount: number) {
@@ -33,18 +33,26 @@ export default function PayrollPage() {
   const [tab, setTab] = useState("salary");
 
   const canViewCompany = can("payroll", "approve");
+  const canProcess = can("payroll", "approve");
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  function reloadCompanyPayroll() {
+    getCompanyPayroll(currentMonth, currentYear).then((data) => setCompanyRows(data));
+  }
 
   useEffect(() => {
     let isMounted = true;
     getMySalaryComponents().then((data) => isMounted && setComponents(data));
     getMyPayslips().then((data) => isMounted && setPayslips(data));
     if (canViewCompany) {
-      getCompanyPayroll().then((data) => isMounted && setCompanyRows(data));
+      getCompanyPayroll(currentMonth, currentYear).then((data) => isMounted && setCompanyRows(data));
     }
     return () => {
       isMounted = false;
     };
-  }, [canViewCompany]);
+  }, [canViewCompany, currentMonth, currentYear]);
 
   const earnings = useMemo(() => (components ?? []).filter((c) => c.type === "earning"), [components]);
   const deductions = useMemo(() => (components ?? []).filter((c) => c.type === "deduction"), [components]);
@@ -171,15 +179,17 @@ export default function PayrollPage() {
                       render: (r: EmployeePayrollRow) => (
                         <div className="flex items-center gap-2">
                           <StatusBadge status={r.status} />
-                          {r.status === "Pending" && (
+                          {r.status === "Pending" && canProcess && (
                             <Button
                               size="sm"
                               variant="secondary"
                               onClick={() => {
-                                setCompanyRows((prev) =>
-                                  (prev ?? []).map((row) => (row.employeeId === r.employeeId ? { ...row, status: "Processed" } : row))
-                                );
-                                showToast(`Payroll processed for ${r.employeeName}.`);
+                                processCompanyPayroll(currentMonth, currentYear, r.employeeId)
+                                  .then(() => {
+                                    showToast(`Payroll processed for ${r.employeeName}.`);
+                                    reloadCompanyPayroll();
+                                  })
+                                  .catch(() => showToast(`Couldn't process payroll for ${r.employeeName}.`));
                               }}
                             >
                               <PlayCircle className="size-3.5" />

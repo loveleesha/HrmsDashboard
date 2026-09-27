@@ -16,6 +16,13 @@ const ALL_NAV_HREFS: string[] = NAV_SECTIONS.flatMap((section) =>
   section.items.flatMap((item) => [item.href, ...(item.children?.map((child) => child.href) ?? [])])
 );
 
+/** An item's `module` can be one key or several alternatives (any-of) — see
+ * NavItem's doc comment. */
+function canAccessNavItem(can: (module: ModuleKey, action?: ActionKey) => boolean, item: NavItem): boolean {
+  const modules = Array.isArray(item.module) ? item.module : [item.module];
+  return modules.some((key) => can(key, item.action ?? "view"));
+}
+
 /**
  * A child href can be a prefix of a sibling's (e.g. Employees' "/employees"
  * vs its own child "/employees/onboarding"), so naive prefix matching marks
@@ -89,7 +96,7 @@ function SidebarItem({
   toggleGroup: (href: string) => void;
 }) {
   const label = item.roleLabels?.[viewAsRole] ?? item.label;
-  const visibleChildren = item.children?.filter((child) => can(child.module, child.action ?? "view"));
+  const visibleChildren = item.children?.filter((child) => canAccessNavItem(can, child));
 
   if (!visibleChildren || visibleChildren.length === 0) {
     return (
@@ -185,9 +192,7 @@ export function Sidebar() {
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
     items: section.items.filter((item) =>
-      item.children
-        ? item.children.some((child) => can(child.module, child.action ?? "view"))
-        : can(item.module, item.action ?? "view")
+      item.children ? item.children.some((child) => canAccessNavItem(can, child)) : canAccessNavItem(can, item)
     ),
   })).filter((section) => section.items.length > 0);
 

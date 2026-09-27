@@ -89,7 +89,7 @@ export function NodeDetailsDrawer({ target, onClose }: { target: NodeDetailsTarg
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Manager" value={target.employee.reportsTo || "—"} />
+            <Field label="Manager" value={target.employee.reportsToName || "—"} />
             <Field label="Project" value={target.projectName ?? "—"} />
             <Field label="Department" value={target.employee.department || "—"} />
             <Field label="Status" value={<StatusBadge status={EMPLOYMENT_STATUS_LABELS[target.employee.status]} />} />

@@ -2,6 +2,7 @@ import { ROLES, type Role, type User } from "@/types/user";
 import { httpService } from "@/lib/http/http.service";
 import { setSessionCookie, clearSessionCookie } from "@/lib/session";
 import { API_ENDPOINTS } from "@/lib/apiEndpoint";
+import { toAbsoluteAssetUrl } from "@/lib/asset-url";
 
 /**
  * Auth service — wired to the real HRMS backend (see the "Hrms Dashboard"
@@ -18,6 +19,11 @@ interface ApiUser {
   employeeId?: string;
   designation?: string;
   department?: string;
+  /** Every real login response (utils/formatUserResponse.js, shared by both
+   * User and Admin login) names this field "profileImage", not "avatarUrl" —
+   * a relative "/uploads/..." path needing toAbsoluteAssetUrl below, same as
+   * everywhere else a stored image path crosses into the frontend. */
+  profileImage?: string | null;
   avatarUrl?: string;
 }
 
@@ -64,7 +70,7 @@ function mapApiUser(apiUser: ApiUser): User {
     role: mapApiRole(apiUser.role),
     designation: apiUser.designation ?? "",
     department: apiUser.department ?? "",
-    avatarUrl: apiUser.avatarUrl,
+    avatarUrl: apiUser.avatarUrl ?? (apiUser.profileImage ? toAbsoluteAssetUrl(apiUser.profileImage) : undefined),
   };
 }
 

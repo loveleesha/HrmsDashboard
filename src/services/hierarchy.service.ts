@@ -25,11 +25,13 @@ import {
  * The relationships drawn from that data:
  *  - "Manager" = an employee whose account role is literally named
  *    "manager" (this app's own role vocabulary — see types/user.ts).
- *  - "Reports to" = Employee.manager, a free-text manager *name* (not an
- *    id) already surfaced elsewhere in the app (Profile > Basic Info's
- *    "Reports to {name}"). An employee is placed under a manager, within a
- *    project, when both are assigned to that project AND the employee's
- *    Employee.manager string matches the manager's name.
+ *  - "Reports to" = Employee.reportsTo, an Employee-record id (set via the
+ *    onboarding wizard's Professional Information step — see
+ *    ProfessionalInfoStep.tsx's Reporting Manager picker). An employee is
+ *    placed under a manager, within a project, when both are assigned to
+ *    that project AND the employee's reportsTo id matches the manager's own
+ *    Employee record id (employeeRecordId) — matched by id, not name, so it
+ *    can't misfire on two people sharing a display name.
  *
  * There's no backend field for "which employees does this manager manage,
  * globally" — only per-project, from the above. A manager with no reports
@@ -59,7 +61,8 @@ function toHierarchyEmployeeRef(employee: Employee): HierarchyEmployeeRef {
     status: employee.status,
     avatarUrl: employee.avatarUrl,
     role: employee.role,
-    reportsTo: employee.manager,
+    reportsToId: employee.reportsToId,
+    reportsToName: employee.manager,
   };
 }
 
@@ -170,7 +173,12 @@ export async function buildHierarchy(): Promise<HierarchyData> {
     const ownProjects: HierarchyManagerProject[] = ownAssignments.map((assignment) => {
       const projectEmployees = (assignmentsByProject.get(assignment.projectId) ?? [])
         .map((entry) => entry.employee)
-        .filter((employee) => employee.userId !== manager.userId && employee.reportsTo === manager.name);
+        .filter(
+          (employee) =>
+            employee.userId !== manager.userId &&
+            Boolean(manager.employeeRecordId) &&
+            employee.reportsToId === manager.employeeRecordId
+        );
       return {
         projectId: assignment.projectId,
         projectName: assignment.projectName,

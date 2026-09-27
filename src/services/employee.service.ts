@@ -33,6 +33,11 @@ interface RawEmployee {
   userId?: string;
   id?: string;
   _id?: string;
+  /** The Employee document's own _id (controllers/Admin/employeeController.js's
+   * formatEmployee) — distinct from userId/id/_id above, which are all the
+   * account's id. Used to match another employee's reportsTo back to this
+   * record (see reportsTo below and hierarchy.service.ts). */
+  employeeRecordId?: string;
   employeeId?: string;
   name?: string;
   firstName?: string;
@@ -52,7 +57,10 @@ interface RawEmployee {
   joinedDate?: string;
   profilePicture?: string;
   avatarUrl?: string;
-  reportsTo?: string;
+  /** GET /api/admin/employees's real shape (controllers/Admin/employeeController.js's
+   * formatEmployee) — an object, not a plain name string; `manager` below covers
+   * any older/alternate shape that already sends a plain string. */
+  reportsTo?: { id?: string; employeeId?: string; name?: string | null } | string | null;
   manager?: string;
   onboardingStatus?: string;
 }
@@ -66,12 +74,15 @@ function mapRawEmployee(raw: RawEmployee): Employee {
   const name = raw.name ?? [raw.firstName, raw.lastName].filter(Boolean).join(" ").trim();
   const avatar = raw.profilePicture ?? raw.avatarUrl;
   const status = raw.status?.toLowerCase();
+  const reportsTo = typeof raw.reportsTo === "object" ? raw.reportsTo : null;
 
   return {
     id,
     // The Employee document's own _id, distinct from the User's id/userId
-    // above — see Employee.employeeRecordId's doc comment.
-    employeeRecordId: raw._id,
+    // above — see Employee.employeeRecordId's doc comment. GET /api/admin/employees
+    // sends this as its own field (raw._id is never actually populated by that
+    // endpoint); other endpoints that DO hand back a real _id fall back to it.
+    employeeRecordId: raw.employeeRecordId ?? raw._id,
     employeeId: raw.employeeId,
     name: name || "Unnamed Employee",
     email: raw.email ?? "",
@@ -85,7 +96,8 @@ function mapRawEmployee(raw: RawEmployee): Employee {
     role: typeof raw.role === "object" && raw.role ? (raw.role.name ?? raw.role.label) : (raw.role ?? undefined),
     skills: raw.skills ?? [],
     joinedDate: raw.joiningDate ?? raw.joinedDate,
-    manager: raw.reportsTo ?? raw.manager,
+    manager: reportsTo?.name ?? (typeof raw.reportsTo === "string" ? raw.reportsTo : undefined) ?? raw.manager,
+    reportsToId: reportsTo?.id,
     onboardingStatus: raw.onboardingStatus,
   };
 }

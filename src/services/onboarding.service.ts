@@ -168,8 +168,10 @@ async function saveOnboardingStepRemote(record: OnboardingRecord, stepKey: Onboa
         workLocation: record.professionalInfo.workLocation,
         experience: record.professionalInfo.experience,
         previousCompany: record.professionalInfo.previousCompany,
-        // reportingManager has no field in this API version yet — kept in
-        // local state only so the UI doesn't lose it if the backend grows one.
+        // The selected manager's own Employee record id (ProfessionalInfoStep's
+        // Reporting Manager picker) — this is what the Project & Team Hierarchy
+        // uses to place this employee under their manager.
+        reportsTo: record.professionalInfo.reportingManager || null,
       });
       return record;
     }

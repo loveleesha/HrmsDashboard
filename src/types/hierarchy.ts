@@ -21,11 +21,12 @@ export interface HierarchyEmployeeRef {
   avatarUrl?: string;
   /** Role name — "manager" is what this module uses to detect managers. */
   role?: string;
-  /** The manager's name this employee reports to (Employee.manager) — a
-   * free-text name, not an id, per how the rest of the app already surfaces
-   * it ("Reports to {name}" on the profile page). Used to link an employee
-   * under the right manager in a project. */
-  reportsTo?: string;
+  /** The Employee record id (matches a manager's own employeeRecordId) of
+   * who this employee reports to — used to link an employee under the right
+   * manager in a project. */
+  reportsToId?: string;
+  /** Display name of the same person, for the node details drawer. */
+  reportsToName?: string;
 }
 
 /** One Project node under the Admin root — every project in the company. */
@@ -61,7 +62,7 @@ export interface HierarchyManagerProject {
   projectId: string;
   projectName: string;
   projectStatus: ProjectStatus;
-  /** Employees on this project who report to the manager (Employee.manager === manager.name). */
+  /** Employees on this project who report to the manager (employee.reportsToId === manager.employeeRecordId). */
   employees: HierarchyEmployeeRef[];
 }
 

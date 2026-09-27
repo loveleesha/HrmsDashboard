@@ -111,6 +111,9 @@ export interface ProfessionalInfo {
   designation: string;
   joiningDate: string;
   employmentType?: EmploymentType | "";
+  /** The selected manager's own Employee record id (not a name) — set via
+   * ProfessionalInfoStep's employee picker, sent to the backend as
+   * Employee.reportsTo. */
   reportingManager?: string;
   workLocation?: string;
   experience?: string;

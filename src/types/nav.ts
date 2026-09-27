@@ -6,8 +6,11 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** RBAC module this item is gated by — visible only when can(module, action). */
-  module: ModuleKey;
+  /** RBAC module(s) this item is gated by — visible when can(module, action)
+   * for ANY of them (an array covers a page that renders more than one
+   * permission's content, like Organization also rendering department
+   * management inline under its own `departments` permission). */
+  module: ModuleKey | ModuleKey[];
   /** Defaults to "view". Set for an item that's really a shortcut to an
    * action rather than a page to look at — e.g. "Add Employee" links
    * straight into the onboarding wizard, so it should require "add", not

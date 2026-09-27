@@ -48,6 +48,13 @@ export interface Employee {
   role?: string;
   skills: string[];
   joinedDate?: string;
+  /** Display name of who this employee reports to — for "Reports to {name}"
+   * labels. See reportsToId for the id used to place this employee in the
+   * Project & Team Hierarchy. */
   manager?: string;
+  /** The reporting manager's own Employee record id (matches another
+   * employee's employeeRecordId) — undefined if this employee has no
+   * reporting manager set, or the list endpoint didn't expose one. */
+  reportsToId?: string;
   onboardingStatus?: string;
 }

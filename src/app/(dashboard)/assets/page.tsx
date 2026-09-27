@@ -44,17 +44,34 @@ const PRIORITY_TONE: Record<AssetRequestPriority, "danger" | "warning" | "neutra
 
 export default function AssetsPage() {
   const { showToast } = useToast();
-  const { can } = useRBAC();
+  const { can, isAdminAccount } = useRBAC();
 
   // Managing the company inventory (Admin > Assets) is deliberately not
   // gated on assets.view — every role has that by default for the
   // self-service "my assets/requests" surface instead.
   const canManage = can("assets", "edit") || can("assets", "toggleStatus");
   const canDelete = can("assets", "delete");
+  // My Assets/My Requests need a real Employee record behind the account —
+  // admin-tier accounts (no Employee record) don't have assets assigned to
+  // them personally, same reasoning as My Projects/My DSR/My Leave. These
+  // two concerns are independent: a real employee who also happens to have
+  // assets.edit (e.g. an HR person managing inventory) sees all four tabs,
+  // not just the admin ones.
+  const showMyTabs = !isAdminAccount;
+  const showAdminTabs = canManage;
 
-  const [tab, setTab] = useState(canManage ? "inventory" : "my-assets");
-  const [assets, setAssets] = useState<AssetItem[] | null>(null);
-  const [requests, setRequests] = useState<AssetRequest[] | null>(null);
+  const tabOptions = [
+    ...(showMyTabs ? [{ label: "My Assets", value: "my-assets" }, { label: "My Requests", value: "my-requests" }] : []),
+    ...(showAdminTabs ? [{ label: "Inventory", value: "inventory" }, { label: "Requests", value: "requests" }] : []),
+  ];
+
+  const [tab, setTab] = useState(showMyTabs ? "my-assets" : "inventory");
+  const activeTab = tabOptions.some((option) => option.value === tab) ? tab : tabOptions[0]?.value;
+
+  const [myAssets, setMyAssets] = useState<AssetItem[] | null>(null);
+  const [myRequests, setMyRequests] = useState<AssetRequest[] | null>(null);
+  const [inventoryAssets, setInventoryAssets] = useState<AssetItem[] | null>(null);
+  const [allRequests, setAllRequests] = useState<AssetRequest[] | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [addOpen, setAddOpen] = useState(false);
@@ -66,19 +83,20 @@ export default function AssetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const load = useCallback(() => {
-    if (canManage) {
-      Promise.all([listAssets(), listAssetRequests(), getEmployees()]).then(([a, r, e]) => {
-        setAssets(a);
-        setRequests(r);
-        setEmployees(e);
-      });
-    } else {
+    if (showMyTabs) {
       Promise.all([getMyAssets(), getMyAssetRequests()]).then(([a, r]) => {
-        setAssets(a);
-        setRequests(r);
+        setMyAssets(a);
+        setMyRequests(r);
       });
     }
-  }, [canManage]);
+    if (showAdminTabs) {
+      Promise.all([listAssets(), listAssetRequests(), getEmployees()]).then(([a, r, e]) => {
+        setInventoryAssets(a);
+        setAllRequests(r);
+        setEmployees(e);
+      });
+    }
+  }, [showMyTabs, showAdminTabs]);
 
   useEffect(() => {
     load();
@@ -202,18 +220,18 @@ export default function AssetsPage() {
     }
   }
 
-  const tabOptions = canManage
-    ? [
-        { label: "Inventory", value: "inventory" },
-        { label: "Requests", value: "requests" },
-      ]
-    : [
-        { label: "My Assets", value: "my-assets" },
-        { label: "My Requests", value: "my-requests" },
-      ];
+  const isInventoryTab = activeTab === "inventory";
+  const isMyAssetsTab = activeTab === "my-assets";
+  const isRequestsTab = activeTab === "requests";
+  const isMyRequestsTab = activeTab === "my-requests";
+  const showingAssetsTable = isInventoryTab || isMyAssetsTab;
 
-  const isLoading = assets === null || requests === null;
-  const showingInventory = tab === "inventory" || tab === "my-assets";
+  const isLoading =
+    (showMyTabs && (myAssets === null || myRequests === null)) ||
+    (showAdminTabs && (inventoryAssets === null || allRequests === null));
+
+  const assetsForTable = isInventoryTab ? inventoryAssets : myAssets;
+  const requestsForTable = isRequestsTab ? allRequests : myRequests;
 
   return (
     <div>
@@ -222,19 +240,13 @@ export default function AssetsPage() {
         description="Track company assets and assignments."
         actions={
           <>
-            {showingInventory && canManage && (
+            {isInventoryTab && canManage && (
               <Button onClick={() => setAddOpen(true)}>
                 <Plus className="size-4" />
                 Add Asset
               </Button>
             )}
-            {!showingInventory && !canManage && (
-              <Button onClick={() => setRequestOpen(true)}>
-                <Plus className="size-4" />
-                Request Asset
-              </Button>
-            )}
-            {showingInventory && !canManage && (
+            {(isMyAssetsTab || isMyRequestsTab) && (
               <Button onClick={() => setRequestOpen(true)}>
                 <Plus className="size-4" />
                 Request Asset
@@ -244,16 +256,18 @@ export default function AssetsPage() {
         }
       />
 
-      <div className="mb-4">
-        <Tabs options={tabOptions} value={tab} onChange={setTab} />
-      </div>
+      {tabOptions.length > 1 && (
+        <div className="mb-4">
+          <Tabs options={tabOptions} value={activeTab} onChange={setTab} />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center gap-2 py-24 text-muted">
           <Spinner />
           Loading assets…
         </div>
-      ) : showingInventory ? (
+      ) : showingAssetsTable ? (
         <Table
           columns={[
             { key: "name", header: "Asset Name", render: (a: AssetItem) => <span className="font-medium text-ink">{a.name}</span> },
@@ -261,7 +275,7 @@ export default function AssetsPage() {
             { key: "serial", header: "Serial No.", render: (a: AssetItem) => a.serialNumber ?? "—" },
             { key: "status", header: "Status", render: (a: AssetItem) => <StatusBadge status={a.status} /> },
             { key: "owner", header: "Assigned To", render: (a: AssetItem) => a.assignedTo?.name ?? "—" },
-            ...(canManage
+            ...(isInventoryTab && canManage
               ? [
                   {
                     key: "actions",
@@ -315,15 +329,15 @@ export default function AssetsPage() {
                 ]
               : []),
           ]}
-          data={assets ?? []}
+          data={assetsForTable ?? []}
           keyField={(a) => a.id}
-          emptyMessage={canManage ? "No assets in inventory yet." : "No assets assigned to you yet."}
+          emptyMessage={isInventoryTab ? "No assets in inventory yet." : "No assets assigned to you yet."}
         />
       ) : (
         <Table
           columns={[
             { key: "category", header: "Category", render: (r: AssetRequest) => r.category },
-            ...(canManage ? [{ key: "employee", header: "Employee", render: (r: AssetRequest) => r.employeeName }] : []),
+            ...(isRequestsTab ? [{ key: "employee", header: "Employee", render: (r: AssetRequest) => r.employeeName }] : []),
             { key: "reason", header: "Reason", render: (r: AssetRequest) => r.reason },
             { key: "priority", header: "Priority", render: (r: AssetRequest) => <Badge tone={PRIORITY_TONE[r.priority]}>{r.priority}</Badge> },
             { key: "allocation", header: "Type", render: (r: AssetRequest) => r.allocationType },
@@ -339,7 +353,7 @@ export default function AssetsPage() {
               render: (r: AssetRequest) => (
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusBadge status={r.status} />
-                  {canManage && r.status === "Pending" && (
+                  {isRequestsTab && canManage && r.status === "Pending" && (
                     <div className="flex gap-1">
                       <Button size="sm" variant="ghost" className="text-success" onClick={() => handleApproveRequest(r)} aria-label="Approve">
                         <CheckCircle2 className="size-4" />
@@ -353,7 +367,7 @@ export default function AssetsPage() {
               ),
             },
           ]}
-          data={requests ?? []}
+          data={requestsForTable ?? []}
           keyField={(r) => r.id}
           emptyMessage="No asset requests yet."
         />

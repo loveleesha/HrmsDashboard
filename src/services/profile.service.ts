@@ -107,7 +107,8 @@ interface RawProfile {
     previousCompany?: string | null;
     seniority?: string | null;
     status?: string | null;
-    reportsTo?: string | null;
+    /** utils/formatEmployeeProfile.js's actual shape — an object, not a plain name. */
+    reportsTo?: { employeeId?: string; name?: string | null; designation?: string | null } | null;
   };
   role?: RawRole | null;
   technicalSkill?: { skills?: string[] } | null;
@@ -150,7 +151,7 @@ function mapProfile(raw: RawProfile): MyProfile {
     permissions: role?.permissions as RolePermissionMap | undefined,
     skills: raw.technicalSkill?.skills ?? [],
     joinedDate: pro.joiningDate ?? undefined,
-    manager: pro.reportsTo ?? undefined,
+    manager: pro.reportsTo?.name ?? undefined,
     onboardingStatus: raw.onboardingStatus,
     dateOfBirth: basic.dateOfBirth ? basic.dateOfBirth.slice(0, 10) : undefined,
     gender: (basic.gender as Gender) || undefined,
@@ -284,7 +285,11 @@ export async function updateAdminProfile(payload: { name?: string; mobile?: stri
   if (payload.mobile !== undefined) formData.append("mobile", payload.mobile);
   if (payload.file) formData.append("file", payload.file);
   const data = await httpService.patch<ProfileResponse>(API_ENDPOINTS.admin.profile, formData);
-  return mapProfileResponse(data);
+  // Mapped directly via mapAdminProfile, not the profileType-sniffing
+  // mapProfileResponse — this function only ever calls the admin endpoint,
+  // so it already knows the shape rather than needing to detect it from a
+  // response field that isn't guaranteed present on every reply.
+  return mapAdminProfile((data.profile ?? data) as RawAdminProfile);
 }
 
 /** PATCH /api/user/profile, type: "qualification" — appends one qualification;

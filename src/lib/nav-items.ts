@@ -119,7 +119,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Administration",
     items: [
-      { label: "Organization", href: "/organization", icon: Building2, module: "organization" },
+      { label: "Organization", href: "/organization", icon: Building2, module: ["organization", "departments"] },
       { label: "Reports", href: "/reports", icon: BarChart3, module: "reports" },
       { label: "Settings", href: "/settings", icon: Settings, module: "settings" },
       { label: "Role & Access", href: "/settings/roles", icon: ShieldCheck, module: "roleAccess" },

@@ -11,11 +11,11 @@ export function RouteGuard({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { can, viewAsRole } = useRBAC();
 
-  const moduleKey = resolveRouteModule(pathname);
+  const moduleKeys = resolveRouteModule(pathname);
 
-  if (moduleKey && !can(moduleKey, "view")) {
-    const moduleDef = getModuleDef(moduleKey);
-    return <AccessRestricted moduleLabel={moduleDef?.label ?? moduleKey} role={viewAsRole} />;
+  if (moduleKeys && !moduleKeys.some((key) => can(key, "view"))) {
+    const moduleDef = getModuleDef(moduleKeys[0]);
+    return <AccessRestricted moduleLabel={moduleDef?.label ?? moduleKeys[0]} role={viewAsRole} />;
   }
 
   return <>{children}</>;

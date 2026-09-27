@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PlayCircle, Trash2, UserPlus, Users } from "lucide-react";
+import { CheckCircle2, PlayCircle, Trash2, UserPlus, Users } from "lucide-react";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
@@ -16,7 +16,7 @@ import { useRBAC } from "@/hooks/use-rbac";
 import { useRoles } from "@/hooks/use-roles";
 import { useDepartments } from "@/hooks/use-departments";
 import { useToast } from "@/hooks/use-toast";
-import { discardOnboarding, getOnboardingRecords } from "@/services/onboarding.service";
+import { discardOnboarding, getOnboardingRecords, submitOnboarding } from "@/services/onboarding.service";
 import { ONBOARDING_STEP_KEYS, employeeFullName, type OnboardingRecord } from "@/types/onboarding";
 
 export function OnboardingList() {
@@ -30,6 +30,8 @@ export function OnboardingList() {
   const [department, setDepartment] = useState("");
   const [discardTarget, setDiscardTarget] = useState<OnboardingRecord | null>(null);
   const [isDiscarding, setIsDiscarding] = useState(false);
+  const [completeTarget, setCompleteTarget] = useState<OnboardingRecord | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   // Search and department are real server-side filters (see
   // employee.service.ts's listEmployeesRemote) — debounce the search input
@@ -61,6 +63,23 @@ export function OnboardingList() {
       showToast(err instanceof Error ? err.message : "Could not discard this onboarding.", "error");
     } finally {
       setIsDiscarding(false);
+    }
+  }
+
+  async function handleCompleteConfirmed() {
+    if (!completeTarget) return;
+    setIsCompleting(true);
+    try {
+      await submitOnboarding(completeTarget);
+      // Completing moves the employee out of "in_progress" status server-side,
+      // so it no longer belongs in this in-progress list — same removal as Discard.
+      setRecords((prev) => prev?.filter((r) => r.id !== completeTarget.id) ?? prev);
+      showToast(`Onboarding completed for ${employeeFullName(completeTarget.basicInfo) || "this employee"}.`);
+      setCompleteTarget(null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not complete this onboarding.", "error");
+    } finally {
+      setIsCompleting(false);
     }
   }
 
@@ -105,6 +124,14 @@ export function OnboardingList() {
                 icon: PlayCircle,
                 onClick: () => router.push(`/employees/onboarding/${record.id}`),
                 hidden: !can("employeeOnboarding", "view"),
+              },
+              {
+                label: "Mark as Complete",
+                icon: CheckCircle2,
+                onClick: () => setCompleteTarget(record),
+                // Only once every step through Review has been reached — the
+                // same step-9-of-9 condition the Progress badge above shows.
+                hidden: !can("employeeOnboarding", "add") || record.currentStepIndex < ONBOARDING_STEP_KEYS.length - 1,
               },
               {
                 label: "Discard",
@@ -180,6 +207,17 @@ export function OnboardingList() {
         body="This permanently deletes this onboarding record, including the account it created, and can't be undone."
         confirmLabel="Discard Onboarding"
         isConfirming={isDiscarding}
+      />
+
+      <ConfirmModal
+        open={Boolean(completeTarget)}
+        onClose={() => setCompleteTarget(null)}
+        onConfirm={handleCompleteConfirmed}
+        title="Complete Onboarding"
+        description={completeTarget ? employeeFullName(completeTarget.basicInfo) || "Unnamed candidate" : undefined}
+        body="This finalizes the employee's record and emails them their login credentials. Make sure every section was reviewed for accuracy first."
+        confirmLabel="Mark as Complete"
+        isConfirming={isCompleting}
       />
     </div>
   );
