@@ -45,6 +45,19 @@ export async function listProjects(status?: ProjectStatus): Promise<ApiProject[]
   return projects.map(mapProject);
 }
 
+/**
+ * Every created project, company-wide — self-service (routes/User/projectRoutes.js's
+ * GET /projects/all), not gated on projects.view, unlike listProjects above.
+ * Use this for any project *picker* (DSR submission, DSR filters/export, ...)
+ * that both admin and employee accounts need regardless of their projects.view
+ * grant — only the admin project directory itself needs the fuller listProjects.
+ */
+export async function listAllProjects(): Promise<ApiProject[]> {
+  const data = await httpService.get<{ projects?: ApiProjectRaw[] } | ApiProjectRaw[]>(API_ENDPOINTS.user.allProjects);
+  const projects = Array.isArray(data) ? data : (data.projects ?? []);
+  return projects.map(mapProject);
+}
+
 export async function createProject(payload: CreateProjectPayload): Promise<ApiProject> {
   const data = await httpService.post<{ project?: ApiProjectRaw } | ApiProjectRaw>(
     API_ENDPOINTS.admin.projects,

@@ -2,7 +2,7 @@ import { StatusDot } from "@/components/atoms/StatusDot";
 import { STATUS_DOT_TONE, STATUS_LABEL } from "@/lib/attendance-utils";
 import type { AttendanceStatus } from "@/types/attendance";
 
-const LEGEND_ITEMS: AttendanceStatus[] = ["present", "late", "leave", "absent", "holiday"];
+const LEGEND_ITEMS: AttendanceStatus[] = ["present", "late", "half-day", "leave", "absent", "holiday"];
 
 export function AttendanceLegend() {
   return (

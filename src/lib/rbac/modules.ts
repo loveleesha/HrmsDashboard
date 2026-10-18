@@ -23,6 +23,7 @@ import {
   PartyPopper,
   Building,
   Headset,
+  Settings2,
 } from "lucide-react";
 import type { ModuleDef } from "@/types/rbac";
 
@@ -48,7 +49,7 @@ export const MODULE_DEFS: ModuleDef[] = [
   { key: "recruitment", label: "Recruitment", icon: Briefcase, actions: ["view", "add", "edit", "delete", "approve"], group: "Talent" },
   { key: "performance", label: "Performance", icon: Target, actions: ["view", "add", "edit", "approve"], group: "Talent" },
   { key: "training", label: "Training", icon: GraduationCap, actions: ["view", "add", "edit", "delete"], group: "Talent" },
-  { key: "dsr", label: "DSR", icon: ClipboardList, actions: ["view", "add", "edit", "approve"], group: "My Workspace" },
+  { key: "dsr", label: "DSR", icon: ClipboardList, actions: ["view", "add", "edit", "approve", "export"], group: "My Workspace" },
   { key: "projects", label: "Projects", icon: FolderKanban, actions: ["view", "add", "edit", "delete"], group: "My Workspace" },
   { key: "tickets", label: "Support Tickets", icon: LifeBuoy, actions: ["view", "add", "edit", "delete"], group: "My Workspace" },
   { key: "documents", label: "Documents", icon: FileText, actions: ["view", "add", "edit", "delete"], group: "Resources" },
@@ -60,6 +61,13 @@ export const MODULE_DEFS: ModuleDef[] = [
   { key: "organization", label: "Organization", icon: Building2, actions: ["view", "add", "edit", "delete"], group: "Administration" },
   { key: "supportTickets", label: "Support Tickets (Admin)", icon: Headset, actions: ["view", "edit", "delete"], group: "Administration" },
   { key: "departments", label: "Departments", icon: Building, actions: ["view", "add", "edit", "delete"], group: "Administration" },
+  {
+    key: "dsrForm",
+    label: "DSR Form Builder",
+    icon: Settings2,
+    actions: ["view", "add", "edit", "delete"],
+    group: "Administration",
+  },
   { key: "reports", label: "Reports", icon: BarChart3, actions: ["view", "export"], group: "Administration" },
   { key: "settings", label: "Settings", icon: Settings, actions: ["view", "edit"], group: "Administration" },
   { key: "roleAccess", label: "Role & Access", icon: ShieldCheck, actions: ["view", "edit"], group: "Administration" },

@@ -1,6 +1,7 @@
 export type AttendanceStatus =
   | "present"
   | "late"
+  | "half-day"
   | "absent"
   | "leave"
   | "holiday"
@@ -35,4 +36,15 @@ export interface AttendanceMonthSummary {
   averageWorkingHours: string;
   totalOvertime: string;
   attendanceRate: number;
+}
+
+/** The result of POST /api/admin/attendance/import — see
+ * attendance.service.ts's importAttendance. */
+export interface AttendanceImportSummary {
+  periodStart: string;
+  periodEnd: string;
+  rowsInFile: number;
+  employeesMatched: number;
+  employeesNotFound: string[];
+  recordsUpserted: number;
 }

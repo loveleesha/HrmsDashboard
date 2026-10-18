@@ -1,12 +1,16 @@
-import type { AttendanceDay, AttendanceMonthSummary } from "@/types/attendance";
+import { httpService } from "@/lib/http/http.service";
+import { API_ENDPOINTS } from "@/lib/apiEndpoint";
+import type { AttendanceDay, AttendanceImportSummary, AttendanceMonthSummary } from "@/types/attendance";
 import { toDateKey } from "@/lib/attendance-utils";
 
 /**
- * Attendance service. Weekend/holiday classification is real calendar math;
- * everything else (actual punch-in/out records) has no backend yet, so this
- * returns no entry for ordinary working days rather than fabricating one.
- * Replace with real API calls once the Node.js backend exists — callers
- * only depend on these functions' signatures.
+ * Attendance service — wired to the real backend (routes/User/attendanceRoutes.js
+ * for the caller's own records, routes/Admin/attendanceRoutes.js for viewing
+ * someone else's, same split as every other self-service/admin-wide pair this
+ * app already has). Weekend/holiday classification stays real calendar math
+ * layered underneath (the backend has no holiday calendar of its own yet) —
+ * an actual attendance record for that date always wins over the generic
+ * weekend/holiday guess, since someone can genuinely have worked one.
  */
 
 export const HOLIDAYS: Record<string, string> = {
@@ -33,21 +37,84 @@ function formatDuration(totalMinutes: number): string {
   return `${String(hours).padStart(2, "0")}h ${String(minutes).padStart(2, "0")}m`;
 }
 
-/**
- * `employeeId` is kept in the signature (unused for now) so callers don't
- * need to change once this reads from a real per-employee attendance source.
- */
-export function getAttendanceMonth(employeeId: string, year: number, month: number): AttendanceDay[] {
+interface RawAttendanceRecord {
+  id?: string;
+  date?: string;
+  checkInTime?: string | null;
+  checkOutTime?: string | null;
+  workedHours?: number | null;
+  status?: string;
+}
+
+// "Late" (check-in after the shift-start grace period) and "Half-Day" (short
+// total hours, regardless of arrival time) are distinct backend statuses —
+// see utils/attendanceHelpers.js's determineAttendanceStatus — and now map to
+// their own distinct UI statuses too (previously Half-Day shared "late"'s
+// bucket, which mislabeled an on-time-but-short day as "Late").
+const BACKEND_STATUS_MAP: Record<string, AttendanceDay["status"]> = {
+  Present: "present",
+  Late: "late",
+  "Half-Day": "half-day",
+  Absent: "absent",
+  "On-Leave": "leave",
+  Holiday: "holiday",
+};
+
+// UTC getters, not local ones: the backend's attendance import (controllers/
+// Admin/attendanceController.js's importAttendance) has no real timezone to
+// work with — a device export's raw "16:24" punch has no offset attached at
+// all — so it stores that literal clock reading as this Date's UTC digits
+// (Date.UTC(year, month, day, hours, minutes)), by convention, rather than
+// as a true timezone-aware instant. Reading it back with local getters would
+// re-interpret those same digits in the *viewer's* browser timezone instead
+// (e.g. shifting "16:24" to "21:54" for an IST viewer) — reading UTC getters
+// here is what actually reproduces the file's own numbers on screen.
+function formatClockTime(iso: string): string {
+  const date = new Date(iso);
+  return formatTime(date.getUTCHours() * 60 + date.getUTCMinutes());
+}
+
+function formatHoursDuration(hours: number): string {
+  return formatDuration(Math.round(hours * 60));
+}
+
+function mapRecordToDay(record: RawAttendanceRecord, dateKey: string): AttendanceDay {
+  const punchIn = record.checkInTime ? formatClockTime(record.checkInTime) : undefined;
+  const punchOut = record.checkOutTime ? formatClockTime(record.checkOutTime) : undefined;
+  const workingHours = record.workedHours != null ? formatHoursDuration(record.workedHours) : undefined;
+  const overtime = record.workedHours != null ? formatHoursDuration(Math.max(0, record.workedHours - 9)) : undefined;
+
+  return {
+    date: dateKey,
+    status: (record.status && BACKEND_STATUS_MAP[record.status]) || "absent",
+    punchIn,
+    punchOut,
+    workingHours,
+    overtime,
+  };
+}
+
+/** Every day of the month: a real attendance record where one exists
+ * (imported or punched in/out), else weekend/holiday calendar math, else
+ * left out entirely — an ordinary working day nobody's recorded anything
+ * for yet shows as blank rather than a fabricated Absent. */
+function buildMonthDays(year: number, month: number, records: RawAttendanceRecord[]): AttendanceDay[] {
+  const byDateKey = new Map(records.filter((r) => r.date).map((r) => [toDateKey(new Date(r.date!)), r]));
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days: AttendanceDay[] = [];
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
     const dateKey = toDateKey(date);
-    const dow = date.getDay();
-    const isWeekend = dow === 0 || dow === 6;
 
-    if (isWeekend) {
+    const record = byDateKey.get(dateKey);
+    if (record) {
+      days.push(mapRecordToDay(record, dateKey));
+      continue;
+    }
+
+    const dow = date.getDay();
+    if (dow === 0 || dow === 6) {
       days.push({ date: dateKey, status: "weekend" });
       continue;
     }
@@ -56,12 +123,43 @@ export function getAttendanceMonth(employeeId: string, year: number, month: numb
       days.push({ date: dateKey, status: "holiday", holidayName: HOLIDAYS[dateKey] });
       continue;
     }
-
-    // No real punch-in/out record source yet — leave ordinary working days
-    // unlisted rather than fabricating a status for them.
   }
 
   return days;
+}
+
+function monthQueryKey(year: number, month: number): string {
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+/** The caller's own attendance for one month — GET /api/user/attendance,
+ * gated on attendance.view (every role by default). */
+export async function getMyAttendanceMonth(year: number, month: number): Promise<AttendanceDay[]> {
+  const data = await httpService.get<{ attendance: RawAttendanceRecord[] }>(API_ENDPOINTS.user.attendance, {
+    month: monthQueryKey(year, month),
+  });
+  return buildMonthDays(year, month, data.attendance);
+}
+
+/** The caller's own attendance record for today, or null if nothing's been
+ * recorded yet — GET /api/user/attendance/today, gated on attendance.view. */
+export async function getMyAttendanceToday(): Promise<AttendanceDay | null> {
+  const data = await httpService.get<{ attendance: RawAttendanceRecord | null }>(API_ENDPOINTS.user.attendanceToday);
+  return data.attendance ? mapRecordToDay(data.attendance, toDateKey(new Date())) : null;
+}
+
+/** Someone else's attendance for one month — GET /api/admin/attendance,
+ * gated on attendance.approve (team-oversight tier, NOT the attendance.view
+ * every role gets for its own records — see controllers/Admin/
+ * attendanceController.js's own note on this). `employeeRecordId` is the
+ * Employee document's own _id (Employee.employeeRecordId on the frontend
+ * type), not the account's userId. */
+export async function getTeamAttendanceMonth(employeeRecordId: string, year: number, month: number): Promise<AttendanceDay[]> {
+  const data = await httpService.get<{ attendance: RawAttendanceRecord[] }>(API_ENDPOINTS.admin.attendance, {
+    employeeId: employeeRecordId,
+    month: monthQueryKey(year, month),
+  });
+  return buildMonthDays(year, month, data.attendance);
 }
 
 export function getAttendanceSummary(days: AttendanceDay[]): AttendanceMonthSummary {
@@ -96,6 +194,21 @@ export function getAttendanceSummary(days: AttendanceDay[]): AttendanceMonthSumm
     totalOvertime: formatDuration(totalOvertimeMinutes),
     attendanceRate,
   };
+}
+
+/**
+ * Admin > Attendance > Attendance Upload — wired to the real backend
+ * (routes/Admin/attendanceRoutes.js's POST /import), unlike the rest of this
+ * file. Accepts a CSV/XLS/XLSX export (a biometric device's own "Attendance
+ * Record" format — see the backend's utils/parseAttendanceImport.js for the
+ * exact expected layout) covering at most one month; the backend rejects a
+ * longer range with a 400.
+ */
+export async function importAttendance(file: File): Promise<AttendanceImportSummary> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const data = await httpService.post<{ summary: AttendanceImportSummary }>(API_ENDPOINTS.admin.attendanceImport, formData);
+  return data.summary;
 }
 
 export function punchOutToday(day: AttendanceDay): AttendanceDay {

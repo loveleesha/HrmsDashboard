@@ -73,6 +73,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
     settings: FULL,
     roleAccess: FULL,
     dsr: FULL,
+    dsrForm: FULL,
     projects: FULL,
     tickets: FULL,
   },
@@ -100,7 +101,8 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
     reports: { view: true, export: true },
     settings: { view: true, edit: true },
     roleAccess: VIEW,
-    dsr: { view: true, add: true, edit: true, approve: true },
+    dsr: { view: true, add: true, edit: true, approve: true, export: true },
+    dsrForm: { view: true, add: true, edit: true, delete: true },
     tickets: { view: true, add: true, edit: true, delete: true },
   },
 
@@ -124,7 +126,12 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<Role, RolePermissionMap> = {
     performance: { view: true, edit: true, approve: true },
     expenses: { view: true, add: true, approve: true, reject: true },
     reports: { view: true, export: true },
-    dsr: { view: true, add: true, approve: true },
+    dsr: { view: true, add: true, approve: true, export: true },
+    // Unlike every other non-admin role (which gets no dsrForm grant at all,
+    // so Customize Form/DSR Forms List simply don't show) — a manager can
+    // also design the DSR form itself: add/edit/delete fields for any role,
+    // not just approve submitted reports.
+    dsrForm: { view: true, add: true, edit: true, delete: true },
   },
 
   employee: {

@@ -13,7 +13,7 @@ import { EventsWidget } from "@/components/organisms/dashboard/EventsWidget";
 import { useAuth } from "@/hooks/use-auth";
 import { useRBAC } from "@/hooks/use-rbac";
 import { getEmployees } from "@/services/employee.service";
-import { getAttendanceMonth } from "@/services/attendance.service";
+import { getMyAttendanceToday } from "@/services/attendance.service";
 import { listJobs } from "@/services/recruitment.service";
 import { getRecognitions, buildSummary } from "@/services/recognition.service";
 import { getAnnouncements } from "@/services/announcement.service";
@@ -60,11 +60,10 @@ export function EmployeeDashboard() {
       if (!isMounted) return;
       const me = employees.find((e) => e.email === user?.email) ?? employees[0] ?? null;
       setEmployee(me);
-      if (me) {
-        const days = getAttendanceMonth(me.id, TODAY.getFullYear(), TODAY.getMonth());
-        setTodayAttendance(days[days.length - 1] ?? null);
-      }
     });
+    getMyAttendanceToday()
+      .then((day) => isMounted && setTodayAttendance(day))
+      .catch(() => isMounted && setTodayAttendance(null));
     if (canViewJobs) {
       listJobs({ status: "Open" })
         .then((data) => isMounted && setJobs(data))

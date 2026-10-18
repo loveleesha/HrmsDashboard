@@ -11,6 +11,7 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { useRBAC } from "@/hooks/use-rbac";
 import { getDsrEntry } from "@/services/dsr.service";
 import type { DsrEntry } from "@/types/dsr";
+import { cn } from "@/lib/cn";
 
 function formatDate(value: string, long = true) {
   const date = new Date(value);
@@ -31,6 +32,28 @@ function formatHours(value: string) {
   if (!match) return value || "—";
   const [hours, minutes] = [Number(match[1]), Number(match[2])];
   return [hours ? `${hours}h` : "", minutes ? `${minutes}m` : ""].filter(Boolean).join(" ") || "0m";
+}
+
+// The submission form is now entirely admin-configured (see CreateDsrPanel.tsx)
+// — a role's form can include custom field *documents* literally labeled
+// "Project"/"Date"/"Estimated Hours"/"Description", which get answered into
+// entry.customFields the same as any other field, on top of already driving
+// this page's dedicated Project/Time logged/Description cards above. Without
+// this, "Additional Fields" would redundantly repeat all four.
+const DUPLICATE_LABELS = new Set(["date", "project", "estimated hours", "description"]);
+
+/** Genuinely extra fields only — excludes anything already shown in the
+ * cards above, and collapses the same label to one entry (two role groups
+ * can each configure their own "Notes" field, for instance, both answered
+ * on this entry; shown once). */
+function additionalFields(entry: DsrEntry) {
+  const seen = new Set<string>();
+  return entry.customFields.filter((field) => {
+    const key = field.label.trim().toLowerCase();
+    if (DUPLICATE_LABELS.has(key) || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function Detail({ icon: Icon, label, children }: { icon: typeof Clock; label: string; children: React.ReactNode }) {
@@ -144,6 +167,20 @@ function DsrDetail({ id }: { id: string }) {
           <p className="text-fs-base text-muted">{entry.noWorkDone ? "No description — no work was done that day." : "No description was added."}</p>
         )}
       </div>
+
+      {additionalFields(entry).length > 0 && (
+        <div className="rounded-xl border border-border bg-surface-card p-5 sm:p-6">
+          <h3 className="mb-3 text-fs-xl font-semibold text-ink">Additional Fields</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {additionalFields(entry).map((field, index) => (
+              <div key={field.fieldId ?? index} className={cn("min-w-0", field.type === "textarea" && "sm:col-span-2")}>
+                <p className="text-fs-sm text-muted-light">{field.label}</p>
+                <p className="whitespace-pre-wrap break-words text-fs-base text-ink [overflow-wrap:anywhere]">{field.value ?? "—"}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

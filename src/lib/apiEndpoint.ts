@@ -12,6 +12,10 @@
 
 export const API_ENDPOINTS = {
   user: {
+    // Attendance
+    attendance: "/api/user/attendance",
+    attendanceToday: "/api/user/attendance/today",
+
     // Auth
     register: "/api/user/register",
     login: "/api/user/login",
@@ -30,9 +34,14 @@ export const API_ENDPOINTS = {
 
     // DSR
     dsr: "/api/user/dsr",
+    dsrFields: "/api/user/dsr-fields",
+    // Same route, forced to the caller's own role regardless of their
+    // dsr.edit permission — see services/dsr.service.ts's getMyDsrFormFields.
+    myDsrFields: "/api/user/dsr-fields?mine=true",
 
     // My Projects
     projects: "/api/user/projects",
+    allProjects: "/api/user/projects/all",
 
     // Training
     trainings: "/api/user/trainings",
@@ -111,6 +120,9 @@ export const API_ENDPOINTS = {
 
     // DSR
     dsr: "/api/admin/dsr",
+    dsrExport: "/api/admin/dsr/export",
+    dsrFields: "/api/admin/dsr-fields",
+    dsrFieldById: (id: string) => `/api/admin/dsr-fields/${id}`,
 
     // Project Assignments
     projectAssignments: "/api/admin/project-assignments",
@@ -121,6 +133,10 @@ export const API_ENDPOINTS = {
     trainingById: (id: string) => `/api/admin/trainings/${id}`,
     trainingStatus: (id: string) => `/api/admin/trainings/${id}/status`,
     trainingAttendance: (id: string) => `/api/admin/trainings/${id}/attendance`,
+
+    // Attendance
+    attendance: "/api/admin/attendance",
+    attendanceImport: "/api/admin/attendance/import",
 
     // Leave (Team Approvals)
     leave: "/api/admin/leave",

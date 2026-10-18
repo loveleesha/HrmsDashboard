@@ -14,6 +14,7 @@ export interface FilterDropdownProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  disabled?: boolean;
 }
 
 export function FilterDropdown({
@@ -23,6 +24,7 @@ export function FilterDropdown({
   value,
   onChange,
   className,
+  disabled,
 }: FilterDropdownProps) {
   return (
     <div className={cn("relative", className)}>
@@ -30,7 +32,8 @@ export function FilterDropdown({
         aria-label={ariaLabel ?? label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full appearance-none rounded-lg border border-border bg-surface-card pl-3 pr-9 text-fs-lg text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+        disabled={disabled}
+        className="h-10 w-full appearance-none rounded-lg border border-border bg-surface-card pl-3 pr-9 text-fs-lg text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <option value="">{label}</option>
         {options.map((option) => (

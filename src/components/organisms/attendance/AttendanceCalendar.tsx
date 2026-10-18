@@ -87,6 +87,7 @@ export function AttendanceCalendar({
                 <span className="hidden text-fs-2xs uppercase tracking-wide sm:block">
                   {record.status === "present" && "P"}
                   {record.status === "late" && "L"}
+                  {record.status === "half-day" && "HD"}
                   {record.status === "absent" && "A"}
                   {record.status === "leave" && "LV"}
                   {record.status === "holiday" && "H"}

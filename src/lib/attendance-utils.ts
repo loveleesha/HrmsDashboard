@@ -3,15 +3,20 @@ import type { AttendanceStatus } from "@/types/attendance";
 export const STATUS_LABEL: Record<AttendanceStatus, string> = {
   present: "Present",
   late: "Late",
+  "half-day": "Half Day",
   absent: "Absent",
   leave: "Leave",
   holiday: "Holiday",
   weekend: "Weekend",
 };
 
+// "late" and "half-day" share a tone/cell class (both "needs a look" states)
+// but render different labels/badges — a late arrival and a short day are
+// different things and shouldn't both just say "Late".
 export const STATUS_DOT_TONE: Record<AttendanceStatus, "success" | "warning" | "danger" | "info" | "neutral"> = {
   present: "success",
   late: "warning",
+  "half-day": "warning",
   absent: "danger",
   leave: "info",
   holiday: "neutral",
@@ -21,6 +26,7 @@ export const STATUS_DOT_TONE: Record<AttendanceStatus, "success" | "warning" | "
 export const STATUS_CELL_CLASS: Record<AttendanceStatus, string> = {
   present: "bg-success-bg text-success",
   late: "bg-warning-bg text-warning",
+  "half-day": "bg-warning-bg text-warning",
   absent: "bg-danger-bg text-danger",
   leave: "bg-info-bg text-info",
   holiday: "bg-surface text-muted",

@@ -20,6 +20,7 @@ export type ModuleKey =
   | "settings"
   | "roleAccess"
   | "dsr"
+  | "dsrForm"
   | "projects"
   | "tickets"
   | "holidays"
